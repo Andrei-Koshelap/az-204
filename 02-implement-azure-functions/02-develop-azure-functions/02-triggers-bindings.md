@@ -1,55 +1,92 @@
-# Triggers and Bindings
+# Triggers and Bindings (Триггеры и биндинги)
 
-## Key Concepts
-- **Trigger** - Event that starts function execution (exactly one per function)
-- **Binding** - Declarative connection to data source/destination
-- **Input binding** - Read data into function
-- **Output binding** - Write data from function
-- **Direction** - `in`, `out`, or `inout`
+## Key Concepts (Ключевые понятия)
 
-## Triggers
+- **Trigger** — событие, которое запускает выполнение функции  
+  (ровно **один trigger на функцию**)
+- **Binding** — декларативное подключение к источнику или получателю данных
+- **Input binding** — чтение данных в функцию
+- **Output binding** — запись данных из функции
+- **Direction** — `in`, `out` или `inout`
 
-### Definition
-**Event that invokes a function** - Each function must have exactly ONE trigger
+---
 
-### Trigger Properties
-- **Type** - What kind of event (http, timer, queue, etc.)
-- **Data** - Often provided as function parameter payload
-- **Direction** - Always `in`
+# Triggers (Триггеры)
 
-### Common Triggers
+## Definition (Определение)
+
+Trigger — это **событие, которое вызывает выполнение функции**.
+
+📌 У каждой функции должен быть **ровно один trigger**.
+
+---
+
+## Trigger Properties (Свойства триггера)
+
+- **Type** — тип события (`http`, `timer`, `queue` и др.)
+- **Data** — данные события (передаются как параметр функции)
+- **Direction** — всегда `in`
+
+---
+
+## Common Triggers (Часто используемые триггеры)
+
 | Trigger | Event | Use Case |
-|---------|-------|----------|
-| **HTTP** | HTTP request | REST APIs, webhooks |
-| **Timer** | Schedule (cron) | Scheduled jobs, cleanup |
-| **Queue** | Message in queue | Async processing |
-| **Blob** | File added/modified | File processing |
-| **Event Hub** | Stream events | IoT, telemetry |
-| **Event Grid** | Event notification | Resource changes |
-| **Service Bus** | Enterprise message | Reliable messaging |
-| **Cosmos DB** | Document change | Data synchronization |
+|----------|--------|------------|
+| **HTTP** | HTTP-запрос | REST API, webhooks |
+| **Timer** | Расписание (cron) | Периодические задачи |
+| **Queue** | Сообщение в очереди | Асинхронная обработка |
+| **Blob** | Добавление/изменение файла | Обработка файлов |
+| **Event Hub** | Поток событий | IoT, телеметрия |
+| **Event Grid** | Событие Azure | Реакция на изменения ресурсов |
+| **Service Bus** | Корпоративное сообщение | Надёжный messaging |
+| **Cosmos DB** | Изменение документа | Синхронизация данных |
 
-## Bindings
+---
 
-### Definition
-**Declarative way** to connect to external data sources/destinations
+# Bindings (Биндинги)
 
-### Binding Types
-1. **Input binding** - Bring data INTO function
-2. **Output binding** - Send data OUT of function
-3. **Bidirectional (inout)** - Read and write
+## Definition (Определение)
 
-### Benefits
-✅ **No hardcoded connections** - Configuration, not code
-✅ **Simplified code** - Framework handles connection logic
-✅ **Testability** - Easy to mock bindings
-✅ **Reusability** - Same binding in multiple functions
+Binding — это **декларативный способ** подключения к внешним сервисам.
 
-### Binding Properties
-- **Type** - Data source (blob, table, queue, etc.)
-- **Direction** - `in`, `out`, or `inout`
-- **Name** - Parameter name in function
-- **Connection** - App setting with connection string
+Не нужно писать код подключения — runtime делает это автоматически.
+
+---
+
+## Binding Types (Типы биндингов)
+
+1️⃣ **Input binding** — получение данных  
+2️⃣ **Output binding** — отправка данных  
+3️⃣ **Bidirectional (inout)** — чтение и запись
+
+---
+
+## Benefits (Преимущества)
+
+✅ Нет хардкодинга строк подключения  
+✅ Упрощённый код  
+✅ Легче тестировать  
+✅ Повторное использование конфигурации
+
+---
+
+## Binding Properties (Свойства биндинга)
+
+- **Type** — источник данных (`blob`, `table`, `queue` и т.д.)
+- **Direction** — `in`, `out`, `inout`
+- **Name** — имя параметра в коде
+- **Connection** — имя app setting с connection string
+
+---
+
+## Важно для AZ-204
+
+- Один trigger на функцию
+- Несколько bindings допустимы
+- Trigger всегда `direction = in`
+- Bindings конфигурируются декларативно
+- Connection strings хранятся в Application Settings
 
 ## Configuration Methods
 
@@ -120,42 +157,91 @@ public Person run(
     return person;
 }
 ```
+# Binding Direction (Направление биндингов)
 
-## Binding Direction
+## Trigger
 
-### Trigger
-- **Direction**: Always `in`
-- **Count**: Exactly one per function
-- **Purpose**: Start function execution
+- **Direction**: всегда `in`
+- **Count**: ровно 1 на функцию
+- **Purpose**: запуск выполнения функции
 
-### Input Binding
+---
+
+## Input Binding
+
 - **Direction**: `in`
-- **Count**: Zero or more
-- **Purpose**: Read data into function
+- **Count**: 0 или больше
+- **Purpose**: получение данных в функцию
 
-### Output Binding
+---
+
+## Output Binding
+
 - **Direction**: `out`
-- **Count**: Zero or more
-- **Purpose**: Write data from function
+- **Count**: 0 или больше
+- **Purpose**: запись данных из функции
 
-### Bidirectional Binding
+---
+
+## Bidirectional Binding
+
 - **Direction**: `inout`
-- **Count**: Zero or more
-- **Purpose**: Read and write same resource
-- **Portal**: Requires Advanced editor
+- **Count**: 0 или больше
+- **Purpose**: чтение и запись одного и того же ресурса
+- **Portal**: требуется Advanced editor
 
-### Direction Summary
+> 💡 Используется, например, для обновления документа в базе.
+
+---
+
+## Direction Summary (Сводка)
+
 | Binding | Direction | Count | Example |
-|---------|-----------|-------|---------|
-| **Trigger** | `in` | 1 (required) | Queue message arrives |
-| **Input** | `in` | 0+ | Read blob, query table |
-| **Output** | `out` | 0+ | Write blob, insert table row |
-| **Bidirectional** | `inout` | 0+ | Update document |
+|----------|------------|--------|----------|
+| **Trigger** | `in` | 1 (обязателен) | Сообщение в очереди |
+| **Input** | `in` | 0+ | Чтение blob, запрос к таблице |
+| **Output** | `out` | 0+ | Запись blob, вставка строки |
+| **Bidirectional** | `inout` | 0+ | Обновление документа |
 
-## Complete Example: Queue → Table
+---
 
-### Scenario
-New message in queue → Write row to table
+# Complete Example: Queue → Table
+
+## Scenario (Сценарий)
+
+Новое сообщение в очереди → записать строку в таблицу.
+
+### Логика:
+
+1. Сообщение поступает в **Storage Queue**
+2. Срабатывает **Queue trigger**
+3. Функция получает сообщение
+4. Через **Output binding** добавляет строку в Azure Table Storage
+
+---
+
+## Пример (JavaScript / function.json)
+
+```json
+{
+  "bindings": [
+    {
+      "name": "myQueueItem",
+      "type": "queueTrigger",
+      "direction": "in",
+      "queueName": "orders",
+      "connection": "AzureWebJobsStorage"
+    },
+    {
+      "name": "outputTable",
+      "type": "table",
+      "direction": "out",
+      "tableName": "Orders",
+      "connection": "AzureWebJobsStorage"
+    }
+  ]
+}
+```
 
 ### function.json (JavaScript)
 ```json
@@ -194,6 +280,14 @@ module.exports = async function (context, myQueueItem) {
     };
 };
 ```
+
+
+Важно для AZ-204
+Trigger всегда один
+Bindings могут быть множественными
+Output binding автоматически записывает данные
+Connection указывается через имя App Setting
+Код не содержит строк подключения
 
 ### C# Equivalent
 ```csharp
@@ -471,30 +565,59 @@ Use binding expressions in `path` or other properties:
   ]
 }
 ```
+## Critical Notes (Критически важные моменты)
 
-## Critical Notes
-- 💡 **One trigger** - Exactly one per function (required)
-- ⚠️ **Multiple bindings** - Zero or more input/output bindings
-- 🎯 **Direction** - Trigger always `in`, bindings `in`/`out`/`inout`
-- 📊 **Declarative** - Configuration, not code
-- ✅ **Connection names** - Reference app settings, not connection strings
-- 🔄 **C# uses attributes** - Other languages use function.json
-- ⏱️ **Azurite for local** - Test storage bindings without Azure
-- 🔒 **Never hardcode** - Use app settings for secrets
+- 💡 **Один trigger** — строго один на функцию (обязателен)
+- ⚠️ **Несколько bindings** — можно 0 или больше input/output биндингов
+- 🎯 **Direction**:
+    - Trigger всегда `in`
+    - Bindings — `in`, `out`, `inout`
+- 📊 **Декларативная модель** — конфигурация, а не код
+- ✅ **Connection** — указывает на имя App Setting, а не на строку подключения
+- 🔄 **C# использует атрибуты**, другие языки — `function.json`
+- ⏱️ **Azurite** — эмулятор Azure Storage для локального тестирования
+- 🔒 Никогда не хардкодьте секреты — используйте App Settings
 
-## Exam Tips
-- Trigger = event that starts function (exactly ONE per function)
-- Binding = connection to data source/destination (zero or MORE)
-- Direction: Trigger always `in`, bindings `in`/`out`/`inout`
-- C# uses attributes, JavaScript/Python/PowerShell use function.json
-- Connection property references app setting NAME, not connection string
-- Java uses annotations (@QueueTrigger, @TableOutput, etc.)
-- dataType for dynamically typed languages (binary, stream, string)
-- C# type inferred from parameter type
-- Portal editing: Integration tab for function.json languages only
-- Cannot configure C# bindings in portal (use attributes)
-- Azurite emulator for local storage binding testing
-- Admin endpoint for manual trigger: http://localhost:7071/admin/functions/{name}
-- Binding expressions: {rand-guid}, {datetime}, {propertyName}
+---
+
+## Exam Tips (Советы для экзамена)
+
+- **Trigger** = событие запуска функции (РОВНО один)
+- **Binding** = подключение к источнику/назначению данных (0 или больше)
+- Direction:
+    - Trigger → всегда `in`
+    - Bindings → `in` / `out` / `inout`
+
+### Языковые различия
+
+- **C# (compiled)** → атрибуты (`[QueueTrigger]`, `[BlobOutput]` и т.д.)
+- **JavaScript / Python / PowerShell** → `function.json`
+- **Java** → аннотации (`@QueueTrigger`, `@TableOutput`, и др.)
+
+---
+
+### Важные детали
+
+- Свойство `connection` ссылается на **имя настройки**, а не сам connection string
+- `dataType` используется в динамически типизированных языках (`binary`, `stream`, `string`)
+- В C# тип определяется типом параметра функции
+- В портале вкладка **Integration** доступна только для `function.json` языков
+- Для C# bindings настраиваются только через атрибуты (не через портал)
+- Azurite позволяет тестировать Storage bindings локально
+- Admin endpoint для ручного запуска:
+       http://localhost:7071/admin/functions/{name}
+
+
+---
+
+### Binding Expressions (Выражения биндингов)
+
+Можно использовать специальные выражения:
+
+- `{rand-guid}` — случайный GUID
+- `{datetime}` — текущая дата/время
+- `{propertyName}` — значение свойства из триггера
+
+> 💡 Часто используется для динамического именования blob-файлов и строк таблиц.
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/develop-azure-functions/3-create-triggers-bindings)

@@ -1,22 +1,53 @@
-# Azure Functions Development
+# Azure Functions Development (Разработка Azure Functions)
 
-## Key Concepts
-- **Function app** - Container for multiple functions
-- **host.json** - Configuration for entire function app
-- **local.settings.json** - Local development settings
-- **function.json** - Function-level configuration (non-C#)
-- **Local development** - Test locally, deploy to Azure
+## Key Concepts (Ключевые понятия)
 
-## Function App Structure
+- **Function App** — контейнер для группы функций
+- **host.json** — конфигурация всего Function App
+- **local.settings.json** — настройки для локальной разработки
+- **function.json** — конфигурация конкретной функции (не для C# compiled)
+- **Local development** — разработка и тестирование локально с последующим деплоем в Azure
 
-### What Is a Function App?
-**Container** that manages, deploys, and scales functions together:
+---
 
-- **Execution context** - All functions share same runtime environment
-- **Deployment unit** - Deploy entire function app at once
-- **Pricing plan** - All functions share same billing/plan
-- **Runtime version** - All functions use same runtime (e.g., 4.x)
-- **Language** - Functions 2.x+: All functions must use same language
+# Function App Structure (Структура Function App)
+
+## What Is a Function App? (Что такое Function App?)
+
+**Function App** — это контейнер, который управляет, деплоит и масштабирует функции вместе.
+
+### Основные характеристики
+
+- 🧩 **Execution context**  
+  Все функции работают в одном runtime-окружении
+
+- 📦 **Deployment unit**  
+  Деплой происходит целиком на уровне Function App
+
+- 💰 **Pricing plan**  
+  Все функции используют один и тот же hosting plan
+
+- 🔄 **Runtime version**  
+  Все функции используют одну версию runtime (например, 4.x)
+
+- 🧑‍💻 **Language constraint**  
+  Начиная с версии 2.x — все функции в Function App должны быть написаны на одном языке
+
+> 💡 Масштабирование также происходит на уровне Function App  
+> (кроме Flex Consumption, где возможно масштабирование на уровне отдельных функций).
+
+---
+
+## Важно для AZ-204
+
+- Function App = единица масштабирования и деплоя
+- Все функции делят:
+    - план
+    - runtime
+    - конфигурацию
+- host.json влияет на поведение всех функций
+- Нельзя смешивать разные языки в одном Function App
+
 
 ### Organizational Benefits
 ```
@@ -65,15 +96,45 @@ Benefits:
 }
 ```
 
-**Key settings**:
-- `version` - Schema version (always "2.0")
-- `functionTimeout` - Max execution time
-- `extensions` - Extension-specific config
-- `logging` - Application Insights settings
+### host.json
 
-#### local.settings.json
-**Local development configuration** (NOT deployed):
+Глобальный файл конфигурации для всего Function App.
 
+**Key settings:**
+
+- `version` — версия схемы (обычно `"2.0"`)
+- `functionTimeout` — максимальное время выполнения функции
+- `extensions` — настройки для конкретных триггеров и биндингов
+- `logging` — конфигурация логирования (Application Insights и др.)
+
+> 💡 host.json влияет на все функции внутри Function App.
+
+---
+
+### local.settings.json
+
+Файл конфигурации для **локальной разработки**  
+(в Azure не деплоится).
+
+Используется для:
+
+- Хранения connection strings
+- Настроек среды разработки
+- Локальных значений переменных окружения
+
+Пример структуры:
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet"
+  }
+}
+```
+⚠️ Этот файл не публикуется в Azure —
+для продакшена используются Application Settings в портале.
 ```json
 {
   "IsEncrypted": false,
@@ -93,16 +154,63 @@ Benefits:
 }
 ```
 
-**Structure**:
-- `Values` - App settings (connection strings, API keys)
-- `Host` - Local Functions host settings
-- `ConnectionStrings` - Database connections
-- `IsEncrypted` - Whether values are encrypted
+### local.settings.json (структура)
 
-⚠️ **Important**: Never commit to source control (contains secrets)
+**Structure:**
 
-#### function.json (JavaScript/Python/PowerShell)
-**Function-level configuration**:
+- `Values` — App Settings  
+  (connection strings, API keys, environment variables)
+- `Host` — настройки локального Functions Host
+- `ConnectionStrings` — строки подключения к БД
+- `IsEncrypted` — флаг шифрования значений
+
+⚠️ **Важно:**  
+Никогда не коммитить `local.settings.json` в систему контроля версий —  
+файл содержит секреты.
+
+> 💡 В Azure используйте Application Settings вместо этого файла.
+
+---
+
+### function.json (JavaScript / Python / PowerShell)
+
+Файл конфигурации **конкретной функции**.
+
+Используется для:
+
+- Определения trigger
+- Настройки input/output bindings
+- Конфигурации направления данных
+
+Пример структуры:
+
+```json
+{
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "authLevel": "function",
+      "direction": "in",
+      "name": "req",
+      "methods": [ "get", "post" ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    }
+  ]
+}
+```
+Основные элементы
+- type — тип триггера или биндинга
+- direction — in или out
+- name — имя параметра в коде
+- authLevel — уровень авторизации (для HTTP)
+- methods — допустимые HTTP-методы
+
+📌 В C# compiled функции конфигурация задаётся через атрибуты,
+а function.json генерируется автоматически.
 
 ```json
 {
@@ -166,21 +274,36 @@ MyFunctionApp/
 └── TimerTriggerFunction.cs
 ```
 
-## Local Development
+# Local Development (Локальная разработка)
 
-### Benefits
-✅ **Full runtime** - Complete Functions runtime locally
-✅ **Live connections** - Connect to Azure services
-✅ **Debugging** - Full debugging support
-✅ **Fast iteration** - Test without deployment
+## Benefits (Преимущества)
 
-### Prerequisites
+✅ **Полноценный runtime** — локально запускается полный Azure Functions Runtime  
+✅ **Live connections** — можно подключаться к реальным Azure-сервисам  
+✅ **Debugging** — полноценная отладка  
+✅ **Быстрая итерация** — тестирование без деплоя в облако
+
+> 💡 Позволяет разрабатывать и тестировать функции так же, как обычное приложение.
+
+---
+
+## Prerequisites (Необходимые инструменты)
+
 | Tool | Purpose |
-|------|---------|
-| **Azure Functions Core Tools** | Local runtime and CLI |
-| **Visual Studio Code** | Code editor (recommended) |
-| **Azure Functions extension** | VS Code integration |
-| **Language runtime** | Node.js, Python, .NET, etc. |
+|------|----------|
+| **Azure Functions Core Tools** | Локальный runtime и CLI |
+| **Visual Studio Code** | Редактор кода (рекомендуется) |
+| **Azure Functions extension** | Интеграция с VS Code |
+| **Language runtime** | Node.js, Python, .NET и т.д. |
+
+---
+
+## Важно для AZ-204
+
+- Core Tools позволяют запускать функции локально
+- Можно подключаться к Azure Storage и другим сервисам
+- local.settings.json используется только локально
+- Отладка полностью поддерживается в VS Code и Visual Studio
 
 ### Installation
 
@@ -345,31 +468,58 @@ func azure functionapp fetch-app-settings <function-app-name>
 func settings decrypt
 ```
 
-### Best Practices
-✅ **Separate environments** - Different settings for dev/test/prod
-✅ **Use Key Vault** - Store secrets in Azure Key Vault
-✅ **Never commit secrets** - Add local.settings.json to .gitignore
-✅ **Connection naming** - Use descriptive names for connection strings
+## Best Practices (Лучшие практики)
 
-## Portal Development Limitations
+✅ **Разделяйте окружения**  
+Используйте разные настройки для dev / test / prod
 
-### Limited Portal Editing
-❌ **C# compiled** - Cannot edit in portal
-❌ **Python** - Cannot edit in portal
-❌ **Java** - Cannot edit in portal
-❌ **TypeScript** - Cannot edit in portal
+✅ **Используйте Azure Key Vault**  
+Храните секреты вне кода и конфигурационных файлов
 
-✅ **C# Script (.csx)** - Can edit in portal
-✅ **JavaScript** - Can edit in portal
-✅ **PowerShell** - Can edit in portal
+✅ **Никогда не коммитьте секреты**  
+Добавьте `local.settings.json` в `.gitignore`
 
-### Recommendation
-💡 **Develop locally** for all production scenarios:
-- Better IDE support
-- Full debugging
-- Source control integration
+✅ **Понятные имена подключений**  
+Используйте описательные имена для connection strings  
+(например: `OrdersStorageConnection`, а не `Storage1`)
+
+> 💡 В Azure используйте Application Settings + Key Vault references.
+
+---
+
+# Portal Development Limitations (Ограничения разработки в портале)
+
+## Limited Portal Editing (Ограниченное редактирование)
+
+❌ **C# compiled** — нельзя редактировать в портале  
+❌ **Python** — нельзя редактировать в портале  
+❌ **Java** — нельзя редактировать в портале  
+❌ **TypeScript** — нельзя редактировать в портале
+
+✅ **C# Script (.csx)** — можно редактировать  
+✅ **JavaScript** — можно редактировать  
+✅ **PowerShell** — можно редактировать
+
+---
+
+## Recommendation (Рекомендация)
+
+💡 Для production-разработки всегда лучше разрабатывать локально:
+
+- Полноценная IDE
+- Полная поддержка debugging
+- Интеграция с системой контроля версий
 - CI/CD pipelines
-- Unit testing
+- Поддержка unit-тестирования
+
+---
+
+## Важно для AZ-204
+
+- Portal подходит только для простых сценариев
+- Production-разработка должна вестись локально
+- Секреты не хранятся в коде
+- Key Vault — рекомендуемый способ хранения чувствительных данных
 
 ## Configuration Examples
 
@@ -435,30 +585,56 @@ func settings decrypt
   }
 }
 ```
+## Critical Notes (Критически важные моменты)
 
-## Critical Notes
-- 💡 **Function app** - Deployment unit containing multiple functions
-- ⚠️ **Same language** - Functions 2.x+ requires same language per app
-- 🎯 **host.json** - App-wide configuration
-- 📊 **local.settings.json** - Never commit to source control
-- ✅ **Local development** - Recommended for all scenarios
-- 🔄 **Settings sync** - Use func CLI to upload/download settings
-- ⏱️ **Azurite** - Local storage emulator for testing
-- 🔒 **Portal limitations** - C#, Python, Java not editable in portal
+- 💡 **Function App** — единица деплоя, содержит несколько функций
+- ⚠️ Начиная с версии 2.x — все функции в одном приложении должны быть на одном языке
+- 🎯 `host.json` — конфигурация всего Function App
+- 📊 `local.settings.json` — нельзя коммитить в систему контроля версий
+- ✅ Локальная разработка рекомендуется для всех сценариев
+- 🔄 Синхронизация настроек через CLI (загрузка/выгрузка settings)
+- ⏱️ **Azurite** — локальный эмулятор Azure Storage
+- 🔒 Ограничения портала — C#, Python, Java не редактируются в портале
 
-## Exam Tips
-- Function app = container for multiple related functions
-- All functions in app share: runtime, pricing plan, deployment
-- Functions 2.x+: All functions must use same language
-- host.json: App-wide configuration (timeout, extensions, logging)
-- local.settings.json: Local dev settings, not deployed
-- Never commit local.settings.json (contains secrets)
-- C# uses attributes, other languages use function.json
-- Portal editing limited (C# Script, JavaScript, PowerShell only)
-- Local development recommended (better tooling, debugging)
-- Azure Functions Core Tools: CLI for local development
-- Azurite: Local storage emulator for testing
-- Settings sync: `func azure functionapp publish --publish-settings-only`
-- Manual trigger admin endpoint: http://localhost:7071/admin/functions/{name}
+---
 
+## Exam Tips (Советы для экзамена)
+
+- Function App = контейнер для связанных функций
+- Все функции внутри приложения разделяют:
+    - Runtime
+    - Hosting plan
+    - Deployment
+- Functions 2.x+ → один язык на приложение
+- `host.json` управляет timeout, extensions, logging
+- `local.settings.json` используется только локально
+- Никогда не коммитьте `local.settings.json`
+- C# (compiled) использует атрибуты  
+  Другие языки используют `function.json`
+- В портале можно редактировать только:
+    - C# Script
+    - JavaScript
+    - PowerShell
+- Локальная разработка предпочтительна
+- Azure Functions Core Tools — CLI для локального запуска
+- Azurite — локальный Storage emulator
+- Синхронизация настроек:
+
+```json
+func azure functionapp publish --publish-settings-only
+```
+- Админ endpoint для ручного запуска:
+```json
+http://localhost:7071/admin/functions/{name}
+```
+
+Важно для AZ-204
+
+--publish-settings-only обновляет только конфигурацию
+
+Admin endpoint используется только локально
+
+Позволяет тестировать триггеры, которые нельзя вызвать напрямую
+
+Работает через Functions Core Tools
 [Learn More](https://learn.microsoft.com/en-us/training/modules/develop-azure-functions/2-azure-function-development-overview)

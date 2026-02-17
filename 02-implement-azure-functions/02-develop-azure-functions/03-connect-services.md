@@ -1,26 +1,53 @@
-# Connect Functions to Azure Services
+# Connect Functions to Azure Services (Подключение Functions к сервисам Azure)
 
-## Key Concepts
-- **Application settings** - Encrypted key-value pairs for config
-- **Connection strings** - Stored as app settings, not hardcoded
-- **Identity-based connections** - Use managed identity instead of secrets
-- **Managed identity** - System-assigned or user-assigned identity
-- **Least privilege** - Grant minimal required permissions
+## Key Concepts (Ключевые понятия)
 
-## Application Settings
+- **Application Settings** — зашифрованные пары ключ-значение для конфигурации
+- **Connection strings** — хранятся в настройках приложения, а не в коде
+- **Identity-based connections** — подключение через Managed Identity вместо секретов
+- **Managed Identity** — системная или пользовательская управляемая идентичность
+- **Least privilege** — минимально необходимые права доступа
 
-### Purpose
-**Securely store** configuration values:
-- Connection strings
-- API keys
-- Service endpoints
+---
+
+# Application Settings (Настройки приложения)
+
+## Purpose (Назначение)
+
+Безопасное хранение конфигурации:
+
+- Строки подключения
+- API-ключи
+- URL сервисов
 - Feature flags
-- Environment-specific config
+- Настройки для разных окружений
 
-### Storage
-✅ **Encrypted at rest** - Azure encrypts values
-✅ **Environment variables** - Accessed at runtime as env vars
-✅ **Per environment** - Different values for dev/test/prod
+> 💡 Позволяет разделить код и конфигурацию (12-factor app подход).
+
+---
+
+## Storage (Хранение)
+
+✅ **Encrypted at rest** — значения шифруются в Azure  
+✅ Доступны как **переменные окружения** во время выполнения  
+✅ Можно задавать разные значения для dev / test / prod
+
+---
+
+## Как используются в коде
+
+- Через `Environment.GetEnvironmentVariable()` (C#)
+- Через `process.env.NAME` (Node.js)
+- Через `os.environ["NAME"]` (Python)
+
+---
+
+## Важно для AZ-204
+
+- Никогда не храните connection strings в коде
+- Bindings используют имя настройки (`connection`), а не саму строку
+- Application Settings можно помечать как slot-specific
+- Использование Managed Identity предпочтительнее, чем хранение секретов
 
 ### Configuration Sources
 
@@ -82,22 +109,39 @@ public static void Run(
 }
 ```
 
-**How it works**:
-1. Function looks for app setting named `MyStorageConnection`
-2. Retrieves value at runtime
-3. Uses value to connect to service
+## How It Works (Как это работает)
 
-### Set App Settings
+1️⃣ Функция ищет Application Setting с именем `MyStorageConnection`  
+2️⃣ Во время выполнения получает значение  
+3️⃣ Использует его для подключения к сервису
 
-#### Portal
-```
-1. Navigate to Function App
-2. Configuration → Application settings
-3. Click "+ New application setting"
-4. Name: MyStorageConnection
-5. Value: DefaultEndpointsProtocol=https;...
-6. OK → Save
-```
+> 💡 В bindings указывается **имя настройки**, а не сама строка подключения.
+
+---
+
+# Set App Settings (Как задать настройки)
+
+## Через Azure Portal
+
+1. Откройте **Function App**
+2. Перейдите в **Configuration → Application settings**
+3. Нажмите **+ New application setting**
+4. Укажите:
+    - **Name**: `MyStorageConnection`
+    - **Value**: `DefaultEndpointsProtocol=https;...`
+5. Нажмите **OK → Save**
+
+⚠️ После сохранения приложение перезапустится.
+
+---
+
+## Важно для AZ-204
+
+- `connection` в binding ссылается на имя настройки
+- Изменение Application Settings вызывает перезапуск
+- Можно пометить настройку как **Deployment slot setting**
+- Секреты не должны храниться в коде
+
 
 #### CLI
 ```bash
@@ -139,22 +183,38 @@ Connection = "MyStorageConnection"
 MyStorageConnection__serviceUri = "https://mystorageaccount.blob.core.windows.net"
 ```
 
-### Benefits
-✅ **No secrets** - No keys to rotate or leak
-✅ **Azure AD authentication** - Better security
-✅ **Least privilege** - RBAC controls access
-✅ **Automatic rotation** - No manual key management
+## Benefits (Преимущества Identity-based подключения)
 
-### Supported Services
+✅ **Без секретов** — нет ключей, которые нужно хранить и ротировать  
+✅ **Azure AD authentication** — безопасная аутентификация через Entra ID  
+✅ **Least privilege** — доступ контролируется через RBAC  
+✅ **Автоматическая ротация** — нет ручного управления ключами
+
+> 💡 Рекомендуемый способ подключения к Azure-сервисам — через Managed Identity.
+
+---
+
+## Supported Services (Поддерживаемые сервисы)
+
 | Service | Identity Support | Extension |
-|---------|------------------|-----------|
+|----------|------------------|------------|
 | **Azure Storage** | ✅ Yes | Blobs, Queues, Tables |
 | **Azure Cosmos DB** | ✅ Yes | SQL API |
 | **Azure Service Bus** | ✅ Yes | Queues, Topics |
 | **Azure Event Hubs** | ✅ Yes | Event streams |
 | **Azure SQL Database** | ✅ Yes | SQL connections |
 
-⚠️ **Azure Files Exception**: Storage account for function app itself (`WEBSITE_AZUREFILESCONNECTIONSTRING`) must use connection string
+---
+
+## ⚠️ Azure Files Exception
+
+Storage-аккаунт, который используется самой Function App  
+(`WEBSITE_AZUREFILESCONNECTIONSTRING`),
+
+должен использовать **connection string**, а не Managed Identity.
+
+> 📌 Это системное требование платформы.
+
 
 ### Configuration
 
@@ -374,11 +434,12 @@ public static async Task Run(
 }
 ```
 
-## Required Permissions (RBAC Roles)
+# Required Permissions (RBAC Roles)
 
-### Azure Storage
+## Azure Storage
+
 | Operation | Role |
-|-----------|------|
+|------------|------|
 | **Read blobs** | Storage Blob Data Reader |
 | **Write blobs** | Storage Blob Data Contributor |
 | **Read queues** | Storage Queue Data Reader |
@@ -386,43 +447,78 @@ public static async Task Run(
 | **Read tables** | Storage Table Data Reader |
 | **Write tables** | Storage Table Data Contributor |
 
-### Azure Cosmos DB
+---
+
+## Azure Cosmos DB
+
 | Operation | Role |
-|-----------|------|
+|------------|------|
 | **Read data** | Cosmos DB Built-in Data Reader |
 | **Write data** | Cosmos DB Built-in Data Contributor |
 
-### Azure Service Bus
+---
+
+## Azure Service Bus
+
 | Operation | Role |
-|-----------|------|
+|------------|------|
 | **Receive messages** | Azure Service Bus Data Receiver |
 | **Send messages** | Azure Service Bus Data Sender |
 | **Full access** | Azure Service Bus Data Owner |
 
-### Azure Event Hubs
+---
+
+## Azure Event Hubs
+
 | Operation | Role |
-|-----------|------|
+|------------|------|
 | **Receive events** | Azure Event Hubs Data Receiver |
 | **Send events** | Azure Event Hubs Data Sender |
 | **Full access** | Azure Event Hubs Data Owner |
 
-## Best Practices
+---
 
-### 1. Use Identity-Based Connections
-✅ **Preferred**: Managed identity
-⚠️ **Fallback**: Connection strings (when identity not supported)
+# Best Practices (Лучшие практики)
 
-### 2. Separate Environments
-```
-Dev:   MyStorage → dev-storage-account
-Test:  MyStorage → test-storage-account
-Prod:  MyStorage → prod-storage-account
-```
+## 1️⃣ Use Identity-Based Connections
 
-### 3. Least Privilege
-Grant **minimum required** permissions:
-- Read-only if function only reads
-- Specific queue/container scope if possible
+✅ Предпочтительно — **Managed Identity**  
+⚠️ Используйте connection strings только если identity не поддерживается
+
+> 💡 Identity-based доступ безопаснее и не требует хранения секретов.
+
+---
+
+## 2️⃣ Separate Environments (Разделяйте окружения)
+
+Пример:
+Dev: MyStorage → dev-storage-account
+Test: MyStorage → test-storage-account
+Prod: MyStorage → prod-storage-account
+
+
+Один и тот же ключ настройки (`MyStorage`),  
+но разные значения в разных окружениях.
+
+---
+
+## 3️⃣ Least Privilege (Минимальные права)
+
+Назначайте только необходимые роли:
+
+- Только чтение, если функция не пишет данные
+- Ограничение на конкретный контейнер или очередь (если возможно)
+
+> 🎯 Никогда не давайте Data Owner без необходимости.
+
+---
+
+## Важно для AZ-204
+
+- Identity-based подключение предпочтительнее connection strings
+- RBAC роли назначаются на ресурс или на уровень контейнера
+- Настройки окружения различаются для dev/test/prod
+- Следуйте принципу минимальных привилегий
 
 ### 4. Key Vault References
 For secrets that must be stored:
@@ -462,43 +558,82 @@ az role assignment list \
   --output table
 ```
 
-### Common Errors
+# Common Errors (Типичные ошибки)
 
-#### "Identity not found"
-✅ Enable managed identity on function app
+### ❌ "Identity not found"
+✅ Включите **Managed Identity** для Function App  
+(Identity → System assigned → On)
 
-#### "Insufficient permissions"
-✅ Grant appropriate RBAC role
+---
 
-#### "Connection string missing"
-✅ Add app setting with correct name
+### ❌ "Insufficient permissions"
+✅ Назначьте соответствующую **RBAC роль** ресурсу
 
-#### "Identity not supported locally"
-✅ Use `az login` or set environment variables
+---
 
-## Critical Notes
-- 💡 **App settings** - Encrypted key-value pairs for configuration
-- ⚠️ **Connection property** - References app setting NAME, not value
-- 🎯 **Identity-based** - Preferred over connection strings
-- 📊 **Managed identity** - System-assigned or user-assigned
-- ✅ **Least privilege** - Grant minimal required permissions
-- 🔄 **DefaultAzureCredential** - Works locally and in Azure
-- ⏱️ **RBAC roles** - Required for identity-based connections
-- 🔒 **Never commit** - local.settings.json to source control
+### ❌ "Connection string missing"
+✅ Добавьте Application Setting с корректным именем  
+(имя должно совпадать со значением `connection` в binding)
 
-## Exam Tips
-- Application settings stored encrypted, accessed as environment variables
-- Connection property in binding references app setting name
-- Never hardcode connection strings in code
-- Identity-based connections use managed identity (no secrets)
-- System-assigned identity: Tied to function app lifecycle
-- User-assigned identity: Independent lifecycle, reusable
-- DefaultAzureCredential: Automatic credential chain for local/Azure
-- Azure Files exception: Must use connection string for function app storage
-- Setting format: `<Name>__serviceUri`, `<Name>__credential`
-- RBAC roles: Storage Blob Data Contributor, Cosmos DB Built-in Data Contributor
-- Grant least privilege permissions only
-- Key Vault reference: `@Microsoft.KeyVault(SecretUri=...)`
-- Local testing: Use `az login` or Azurite emulator
+---
+
+### ❌ "Identity not supported locally"
+✅ Выполните `az login`  
+или задайте переменные окружения вручную
+
+> 💡 Для локальной разработки часто используется `DefaultAzureCredential`.
+
+---
+
+# Critical Notes (Критически важные моменты)
+
+- 💡 **Application Settings** — зашифрованные пары ключ-значение
+- ⚠️ Свойство `connection` указывает на **имя настройки**, а не на её значение
+- 🎯 Identity-based подключение предпочтительнее connection strings
+- 📊 Managed Identity бывает:
+    - System-assigned
+    - User-assigned
+- ✅ Принцип **least privilege**
+- 🔄 **DefaultAzureCredential** работает локально и в Azure
+- ⏱️ Для identity-based подключения требуются RBAC роли
+- 🔒 Никогда не коммитьте `local.settings.json`
+
+---
+
+# Exam Tips (Советы для экзамена)
+
+- Application Settings:
+    - Хранятся зашифрованными
+    - Доступны как переменные окружения
+- `connection` в binding → имя App Setting
+- Никогда не хардкодьте connection strings
+- Identity-based подключение не требует секретов
+- **System-assigned identity**
+    - Привязана к жизненному циклу Function App
+- **User-assigned identity**
+    - Независима
+    - Может использоваться несколькими ресурсами
+- **DefaultAzureCredential**
+    - Автоматическая цепочка аутентификации
+    - Работает локально и в Azure
+
+---
+
+## Важные детали
+
+- Исключение Azure Files:
+    - Для `WEBSITE_AZUREFILESCONNECTIONSTRING` нужен connection string
+- Формат настроек identity-based подключения:
+    - `<Name>__serviceUri`
+    - `<Name>__credential`
+- Часто используемые RBAC роли:
+    - Storage Blob Data Contributor
+    - Cosmos DB Built-in Data Contributor
+- Key Vault reference:
+  @Microsoft.KeyVault(SecretUri=...)
+
+- Локальное тестирование:
+- `az login`
+- Azurite для Storage bindings
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/develop-azure-functions/4-connect-azure-services)

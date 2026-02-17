@@ -1,70 +1,106 @@
-# Azure Functions Hosting Plans
+# Azure Functions Hosting Plans (Планы размещения Azure Functions)
 
-## Key Concepts
-- **Consumption plan** - Pay-per-execution, automatic scale
-- **Flex Consumption plan** - Enhanced Consumption with more control
-- **Premium plan** - Prewarmed workers, VNet, unlimited duration
-- **Dedicated plan** - App Service Plan, predictable billing
-- **Container Apps** - Containerized functions, custom images
+## Key Concepts (Ключевые понятия)
 
-## Hosting Plan Overview
+- **Consumption plan** — оплата за выполнение, автоматическое масштабирование
+- **Flex Consumption plan** — расширенная версия Consumption с большим контролем
+- **Premium plan** — предразогретые инстансы, VNet, без лимита по времени выполнения
+- **Dedicated plan** — размещение в App Service Plan с фиксированной оплатой
+- **Container Apps** — запуск функций в контейнерах (кастомные образы)
 
-### Decision Factors
-When choosing a hosting plan, consider:
-1. **Scaling** - Automatic vs manual
-2. **Cost** - Pay-per-use vs fixed monthly
-3. **Execution time** - Function timeout limits
-4. **Networking** - VNet connectivity needs
-5. **Compute resources** - CPU/memory requirements
-6. **Cold start** - Performance requirements
+---
 
-## Consumption Plan
+## Hosting Plan Overview (Обзор планов)
 
-### Characteristics
-- **Default plan** for Azure Functions
-- **Pay-per-execution** - Only charged when functions run
-- **Automatic scaling** - Dynamically adds/removes instances
-- **Event-driven** - Scales based on incoming events
-- **Cost-effective** - No idle charges
+### Decision Factors (Критерии выбора)
 
-### Scaling Behavior
+При выборе плана учитывайте:
+
+1. **Масштабирование** — автоматическое или ручное
+2. **Стоимость** — pay-per-use или фиксированная оплата
+3. **Время выполнения** — ограничения по timeout
+4. **Сеть** — требуется ли VNet
+5. **Ресурсы** — CPU и память
+6. **Cold start** — критична ли задержка запуска
+
+---
+
+# Consumption Plan (План Consumption)
+
+## Characteristics (Характеристики)
+
+- 📦 План по умолчанию
+- 💰 **Оплата только за выполнение**
+- 📈 Автоматическое масштабирование
+- ⚡ Масштабируется по событиям
+- 💤 Нет оплаты за простой
+
+---
+
+## Scaling Behavior (Поведение масштабирования)
+
 | Aspect | Details |
-|--------|---------|
-| **Scale-out** | Automatic, event-driven |
+|----------|----------|
+| **Scale-out** | Автоматическое, по событиям |
 | **Max instances** | Windows: 200, Linux: 100 |
-| **Scale-in** | Automatic when idle |
-| **Cold start** | Possible when scaled to zero |
-| **Scale unit** | Per function app |
+| **Scale-in** | Автоматическое при простое |
+| **Cold start** | Возможен (масштабируется до 0) |
+| **Scale unit** | На уровне Function App |
 
-### Timeout
+---
+
+## Timeout (Ограничения по времени)
+
 | Timeframe | Duration |
-|-----------|----------|
-| **Default** | 5 minutes |
-| **Maximum** | 10 minutes |
+|------------|----------|
+| **Default** | 5 минут |
+| **Maximum** | 10 минут |
 
-⚠️ **HTTP timeout**: 230 seconds max (Azure Load Balancer limit)
+⚠️ **HTTP timeout** — максимум 230 секунд  
+(ограничение Azure Load Balancer)
 
-### Billing
-Charged for:
-- **Execution time** - GB-seconds (memory × duration)
-- **Executions** - Number of function invocations
+---
 
-Free tier:
-- 1 million executions/month
-- 400,000 GB-seconds/month
+## Billing (Оплата)
 
-### When to Use
-✅ Unpredictable workloads
-✅ Cost-sensitive scenarios
-✅ Short-running functions (< 10 min)
-✅ Infrequent executions
-✅ No VNet requirements
+Оплачивается:
 
-### Limitations
-❌ Max 10-minute timeout
-❌ Possible cold starts
-❌ No VNet connectivity
-❌ Limited instance resources
+- ⏱ **Execution time** — GB-seconds (память × время)
+- 🔁 **Executions** — количество вызовов
+
+### Бесплатный лимит:
+
+- 1 000 000 выполнений в месяц
+- 400 000 GB-seconds в месяц
+
+---
+
+## When to Use (Когда использовать)
+
+✅ Непредсказуемая нагрузка  
+✅ Чувствительность к стоимости  
+✅ Короткие функции (< 10 минут)  
+✅ Редкие вызовы  
+✅ Нет необходимости в VNet
+
+---
+
+## Limitations (Ограничения)
+
+❌ Максимум 10 минут выполнения  
+❌ Возможен cold start  
+❌ Нет VNet интеграции  
+❌ Ограниченные ресурсы инстанса
+
+---
+
+## Важно для AZ-204
+
+- Consumption масштабируется до нуля
+- Cold start возможен при отсутствии активности
+- HTTP-триггер ограничен 230 секундами
+- Timeout и HTTP timeout — разные ограничения
+- Оплата зависит от памяти и времени выполнения
 
 ### CLI Example
 ```bash
@@ -77,42 +113,67 @@ az functionapp create \
   --runtime-version 18 \
   --storage-account <storage-name>
 ```
+# Flex Consumption Plan (План Flex Consumption)
 
-## Flex Consumption Plan
+## Characteristics (Характеристики)
 
-### Characteristics
-- **Enhanced Consumption plan**
-- **Per-function scaling** - Deterministic scaling per function
-- **Compute choices** - More control over instance size
-- **VNet support** - Virtual network connectivity
-- **Pay-as-you-go** - Like Consumption, pay for usage
+- 🚀 Улучшенная версия Consumption
+- 🎯 **Per-function scaling** — масштабирование отдельно для каждой функции
+- 🖥 Возможность выбора размера инстанса
+- 🔒 Поддержка **VNet integration**
+- 💰 Модель оплаты pay-as-you-go (как в Consumption)
 
-### Scaling Behavior
+> 💡 Flex Consumption сочетает serverless-модель с большим контролем над масштабированием.
+
+---
+
+## Scaling Behavior (Поведение масштабирования)
+
 | Aspect | Details |
-|--------|---------|
-| **Scale-out** | Per-function basis (more deterministic) |
-| **Max instances** | Limited by total memory in region |
-| **Instance concurrency** | Configurable per function |
-| **Pre-provisioned instances** | Always-ready instances (reduce cold start) |
+|----------|----------|
+| **Scale-out** | На уровне отдельной функции (более предсказуемо) |
+| **Max instances** | Ограничено общей памятью региона |
+| **Instance concurrency** | Настраивается для каждой функции |
+| **Pre-provisioned instances** | Always-ready инстансы (снижают cold start) |
 
-### Timeout
+---
+
+## Timeout (Ограничения по времени)
+
 | Timeframe | Duration |
-|-----------|----------|
-| **Default** | 30 minutes |
-| **Maximum** | Unbounded (60 min grace during scale-in) |
+|------------|----------|
+| **Default** | 30 минут |
+| **Maximum** | Без явного лимита (60 мин grace при scale-in) |
 
-### Advanced Features
-- **Per-instance concurrency** - Control simultaneous executions per instance
-- **Always ready instances** - Minimize cold starts
-- **VNet integration** - Private networking
-- **Flexible compute** - Choose instance sizes
+> ⚠️ Во время scale-in даётся до 60 минут для завершения выполнения.
 
-### When to Use
-✅ Need VNet connectivity on Consumption-style plan
-✅ Want to reduce cold starts (pre-provisioned instances)
-✅ Per-function scaling control needed
-✅ More predictable scaling behavior
-✅ Longer timeouts than Consumption (30 min default)
+---
+
+## Advanced Features (Расширенные возможности)
+
+- ⚙️ **Per-instance concurrency** — контроль числа одновременных выполнений
+- 🔥 **Always ready instances** — уменьшение cold start
+- 🌐 **VNet integration** — приватная сеть
+- 🧩 **Flexible compute** — выбор размера инстанса
+
+---
+
+## When to Use (Когда использовать)
+
+✅ Требуется VNet при serverless-модели  
+✅ Нужно минимизировать cold start  
+✅ Требуется контроль масштабирования по функциям  
+✅ Нужна более предсказуемая модель масштабирования  
+✅ Требуется больший timeout (30 минут по умолчанию)
+
+---
+
+## Важно для AZ-204
+
+- Flex Consumption = Consumption + VNet + контроль масштабирования
+- Timeout больше, чем в обычном Consumption
+- Поддерживает always-ready инстансы
+- Подходит для production-нагрузок с serverless-экономикой
 
 ### CLI Example
 ```bash
@@ -128,55 +189,87 @@ az functionapp create \
   --always-ready-instances 5
 ```
 
-## Premium Plan
+# Premium Plan (План Premium)
 
-### Characteristics
-- **Prewarmed workers** - No cold start delays
-- **Unlimited execution duration** - No timeout (60 min grace during scale)
-- **VNet connectivity** - Connect to private networks
-- **More powerful instances** - Better CPU/memory options
-- **Predictable performance** - Consistent resources
+## Characteristics (Характеристики)
 
-### Instance Types
+- 🔥 **Prewarmed workers** — отсутствие cold start
+- ⏳ **Неограниченное время выполнения** (60 минут grace при scale-in)
+- 🌐 **VNet connectivity** — подключение к приватным сетям
+- 🖥 Более мощные инстансы (больше CPU и памяти)
+- 📊 Предсказуемая производительность
+
+> 💡 Premium = serverless-масштабирование + выделенные ресурсы.
+
+---
+
+## Instance Types (Размеры инстансов)
+
 | Size | vCPU | Memory |
-|------|------|--------|
+|-------|------|--------|
 | **EP1** | 1 | 3.5 GB |
 | **EP2** | 2 | 7 GB |
 | **EP3** | 4 | 14 GB |
 
-### Scaling Behavior
+---
+
+## Scaling Behavior (Поведение масштабирования)
+
 | Aspect | Details |
-|--------|---------|
-| **Scale-out** | Event-driven automatic |
-| **Max instances** | Windows: 100, Linux: 20-100 |
-| **Prewarmed workers** | Always ready, no cold start |
-| **Min instances** | Configurable (incurs cost even when idle) |
+|----------|----------|
+| **Scale-out** | Автоматическое, по событиям |
+| **Max instances** | Windows: до 100, Linux: 20–100 |
+| **Prewarmed workers** | Всегда готовы (без cold start) |
+| **Min instances** | Настраиваемый минимум (оплачивается даже при простое) |
 
-### Timeout
+---
+
+## Timeout (Ограничения по времени)
+
 | Timeframe | Duration |
-|-----------|----------|
-| **Default** | 30 minutes |
-| **Maximum** | Unbounded (60 min grace during scale) |
+|------------|----------|
+| **Default** | 30 минут |
+| **Maximum** | Без лимита (60 мин grace при scale-in) |
 
-### Billing
-- **Fixed monthly** cost based on:
-  - Number of instances
-  - Instance size (EP1, EP2, EP3)
-- **Always charged** for minimum instances
+---
 
-### When to Use
-✅ Functions run continuously or frequently
-✅ Need VNet connectivity
-✅ Need more CPU/memory
-✅ Long-running functions (> 10 min)
-✅ Cannot tolerate cold starts
-✅ High number of small executions (high bill on Consumption)
-✅ Deploy multiple function apps on same plan
-✅ Custom Linux image needed
+## Billing (Оплата)
 
-### Limitations
-⚠️ Higher cost than Consumption
-⚠️ Charged even when idle
+- 💰 Фиксированная стоимость в месяц
+- Зависит от:
+  - Количества инстансов
+  - Размера (EP1, EP2, EP3)
+- Минимальное количество инстансов оплачивается всегда
+
+---
+
+## When to Use (Когда использовать)
+
+✅ Часто выполняющиеся функции  
+✅ Требуется VNet  
+✅ Нужны больше CPU/памяти  
+✅ Долгоживущие функции (> 10 минут)  
+✅ Нельзя допустить cold start  
+✅ Очень большое число коротких вызовов (дорого в Consumption)  
+✅ Несколько Function Apps на одном плане  
+✅ Нужен кастомный Linux-образ
+
+---
+
+## Limitations (Ограничения)
+
+⚠️ Дороже, чем Consumption  
+⚠️ Оплата даже при простое
+
+---
+
+## Важно для AZ-204
+
+- Premium устраняет cold start
+- Поддерживает VNet
+- Нет жёсткого timeout (в отличие от Consumption)
+- Подходит для production-нагрузок с требованиями к стабильности
+- Позволяет размещать несколько Function Apps в одном плане
 
 ### CLI Example
 ```bash
@@ -196,47 +289,72 @@ az functionapp create \
   --runtime node \
   --storage-account <storage-name>
 ```
+# Dedicated Plan (App Service Plan)
 
-## Dedicated Plan (App Service Plan)
+## Characteristics (Характеристики)
 
-### Characteristics
-- **Run on App Service Plan** - Same as web apps
-- **Predictable billing** - Fixed monthly cost
-- **Manual/auto scaling** - Control scaling behavior
-- **Long-running** - Best for continuous workloads
-- **Full isolation** - App Service Environment support
+- 🖥 Работает в рамках **App Service Plan** (как Web Apps)
+- 💰 Предсказуемая фиксированная оплата
+- 📈 Масштабирование вручную или через autoscale rules
+- ⏳ Подходит для долгоживущих и непрерывных задач
+- 🔒 Поддержка полной изоляции через App Service Environment (ASE)
 
-### Scaling Behavior
+> 💡 Функции используют те же ресурсы, что и Web Apps в этом плане.
+
+---
+
+## Scaling Behavior (Поведение масштабирования)
+
 | Aspect | Details |
-|--------|---------|
-| **Scale-out** | Manual or autoscale rules |
-| **Max instances** | 10-30 (100 with ASE) |
-| **Minimum instances** | Always at least one |
-| **No event-driven scale** | Must configure autoscale rules |
+|----------|----------|
+| **Scale-out** | Ручное или через autoscale rules |
+| **Max instances** | 10–30 (до 100 с ASE) |
+| **Minimum instances** | Всегда минимум 1 |
+| **No event-driven scale** | Нет автоматического масштабирования по событиям |
 
-### Timeout
+> ⚠️ В отличие от Consumption/Premium, масштабирование не event-driven.
+
+---
+
+## Timeout (Ограничения по времени)
+
 | Timeframe | Duration |
-|-----------|----------|
-| **Default** | 30 minutes |
-| **Maximum** | Unbounded (requires Always On) |
+|------------|----------|
+| **Default** | 30 минут |
+| **Maximum** | Без ограничений (при включённом Always On) |
 
-⚠️ **Always On required** for unbounded timeout
+⚠️ Для неограниченного timeout необходимо включить **Always On**.
 
-### When to Use
-✅ Need fully predictable billing
-✅ Already have underutilized App Service Plans
-✅ Want to co-locate web apps and functions
-✅ Need manual scaling control
-✅ Durable Functions can't be used
-✅ Large compute size needed
-✅ App Service Environment required
-✅ High memory usage scenarios
+---
 
-### App Service Environment (ASE)
-- **Fully isolated** environment
-- **High scale** - Up to 100 instances
-- **Secure networking** - Private environment
-- **Compliance** - Dedicated infrastructure
+## When to Use (Когда использовать)
+
+✅ Нужна полностью предсказуемая стоимость  
+✅ Уже есть недогруженный App Service Plan  
+✅ Нужно размещать Web Apps и Functions вместе  
+✅ Требуется ручной контроль масштабирования  
+✅ Нужен большой размер вычислений  
+✅ Требуется App Service Environment  
+✅ Высокое потребление памяти
+
+---
+
+## App Service Environment (ASE)
+
+- 🏢 Полностью изолированная среда
+- 📈 Масштабирование до 100 инстансов
+- 🔐 Приватная сеть
+- 📜 Подходит для compliance-требований
+
+---
+
+## Важно для AZ-204
+
+- Dedicated = фиксированная оплата независимо от выполнения
+- Нет автоматического масштабирования по событиям
+- Always On обязателен для длительных задач
+- Подходит для постоянных фоновых процессов
+- Можно использовать вместе с Web Apps в одном плане
 
 ### CLI Example
 ```bash
@@ -263,37 +381,58 @@ az functionapp config set \
   --resource-group <rg-name> \
   --always-on true
 ```
+# Container Apps (Azure Container Apps для Functions)
 
-## Container Apps
+## Characteristics (Характеристики)
 
-### Characteristics
-- **Containerized functions** - Run in custom containers
-- **Azure Container Apps hosting** - Fully managed environment
-- **Event-driven serverless** - Functions programming model
-- **Microservices** - Run alongside APIs, websites
-- **Custom images** - Package dependencies, libraries
+- 🐳 **Containerized functions** — запуск функций в кастомных контейнерах
+- ☁️ Размещение в **Azure Container Apps** (полностью управляемая среда)
+- ⚡ Event-driven serverless модель (поддержка Functions programming model)
+- 🧩 Подходит для микросервисной архитектуры
+- 📦 Возможность использовать **custom images** с нужными зависимостями
 
-### Scaling Behavior
+> 💡 Позволяет запускать функции рядом с API, web apps и другими контейнерными сервисами.
+
+---
+
+## Scaling Behavior (Поведение масштабирования)
+
 | Aspect | Details |
-|--------|---------|
-| **Scale-out** | Event-driven automatic |
-| **Max instances** | 10-300 (configurable) |
-| **Min instances** | Configurable (can be 0) |
-| **Scale to zero** | Yes (if min replicas = 0) |
+|----------|----------|
+| **Scale-out** | Автоматическое, по событиям |
+| **Max instances** | 10–300 (настраивается) |
+| **Min instances** | Настраивается (может быть 0) |
+| **Scale to zero** | Да (если min replicas = 0) |
 
-### Timeout
+---
+
+## Timeout (Ограничения по времени)
+
 | Timeframe | Duration |
-|-----------|----------|
-| **Default** | 30 minutes |
-| **Maximum** | Unbounded (depends on triggers if min replicas = 0) |
+|------------|----------|
+| **Default** | 30 минут |
+| **Maximum** | Без ограничений (зависит от триггера, если min replicas = 0) |
 
-### When to Use
-✅ Need custom libraries/dependencies
-✅ Migrate from on-premises to containers
-✅ Avoid Kubernetes overhead
-✅ Need high-end CPU resources
-✅ Run functions with other microservices
-✅ Custom Linux images
+---
+
+## When to Use (Когда использовать)
+
+✅ Требуются кастомные библиотеки или зависимости  
+✅ Миграция с on-premises в контейнерную модель  
+✅ Нужно избежать управления Kubernetes  
+✅ Требуются более мощные CPU-ресурсы  
+✅ Функции работают вместе с другими микросервисами  
+✅ Нужны кастомные Linux-образы
+
+---
+
+## Важно для AZ-204
+
+- Container Apps поддерживает serverless scaling
+- Можно масштабироваться до нуля
+- Подходит для контейнерной архитектуры без Kubernetes
+- Хороший выбор при сложных зависимостях
+- Поддерживает гибкую конфигурацию ресурсов
 
 ### CLI Example
 ```bash
@@ -313,38 +452,64 @@ az functionapp create \
   --max-replicas 30
 ```
 
-## Hosting Plan Comparison
+# Hosting Plan Comparison (Сравнение планов размещения)
 
-### Feature Matrix
+## Feature Matrix (Матрица возможностей)
+
 | Feature | Consumption | Flex Consumption | Premium | Dedicated | Container Apps |
-|---------|-------------|------------------|---------|-----------|----------------|
-| **Auto scale** | ✅ | ✅ | ✅ | ⚠️ Manual | ✅ |
-| **Max timeout** | 10 min | Unbounded | Unbounded | Unbounded | Unbounded |
+|----------|-------------|------------------|---------|-----------|----------------|
+| **Auto scale** | ✅ | ✅ | ✅ | ⚠️ Manual / Autoscale rules | ✅ |
+| **Max timeout** | 10 мин | Без лимита | Без лимита | Без лимита | Без лимита |
 | **VNet** | ❌ | ✅ | ✅ | ✅ | ✅ |
-| **Cold start** | Possible | Reduced | ❌ No | ❌ No | Possible |
+| **Cold start** | Возможен | Снижен | ❌ Нет | ❌ Нет | Возможен |
 | **Billing** | Per-execution | Per-execution | Fixed | Fixed | Per-execution |
 | **Linux containers** | ❌ | ❌ | ✅ | ✅ | ✅ |
 | **Custom image** | ❌ | ❌ | ✅ | ✅ | ✅ |
 
-### Cost Comparison (Estimated Monthly)
+> 💡 Consumption — самый дешёвый для нерегулярной нагрузки.  
+> Premium — лучший баланс производительности и serverless.
+
+---
+
+## Cost Comparison (Оценка стоимости в месяц)
+
 | Plan | Light Usage | Medium Usage | Heavy Usage |
-|------|-------------|--------------|-------------|
-| **Consumption** | $0-20 | $50-200 | $500+ |
-| **Flex Consumption** | $0-30 | $60-250 | $600+ |
-| **Premium (EP1)** | $146 | $146 | $146+ |
-| **Dedicated (S1)** | $70 | $70 | $70+ |
-| **Container Apps** | $0-40 | $80-300 | $800+ |
+|-------|-------------|--------------|-------------|
+| **Consumption** | $0–20 | $50–200 | $500+ |
+| **Flex Consumption** | $0–30 | $60–250 | $600+ |
+| **Premium (EP1)** | ~$146 | ~$146 | $146+ |
+| **Dedicated (S1)** | ~$70 | ~$70 | $70+ |
+| **Container Apps** | $0–40 | $80–300 | $800+ |
 
-💡 **Note**: Consumption most cost-effective for sporadic workloads
+💡 Consumption наиболее выгоден при редких вызовах.  
+Premium и Dedicated выгоднее при постоянной нагрузке.
 
-### Max Instances Comparison
+---
+
+## Max Instances Comparison (Максимальное число инстансов)
+
 | Plan | Windows | Linux |
-|------|---------|-------|
+|--------|----------|--------|
 | **Consumption** | 200 | 100 |
-| **Flex Consumption** | Memory-limited | Memory-limited |
-| **Premium** | 100 | 20-100 |
-| **Dedicated** | 10-30 | 10-30 (100 with ASE) |
-| **Container Apps** | 10-300 | 10-300 |
+| **Flex Consumption** | Ограничено памятью региона | Ограничено памятью региона |
+| **Premium** | До 100 | 20–100 |
+| **Dedicated** | 10–30 | 10–30 (до 100 с ASE) |
+| **Container Apps** | 10–300 | 10–300 |
+
+---
+
+## Важно для AZ-204
+
+- Consumption ограничен 10 минутами выполнения
+- Premium устраняет cold start
+- Flex Consumption поддерживает VNet и больше контроля
+- Dedicated требует Always On для неограниченного timeout
+- Container Apps подходят для контейнерной архитектуры
+- Выбор плана зависит от:
+  - Частоты вызовов
+  - Требований к сети
+  - Времени выполнения
+  - Чувствительности к cold start
 
 ## Function Timeout Configuration
 
@@ -398,54 +563,112 @@ Using custom containers?
 Result: Consumption Plan (best cost/simplicity)
 ```
 
-### Common Scenarios
+## Common Scenarios (Типовые сценарии)
 
-#### Scenario 1: HTTP API (low traffic)
-**Best plan**: Consumption
-- Sporadic requests
-- < 10 min execution
-- Cost-effective
+### Scenario 1: HTTP API (низкая нагрузка)
 
-#### Scenario 2: High-frequency processing
-**Best plan**: Premium
-- No cold starts
-- Consistent performance
-- VNet connectivity
+**Лучший план**: Consumption
 
-#### Scenario 3: Background jobs
-**Best plan**: Dedicated (existing App Service)
-- Run alongside web app
-- Predictable billing
-- Manual control
+- Нерегулярные запросы
+- Время выполнения < 10 минут
+- Минимальная стоимость
 
-#### Scenario 4: Microservices architecture
-**Best plan**: Container Apps
-- Custom dependencies
-- Run with other services
-- Container-based deployment
+---
 
-## Critical Notes
-- 💡 **Consumption default** - Simplest, most cost-effective for sporadic workloads
-- ⚠️ **HTTP 230s limit** - Max response time for HTTP triggers (all plans)
-- 🎯 **Always On required** - For unbounded timeout on Dedicated plan
-- 📊 **Premium prewarmed** - No cold start, better for production
-- ✅ **VNet support** - Premium, Flex Consumption, Dedicated, Container Apps
-- 🔄 **Plan migration** - Can change plans (with limitations)
-- ⏱️ **Timeout defaults** - 5 min (Consumption), 30 min (others)
-- 🔒 **ASE for isolation** - Dedicated plan with App Service Environment
+### Scenario 2: High-frequency processing (частая обработка)
 
-## Exam Tips
-- Consumption plan: Default, pay-per-execution, 10 min max timeout
-- Flex Consumption: Enhanced Consumption, VNet support, per-function scaling
-- Premium plan: No cold start (prewarmed), VNet, unlimited duration
-- Dedicated plan: App Service Plan, predictable billing, Always On for unbounded
-- Container Apps: Custom images, run with microservices
-- Max timeout (HTTP): 230 seconds (Azure Load Balancer limit)
-- Consumption max instances: Windows 200, Linux 100
-- Premium max instances: Windows 100, Linux 20-100
-- VNet support: NOT in basic Consumption (yes in Flex Consumption, Premium, Dedicated, Container Apps)
-- Cold starts: Possible in Consumption/Flex/Container Apps, eliminated in Premium/Dedicated
-- Always On requirement: Dedicated plan for unbounded timeout
-- Durable Functions: Use for long-running operations (async pattern)
+**Лучший план**: Premium
+
+- Отсутствие cold start
+- Стабильная производительность
+- Поддержка VNet
+
+---
+
+### Scenario 3: Background jobs (фоновые задачи)
+
+**Лучший план**: Dedicated (существующий App Service Plan)
+
+- Запуск рядом с Web App
+- Предсказуемая стоимость
+- Ручной контроль масштабирования
+
+---
+
+### Scenario 4: Microservices architecture (микросервисная архитектура)
+
+**Лучший план**: Container Apps
+
+- Кастомные зависимости
+- Запуск вместе с другими сервисами
+- Контейнерная модель деплоя
+
+---
+
+# Critical Notes (Критически важные моменты)
+
+- 💡 **Consumption — план по умолчанию**  
+  Лучший выбор для нерегулярной нагрузки
+- ⚠️ **HTTP-лимит 230 секунд**  
+  Ограничение Azure Load Balancer (для всех планов)
+- 🎯 **Always On требуется**  
+  Для неограниченного timeout в Dedicated
+- 📊 **Premium prewarmed**  
+  Нет cold start — лучше для production
+- ✅ **VNet поддерживается** в:
+  - Flex Consumption
+  - Premium
+  - Dedicated
+  - Container Apps
+- 🔄 План можно изменить (с ограничениями)
+- ⏱️ Default timeout:
+  - 5 минут (Consumption)
+  - 30 минут (остальные)
+- 🔒 ASE используется для полной изоляции (Dedicated)
+
+---
+
+# Exam Tips (Советы для экзамена)
+
+- **Consumption**:
+  - План по умолчанию
+  - Pay-per-execution
+  - Максимум 10 минут
+- **Flex Consumption**:
+  - Улучшенный Consumption
+  - VNet
+  - Масштабирование на уровне функции
+- **Premium**:
+  - Нет cold start (prewarmed)
+  - VNet
+  - Неограниченное время выполнения
+- **Dedicated**:
+  - Работает в App Service Plan
+  - Фиксированная стоимость
+  - Always On для неограниченного timeout
+- **Container Apps**:
+  - Кастомные образы
+  - Подходит для микросервисов
+
+---
+
+## Важные лимиты
+
+- HTTP timeout: **230 секунд**
+- Consumption max instances:
+  - Windows — 200
+  - Linux — 100
+- Premium max instances:
+  - Windows — 100
+  - Linux — 20–100
+- VNet не поддерживается в обычном Consumption
+- Cold start возможен в:
+  - Consumption
+  - Flex Consumption
+  - Container Apps
+- Cold start отсутствует в:
+  - Premium
+  - Dedicated
+- Для длительных операций используйте **Durable Functions**
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-azure-functions/3-compare-azure-functions-hosting-options)
