@@ -1,19 +1,50 @@
-# Deployment Slots Overview
+# Deployment Slots Overview (Обзор deployment slots)
 
-## Key Concepts
-- **Deployment slot** - Separate live app with own hostname
-- **Staging environment** - Test before production deployment
-- **Slot swapping** - Exchange content and configuration between slots
-- **Zero downtime** - Swap without dropping requests
-- **Rollback** - Quick revert by swapping back
+## Key Concepts (Ключевые понятия)
 
-## What Are Deployment Slots?
+- **Deployment slot** — отдельный экземпляр приложения со своим hostname
+- **Staging environment** — среда для тестирования перед продакшеном
+- **Slot swapping** — обмен содержимым и конфигурацией между слотами
+- **Zero downtime** — переключение без прерывания запросов
+- **Rollback** — быстрый откат через обратный swap
 
-### Definition
-- **Live apps** with their own hostnames
-- **Separate environments** for staging, testing, development
-- **Same App Service Plan** - Share resources with production
-- Available in **Standard, Premium, Isolated tiers only**
+---
+
+## What Are Deployment Slots? (Что такое deployment slots?)
+
+### Definition (Определение)
+
+- 🟢 Это **полноценные live-приложения** со своим hostname
+- 🧪 Используются как отдельные среды: staging, test, dev
+- ⚙️ Работают в рамках одного **App Service Plan**
+- 📦 Делят вычислительные ресурсы с production
+- ✅ Доступны только в тарифах:
+    - Standard
+    - Premium
+    - Isolated
+
+> 💡 Deployment slots позволяют деплоить новую версию без риска для production.
+
+---
+
+## Основная идея
+
+Вместо деплоя напрямую в production:
+
+1. Деплой в **staging slot**
+2. Проверка работоспособности
+3. Выполнение **swap**
+4. Staging становится production
+
+---
+
+## Почему это важно для AZ-204
+
+- Deployment slots = способ обеспечить zero-downtime deployment
+- Swap можно выполнить мгновенно
+- Можно быстро откатиться через повторный swap
+- Слоты используют те же ресурсы App Service Plan
+
 
 ### URL Format
 ```
@@ -26,34 +57,53 @@ Limits:
 - Site name + slot name: Max 59 characters
 ```
 
-## Benefits of Deployment Slots
+## Benefits of Deployment Slots (Преимущества deployment slots)
 
-### 1. Validate Before Production
-- Test changes in staging environment
-- Verify functionality with production config
-- Catch issues before impacting users
+### 1️⃣ Проверка перед production
 
-### 2. Warm-Up Instances
-- All instances warmed up before swap
-- Eliminates cold start delays
-- No performance degradation
+- Тестирование изменений в staging-среде
+- Проверка с production-конфигурацией
+- Обнаружение проблем до влияния на пользователей
 
-### 3. Zero Downtime Deployment
-- Traffic redirection is seamless
-- No requests dropped during swap
-- Users experience no interruption
+> 💡 Можно подключить staging к production-базе (осторожно!) для максимально реалистичной проверки.
 
-### 4. Easy Rollback
-- Previous production version in staging slot after swap
-- Single swap operation to revert
-- Get "last known good site" back immediately
+---
 
-### 5. Staged Rollout
-- Route percentage of traffic to new version
-- Gradual exposure (A/B testing, canary releases)
-- Monitor performance before full deployment
+### 2️⃣ Прогрев инстансов (Warm-Up)
 
-## Slot Availability by Tier
+- Все инстансы запускаются и прогреваются до swap
+- Нет cold start задержек
+- Производительность не падает после релиза
+
+---
+
+### 3️⃣ Zero Downtime Deployment
+
+- Переключение трафика происходит мгновенно
+- Запросы не теряются
+- Пользователь не замечает релиза
+
+> 🎯 Это ключевое преимущество для production-сценариев.
+
+---
+
+### 4️⃣ Быстрый Rollback
+
+- Предыдущая версия автоматически оказывается в staging после swap
+- Один повторный swap — и система откатывается
+- Можно мгновенно вернуть "last known good version"
+
+---
+
+### 5️⃣ Постепенный Rollout
+
+- Можно направить часть трафика на новую версию
+- Поддержка A/B testing и canary deployment
+- Мониторинг поведения перед полным переходом
+
+---
+
+## Slot Availability by Tier (Доступность слотов по тарифам)
 
 | Pricing Tier | Deployment Slots | Manual Scaling | Auto Swap |
 |--------------|------------------|----------------|-----------|
@@ -64,7 +114,19 @@ Limits:
 | **Premium (P1V2-P3V3)** | 20 | ✅ | ✅ |
 | **Isolated (I1V2-I6V2)** | 20 | ✅ | ✅ |
 
-⚠️ **Important**: No extra charge for using deployment slots
+⚠️ **Важно**: За сами deployment slots отдельная плата не взимается.  
+Они используют ресурсы существующего App Service Plan.
+
+---
+
+## Важно для AZ-204
+
+- Deployment slots доступны начиная с Standard
+- Максимальное количество слотов зависит от тарифа
+- Auto Swap позволяет автоматически выполнять swap после деплоя
+- Rollback выполняется обычным повторным swap
+- Слоты делят ресурсы App Service Plan
+
 
 ## Scaling Considerations
 
@@ -197,19 +259,39 @@ hotfix-123
 6. Auto swap to production (or manual swap)
 ```
 
-## Slot Resources
+## Slot Resources (Ресурсы deployment slots)
 
-### Shared Resources (Same Plan)
-- **Compute** - VMs shared with production
-- **Storage** - Shared file system
-- **Memory** - Shared memory pool
-- **CPU** - Shared CPU allocation
+### Shared Resources (Общие ресурсы — в рамках одного App Service Plan)
 
-### Separate Resources (Per Slot)
-- **Application code** -独立部署
-- **Configuration** - Different settings
-- **Hostname** - Unique URL
-- **Database connections** - Can point to different DBs
+- **Compute** — виртуальные машины общие с production
+- **Storage** — общая файловая система
+- **Memory** — общий пул памяти
+- **CPU** — общее распределение процессорных ресурсов
+
+> 💡 Все слоты работают в рамках одного App Service Plan и делят его ресурсы.
+
+---
+
+### Separate Resources (Отдельные ресурсы — на уровне слота)
+
+- **Application code** — разворачивается отдельно в каждом слоте
+- **Configuration** — может отличаться (app settings, connection strings)
+- **Hostname** — уникальный URL для каждого слота  
+  (например: `appname-staging.azurewebsites.net`)
+- **Database connections** — можно подключать разные базы данных
+
+> 🎯 Это позволяет тестировать новую версию с отдельной конфигурацией,  
+> не затрагивая production.
+
+---
+
+## Важно для AZ-204
+
+- Ресурсы вычислений общие, но код и настройки — независимые
+- Нагрузка в staging влияет на production (один план)
+- Можно пометить настройки как **slot-specific**, чтобы они не менялись при swap
+- Hostname каждого слота уникален
+
 
 ## Managing Multiple Slots
 
@@ -261,24 +343,29 @@ az webapp deployment source config \
   --branch develop
 ```
 
-## Critical Notes
-- 💡 **Minimum tier** - Standard (S1) required for deployment slots
-- ⚠️ **Same plan** - All slots share same App Service Plan resources
-- 🎯 **Production default** - Production slot exists by default
-- 📊 **No extra cost** - Slots don't incur additional charges
-- ✅ **Zero downtime** - Swapping doesn't drop requests
-- 🔄 **Quick rollback** - Swap back to previous version instantly
-- ⏱️ **Pre-warmed** - Instances warmed before swap completes
+## Critical Notes (Критически важные моменты)
 
-## Exam Tips
-- Deployment slots require Standard, Premium, or Isolated tier
-- Production slot exists by default, others must be created
-- Each slot has unique hostname: `<app>-<slot>.azurewebsites.net`
-- Slots share App Service Plan resources (no extra compute cost)
-- No content in new slots by default (even with cloned settings)
-- Standard tier supports 5 slots, Premium/Isolated support 20
-- All requests handled during swap (zero downtime)
-- Previous production version in staging after swap (easy rollback)
-- Must delete slots before scaling down to unsupported tier
+- 💡 Минимальный тариф — **Standard (S1)** для использования deployment slots
+- ⚠️ Все слоты работают в рамках одного **App Service Plan** и делят его ресурсы
+- 🎯 Production slot создаётся автоматически по умолчанию
+- 📊 За сами слоты дополнительная плата не взимается
+- ✅ Swap выполняется без потери запросов (zero downtime)
+- 🔄 Быстрый rollback — повторный swap возвращает предыдущую версию
+- ⏱️ Инстансы прогреваются перед завершением swap
+
+---
+
+## Exam Tips (Советы для экзамена)
+
+- Deployment slots доступны только в Standard, Premium и Isolated
+- Production slot существует всегда, остальные создаются вручную
+- Каждый слот имеет уникальный hostname:  
+  `<app>-<slot>.azurewebsites.net`
+- Слоты делят ресурсы App Service Plan (нет отдельного compute)
+- Новые слоты создаются без кода (даже если клонируются настройки)
+- Standard поддерживает 5 слотов, Premium/Isolated — 20
+- Swap не прерывает обработку запросов
+- После swap предыдущая production-версия оказывается в staging
+- Перед понижением тарифа нужно удалить все дополнительные слоты
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/understand-app-service-deployment-slots/2-app-service-staging-environments)

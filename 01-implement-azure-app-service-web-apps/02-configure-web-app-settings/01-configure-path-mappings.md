@@ -1,57 +1,121 @@
-# Configure Path Mappings
+# Configure Path Mappings (Настройка сопоставлений путей)
 
-## Key Concepts
-- **Handler mappings** - Custom script processors for file extensions
-- **Virtual applications** - Map URLs to different physical directories
-- **Custom storage** - Mount Azure Storage to containerized apps
+## Key Concepts (Ключевые понятия)
 
-## Windows Apps (Uncontainerized)
+- **Handler mappings (Сопоставления обработчиков)** — настройка пользовательских обработчиков для определённых расширений файлов
+- **Virtual applications (Виртуальные приложения)** — сопоставление URL с различными физическими директориями
+- **Custom storage (Пользовательское хранилище)** — подключение Azure Storage к контейнеризованным приложениям
 
-### Handler Mappings
-Add custom script processors for specific file extensions.
+> 💡 В контексте AZ-204 это относится к Azure App Service и управлению файловой системой веб-приложения.
 
-**Configuration**:
-- **Extension**: File extension (e.g., `*.php`, `handler.fcgi`)
-- **Script processor**: Absolute path (use `D:\home\site\wwwroot` for app root)
-- **Arguments**: Optional command-line arguments
+---
 
-### Virtual Applications & Directories
-- **Default root path**: `/` → `D:\home\site\wwwroot`
-- Map virtual directories to physical paths relative to `D:\home`
-- Clear "Directory" checkbox to mark as web application
+## Windows Apps (Без контейнеров)
 
-**Example**:
-| Virtual Path | Physical Path | Is Application |
-|--------------|---------------|----------------|
-| `/` | `site\wwwroot` | ✅ Yes |
-| `/api` | `site\wwwroot\api` | ✅ Yes |
-| `/images` | `site\assets\images` | ❌ No (directory) |
+### Handler Mappings (Сопоставления обработчиков)
+
+Позволяют добавить собственный обработчик для определённого расширения файла (если платформа не поддерживается по умолчанию).
+
+### Параметры конфигурации:
+
+- **Extension (Расширение)** — например:  
+  `*.php`, `handler.fcgi`
+- **Script processor (Обработчик)** — абсолютный путь к исполняемому файлу  
+  Для корня приложения используется:  
+  `D:\home\site\wwwroot`
+- **Arguments (Аргументы)** — необязательные параметры командной строки
+
+> ⚠️ `D:\home` — персистентное хранилище App Service. Всё вне этой директории может быть перезаписано при деплое.
+
+---
+
+### Virtual Applications & Directories (Виртуальные приложения и директории)
+
+- **Путь по умолчанию**:  
+  `/` → `D:\home\site\wwwroot`
+- Можно сопоставить виртуальные пути с физическими директориями относительно `D:\home`
+- Если снять флажок **"Directory"**, элемент становится **веб-приложением**, а не просто папкой
+
+### Пример конфигурации
+
+| Virtual Path | Physical Path        | Is Application |
+|--------------|----------------------|----------------|
+| `/`          | `site\wwwroot`       | ✅ Yes |
+| `/api`       | `site\wwwroot\api`   | ✅ Yes |
+| `/images`    | `site\assets\images` | ❌ No (directory) |
+
+> 📝 `/api` может быть отдельным приложением (например, ASP.NET Core),  
+> а `/images` — каталог статических ресурсов.
+
+---
 
 ## Linux and Containerized Apps
 
-### Custom Storage Mount
-Mount Azure Storage (Blobs or Files) to containers.
+### Custom Storage Mount (Монтирование хранилища)
 
-**Configuration Options**:
+Позволяет подключить Azure Storage (Blob или File) внутрь контейнера.
+
+> ⚠️ Файловая система контейнера по умолчанию неперсистентная.
+
+---
+
+### Параметры конфигурации
 
 | Setting | Description | Options |
 |---------|-------------|---------|
-| **Name** | Display name | Custom |
-| **Configuration** | Basic or Advanced | Basic: Standard storage<br>Advanced: Service endpoints, private endpoints, Key Vault |
-| **Storage account** | Azure Storage account | Select from subscription |
-| **Storage type** | Blob or File | Blobs: Read-only<br>Files: Read/write |
-| **Storage container** | Container name (Basic) | Existing container |
-| **Share name** | File share (Advanced) | Existing share |
-| **Access key** | Storage key (Advanced) | From storage account |
-| **Mount path** | Container path | Absolute path (e.g., `/data`) |
-| **Deployment slot setting** | Stick to slot | ✅/❌ |
+| **Name** | Отображаемое имя | Произвольное |
+| **Configuration** | Basic или Advanced | Basic: стандартное хранилище<br>Advanced: service endpoints, private endpoints, Key Vault |
+| **Storage account** | Аккаунт Azure Storage | Выбор из подписки |
+| **Storage type** | Blob или File | Blobs: только чтение<br>Files: чтение/запись |
+| **Storage container** | Контейнер (Basic) | Существующий container |
+| **Share name** | File share (Advanced) | Существующий share |
+| **Access key** | Ключ доступа (Advanced) | Из storage account |
+| **Mount path** | Путь внутри контейнера | Абсолютный путь (например, `/data`) |
+| **Deployment slot setting** | Привязка к слоту | ✅/❌ |
 
-### Storage Type Restrictions
-- **Windows containers**: Only Azure Files supported
-- **Linux containers**: Azure Blobs (read-only) or Azure Files
-- **Azure Blobs**: Read-only access only
+---
 
-## Quick Reference Commands
+### Storage Type Restrictions (Ограничения)
+
+- **Windows containers** → поддерживается только Azure Files
+- **Linux containers** → Azure Blobs (read-only) или Azure Files
+- **Azure Blobs** → доступ только для чтения
+
+> 🎯 Частый экзаменационный вопрос.
+
+---
+
+## Дополнительно (Важно для AZ-204)
+
+### Файловая система App Service
+
+- `D:\home` (Windows) или `/home` (Linux) — персистентная
+- Остальная часть файловой системы может быть сброшена при рестарте
+
+### Когда использовать Azure Files
+
+- Нужно чтение/запись
+- Нужно разделяемое хранилище между несколькими инстансами
+
+### Когда использовать Blob
+
+- Статические данные
+- Только чтение
+- Интеграция с CDN
+- Более дешёвое хранение
+
+---
+
+## Quick Reference (Краткая выжимка)
+
+| Сценарий | Решение |
+|-----------|----------|
+| Кастомный runtime | Handler mappings |
+| Разделение приложения по URL | Virtual applications |
+| Персистентное хранилище в контейнере | Azure Files |
+| Только чтение в Linux контейнере | Azure Blob |
+| Общий доступ между инстансами | Azure Files |
+
 
 ```bash
 # Configure handler mapping (via portal only)
@@ -83,7 +147,7 @@ az webapp config storage-account delete \
   --custom-id <mount-name>
 ```
 
-## Use Cases
+## Use Cases (Сценарии использования)
 
 | Scenario | Solution |
 |----------|----------|
@@ -93,20 +157,26 @@ az webapp config storage-account delete \
 | Static assets from Blob Storage | Azure Blobs mount (read-only) |
 | Separate app in subdirectory | Virtual application |
 
-## Critical Notes
-- 💡 **Windows containers** only support Azure Files (not Blobs)
-- ⚠️ **Azure Blobs** are read-only when mounted
-- 🎯 **Default root**: `D:\home\site\wwwroot` (Windows)
-- 📝 **Virtual applications** can have separate app pools
-- 🔐 **Advanced config** needed for private endpoints/service endpoints
-- ⚠️ **Mount path** must be absolute (e.g., `/data`, not `data`)
+---
 
-## Exam Tips
-- Know handler mappings are for Windows apps only
-- Understand virtual applications vs directories
-- Remember Azure Blobs are read-only when mounted
-- Windows containers can only use Azure Files
-- Custom storage useful for shared data across scaled instances
-- Slot settings can apply to storage mounts
+## Critical Notes (Критически важные моменты)
+
+- 💡 **Windows containers** поддерживают только Azure Files (Blobs не поддерживаются)
+- ⚠️ **Azure Blobs** при монтировании доступны только для чтения
+- 🎯 **Корневой путь по умолчанию**: `D:\home\site\wwwroot` (Windows)
+- 📝 **Virtual applications** могут работать как отдельные веб-приложения
+- 🔐 Для private endpoints и service endpoints требуется **Advanced configuration**
+- ⚠️ **Mount path** должен быть абсолютным (например, `/data`, а не `data`)
+
+---
+
+## Exam Tips (Советы для экзамена)
+
+- Handler mappings применяются только к Windows App Service (не к Linux)
+- Чётко понимать разницу между Virtual application и Directory
+- Azure Blobs при монтировании всегда read-only
+- Windows containers могут использовать только Azure Files
+- Custom storage нужен при масштабировании (shared storage между инстансами)
+- Настройки storage можно привязывать к deployment slot (slot setting)
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/configure-web-app-settings/4-configure-path-mappings)

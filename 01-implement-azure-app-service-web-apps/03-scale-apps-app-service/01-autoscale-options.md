@@ -1,15 +1,20 @@
-# Examine Autoscale Options
+# Examine Autoscale Options (Механизмы автомасштабирования)
 
-## Key Concepts
-- **Autoscaling** - Automatically add/remove instances based on demand
-- **Scale Out/In** - Add/remove instances (horizontal scaling)
-- **Scale Up/Down** - Increase/decrease instance size (vertical scaling)
-- **Two automatic options**: Autoscale (rule-based) vs Automatic scaling (platform-managed)
+## Key Concepts (Ключевые понятия)
+
+- **Autoscaling** — автоматическое добавление или удаление инстансов в зависимости от нагрузки
+- **Scale Out / In** — горизонтальное масштабирование (добавление/удаление инстансов)
+- **Scale Up / Down** — вертикальное масштабирование (изменение размера инстанса)
+- **Два автоматических варианта**:
+    - **Autoscale** (на основе правил)
+    - **Automatic scaling** (управляется платформой)
+
+---
 
 ## Autoscaling vs Automatic Scaling
 
 | Feature | **Autoscale** | **Automatic Scaling** |
-|---------|---------------|----------------------|
+|----------|---------------|----------------------|
 | **Tiers** | Standard+ | PremiumV2, PremiumV3 |
 | **Rule-based** | ✅ Yes | ❌ No (platform-managed) |
 | **Schedule-based** | ✅ Yes | ❌ No |
@@ -18,52 +23,96 @@
 | **Per-app maximum** | ❌ No | ✅ Yes |
 | **Configuration** | Manual rules | Platform decides |
 
-## When to Use Autoscaling
+> 💡 Automatic Scaling доступен только в PremiumV2 / PremiumV3 и работает на уровне приложения.
 
-### ✅ Good Use Cases
-- **Predictable patterns** - Holiday traffic spikes
-- **Variable workload** - Business hours vs off-hours
-- **Cost optimization** - Scale in during low demand
-- **Multiple metrics** - CPU, memory, queue length
-- **Improve availability** - Handle sudden traffic increases
+---
 
-### ❌ When NOT to Use
-- **Resource-intensive processing** - Each request uses lots of resources
-- **Long-term growth** - Predictable linear growth (manually scale instead)
-- **DoS attack protection** - Use filtering, not scaling
-- **Few instances** - Start with more instances for availability
-- **Overhead concerns** - Monitoring costs vs benefits
+## When to Use Autoscaling (Когда использовать Autoscale)
 
-## Autoscaling Fundamentals
+### ✅ Подходит для
 
-### How It Works
-1. **Monitor metrics** (CPU, memory, requests, etc.)
-2. **Compare to thresholds** defined in rules
-3. **Trigger scale action** (add/remove instances)
-4. **Wait for cooldown** before next scale action
-5. **Load balance** across all instances
+- Предсказуемых паттернов (например, праздничные пики)
+- Переменной нагрузки (рабочие часы vs ночь)
+- Оптимизации затрат (scale-in при низкой нагрузке)
+- Масштабирования по нескольким метрикам (CPU, память, очередь)
+- Повышения отказоустойчивости
+
+---
+
+### ❌ Не подходит для
+
+- Ресурсоёмкой обработки каждого запроса
+- Долгосрочного линейного роста (лучше вручную scale up)
+- Защиты от DoS-атак (нужно использовать фильтрацию)
+- Сценариев с минимальным числом инстансов (сначала увеличить baseline)
+- Ситуаций, где мониторинг дороже выгоды
+
+---
+
+## Autoscaling Fundamentals (Основы Autoscale)
+
+### Как это работает
+
+1. Мониторинг метрик (CPU, память, HTTP requests и т.д.)
+2. Сравнение со значениями из правил
+3. Выполнение действия масштабирования
+4. Период cooldown (ожидание перед следующим действием)
+5. Балансировка нагрузки между инстансами
+
+---
 
 ### Scale Actions
-- **Scale Out** - Increase instance count
-- **Scale In** - Decrease instance count
-- **No effect on**: CPU power, memory, storage per instance
 
-## Automatic Scaling (PremiumV2/V3)
+- **Scale Out** — увеличение количества инстансов
+- **Scale In** — уменьшение количества инстансов
+- ❗ Не влияет на ресурсы одного инстанса (CPU, RAM, storage)
 
-### Features
-- ✅ **Platform-managed** - Azure handles decisions
-- ✅ **HTTP traffic-based** - Scales based on requests
-- ✅ **Always ready instances** - Minimum instances always running
-- ✅ **Prewarmed instances** - Ready to serve traffic immediately
-- ✅ **Per-app scaling** - Apps in same plan scale independently
+---
 
-### Use Cases
+## Automatic Scaling (PremiumV2 / PremiumV3)
+
+### Features (Возможности)
+
+- ✅ Управляется платформой Azure
+- ✅ Основано на HTTP-трафике
+- ✅ Always ready instances (минимум 1)
+- ✅ Prewarmed instances (по умолчанию 1)
+- ✅ Масштабирование на уровне приложения (per-app scaling)
+
+> 💡 В одном App Service Plan приложения могут масштабироваться независимо.
+
+---
+
+### Use Cases (Когда выбирать Automatic Scaling)
+
 | Scenario | Why Automatic Scaling |
 |----------|----------------------|
-| No metric expertise | Platform handles decisions |
-| Independent app scaling | Each app scales separately |
-| Backend limitations | Set maximum to avoid overwhelming DB |
-| Simple setup | No rules to configure |
+| Нет опыта настройки метрик | Платформа принимает решения |
+| Нужно независимое масштабирование | Каждое приложение масштабируется отдельно |
+| Ограничения backend (например, БД) | Можно задать максимум инстансов |
+| Нужна простота | Нет правил для конфигурации |
+
+---
+
+## Дополнительно (Важно для AZ-204)
+
+- Autoscale поддерживает **расписание (schedule-based rules)**
+- Можно комбинировать несколько правил
+- Cooldown предотвращает "flapping" (частое scale in/out)
+- Vertical scaling (scale up) требует рестарта приложения
+- Horizontal scaling не требует изменения кода (при stateless архитектуре)
+
+---
+
+## Exam Focus (Что важно запомнить)
+
+- Разница между Autoscale и Automatic Scaling
+- Automatic Scaling доступен только в PremiumV2/V3
+- Autoscale работает на основе правил и метрик
+- Scale out ≠ Scale up
+- Automatic Scaling поддерживает per-app scaling
+- Cooldown — важный механизм предотвращения частых изменений
+
 
 ## Quick Commands
 
@@ -90,7 +139,7 @@ az monitor autoscale show \
   --name <autoscale-name>
 ```
 
-## Tier Requirements
+## Tier Requirements (Требования по тарифам)
 
 | Tier | Manual Scale | Autoscale | Automatic Scaling |
 |------|--------------|-----------|-------------------|
@@ -101,21 +150,33 @@ az monitor autoscale show \
 | **PremiumV2** | ✅ Up to 30 | ✅ Yes | ✅ Yes |
 | **PremiumV3** | ✅ Up to 30 | ✅ Yes | ✅ Yes |
 
-## Critical Notes
-- 💡 **Autoscaling = horizontal** (more instances), not vertical (bigger instances)
-- ⚠️ **DoS attacks** - Use filtering/WAF, not autoscaling
-- 🎯 **Standard tier minimum** for autoscale feature
-- 📊 **Monitor overhead** - Autoscaling has monitoring costs
-- 🔄 **Cooldown periods** prevent rapid scaling
-- ⚠️ **App Service Plan limit** - Can't scale beyond plan's max instances
-- 💰 **Cost consideration** - More instances = higher cost
+> 💡 Минимальный тариф для Autoscale — **Standard**.  
+> Automatic Scaling доступен только в **PremiumV2 / PremiumV3**.
 
-## Exam Tips
-- Know the difference between Scale Out/In vs Scale Up/Down
-- Understand when autoscaling is appropriate (and when it's not)
-- Remember Standard tier required for autoscale
-- PremiumV2/V3 have automatic scaling (platform-managed)
-- Autoscaling doesn't change instance size, only count
-- Know autoscale vs automatic scaling comparison
+---
+
+## Critical Notes (Критически важные моменты)
+
+- 💡 **Autoscaling = горизонтальное масштабирование** (количество инстансов),  
+  не вертикальное (размер инстанса)
+- ⚠️ **DoS-атаки** — использовать WAF/фильтрацию, а не масштабирование
+- 🎯 Минимальный тариф для Autoscale — Standard
+- 📊 Мониторинг метрик имеет накладные расходы
+- 🔄 **Cooldown period** предотвращает частые скачки масштабирования
+- ⚠️ Нельзя масштабироваться выше лимита App Service Plan
+- 💰 Больше инстансов = выше стоимость
+
+---
+
+## Exam Tips (Советы для экзамена)
+
+- Чётко различать:
+    - **Scale Out / In** (горизонтально)
+    - **Scale Up / Down** (вертикально)
+- Понимать, когда Autoscale оправдан, а когда нет
+- Запомнить: Autoscale доступен с Standard
+- PremiumV2 / PremiumV3 поддерживают Automatic Scaling
+- Autoscaling изменяет только количество
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/scale-apps-app-service/2-autoscale-factors)
