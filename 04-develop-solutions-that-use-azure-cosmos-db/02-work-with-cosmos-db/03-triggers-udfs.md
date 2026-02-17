@@ -1,32 +1,55 @@
 # Azure Cosmos DB Triggers and User-Defined Functions
 
-## Key Concepts
-- **Pre-triggers** - Execute before operations
-- **Post-triggers** - Execute after operations  
-- **UDFs** - Custom functions in queries
-- **JavaScript** - Written in JavaScript
+## Ключевые понятия (Key Concepts)
 
-## Overview
+- **Pre-triggers** — выполняются до операции
+- **Post-triggers** — выполняются после операции
+- **UDFs** — пользовательские функции для запросов
+- **JavaScript** — реализуются на JavaScript
 
-**Server-side programmability**:
+---
 
-| Feature | Purpose | Execution |
-|---------|---------|-----------|
-| **Pre-triggers** | Validate/modify input | Before operation |
-| **Post-triggers** | Update metadata/logs | After operation |
-| **UDFs** | Custom query logic | During query |
+# Обзор
 
-## Pre-Triggers
+## Серверная программируемость (Server-side programmability)
 
-### What are Pre-Triggers?
+| Механизм | Назначение | Когда выполняется |
+|-----------|------------|------------------|
+| **Pre-triggers** | Валидация / изменение входных данных | До операции |
+| **Post-triggers** | Обновление метаданных / логирование | После операции |
+| **UDFs** | Пользовательская логика в запросах | Во время запроса |
 
-**Execute BEFORE create/update/delete operations**:
+---
 
-- **Purpose**: Validate or modify input data
-- **When**: Before operation is executed
-- **Access**: Can read and modify request body
-- **Mandatory**: Optional (must be specified per request)
-- **Rollback**: Throwing error rolls back operation
+# Pre-Triggers
+
+## Что такое Pre-Triggers?
+
+**Выполняются ПЕРЕД операциями create / update / delete**
+
+- **Назначение** — проверка или изменение входных данных
+- **Момент выполнения** — до выполнения основной операции
+- **Доступ** — могут читать и изменять тело запроса
+- **Обязательность** — не обязательны, указываются явно в запросе
+- **Rollback** — при выбросе ошибки операция отменяется
+
+---
+
+## Когда использовать Pre-Triggers
+
+- Валидация бизнес-правил
+- Установка значений по умолчанию
+- Автоматическое добавление метаданных
+- Контроль целостности данных до сохранения
+
+---
+
+## Ограничения
+
+- Работают только в пределах одного контейнера
+- Не выполняются автоматически — нужно указать при вызове
+- Ограничены временем выполнения
+- Не поддерживают cross-partition операции
 
 ### Basic Pre-Trigger Example
 
@@ -169,18 +192,36 @@ function enrichDocument() {
     request.setBody(document);
 }
 ```
-
 ## Post-Triggers
 
-### What are Post-Triggers?
+### Что такое Post-Triggers?
 
-**Execute AFTER create/update/delete operations**:
+**Выполняются ПОСЛЕ операций create / update / delete**
 
-- **Purpose**: Update metadata, logs, derived data
-- **When**: After operation completes successfully
-- **Access**: Can read operation result
-- **Transactional**: Part of same transaction
-- **No rollback**: Operation already committed
+- **Назначение** — обновление метаданных, логирование, вычисление производных данных
+- **Момент выполнения** — после успешного завершения основной операции
+- **Доступ** — могут читать результат выполненной операции
+- **Транзакционность** — выполняются в рамках той же транзакции (в пределах одной партиции)
+- **Откат** — основная операция уже зафиксирована
+
+---
+
+## Когда использовать Post-Triggers
+
+- Автоматическое обновление агрегированных значений
+- Логирование изменений
+- Обновление связанных элементов внутри той же партиции
+- Поддержка audit-полей (modifiedAt, modifiedBy)
+
+---
+
+## Ограничения
+
+- Работают только в пределах одного partition key
+- Должны быть явно указаны при выполнении операции
+- Ограничены временем выполнения
+- Не могут выполнять cross-partition операции
+
 
 ### Basic Post-Trigger Example
 
@@ -327,17 +368,45 @@ function updateDocumentCount() {
 }
 ```
 
-## User-Defined Functions (UDFs)
+## User-Defined Functions (UDF)
 
-### What are UDFs?
+### Что такое UDF?
 
-**Custom functions for use in queries**:
+**Пользовательские функции для использования в запросах**
 
-- **Purpose**: Extend query capabilities with custom logic
-- **When**: During query execution
-- **Scope**: Query expressions only (SELECT, WHERE, ORDER BY)
-- **Read-only**: Cannot modify data
-- **JavaScript**: Written in JavaScript
+- **Назначение** — расширение возможностей запросов собственной логикой
+- **Когда выполняются** — во время выполнения запроса
+- **Область применения** — только в выражениях запроса (SELECT, WHERE, ORDER BY)
+- **Только чтение** — не могут изменять данные
+- **Язык реализации** — JavaScript
+
+---
+
+## Когда использовать UDF
+
+- Кастомные вычисления в SELECT
+- Сложные фильтры в WHERE
+- Логика форматирования или преобразования данных
+- Повторно используемые вычисления в разных запросах
+
+---
+
+## Ограничения
+
+- Работают только в контексте запроса
+- Не могут выполнять операции записи
+- Могут увеличивать потребление RU
+- Ограничены временем выполнения
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- UDF используются **только в запросах**
+- Не поддерживают операции изменения данных
+- Пишутся на JavaScript
+- Подходят для кастомной логики в SELECT и WHERE
+
 
 ### Basic UDF Example
 
@@ -870,45 +939,80 @@ function createAuditTrail() {
 }
 ```
 
-## Critical Notes
-- 💡 **Pre-triggers** - Execute before operation, can modify request
-- 🎯 **Post-triggers** - Execute after operation, can create related documents
-- ✅ **UDFs** - User-defined functions for queries (SELECT, WHERE, ORDER BY)
-- ⚠️ **Optional** - Triggers must be explicitly specified per request
-- 🔄 **JavaScript** - All written in JavaScript
-- 📊 **Validation** - Pre-triggers ideal for input validation
-- 💡 **Metadata** - Post-triggers ideal for audit logs, counters
-- ✅ **Read-only** - UDFs cannot modify data
-- ⚠️ **Transactional** - Triggers part of same transaction as operation
-- 🔒 **Error handling** - Throwing error in trigger rolls back operation
-- 🎯 **Registration** - Register before use (Scripts.CreateTriggerAsync)
-- 💡 **Request options** - Specify triggers in ItemRequestOptions
-- ⚠️ **Multiple triggers** - Can specify multiple pre/post triggers
-- ✅ **TriggerOperation** - All, Create, Update, Delete, Replace
-- 🔄 **Context objects** - getContext(), getRequest(), getResponse(), getCollection()
+# Critical Notes — Triggers и UDF
 
-## Exam Tips
-- Pre-triggers: Execute before operations (Create, Update, Delete)
-- Post-triggers: Execute after operations complete successfully
-- UDFs: Custom functions for use in queries only
-- Triggers are optional: Must be explicitly specified in ItemRequestOptions
-- Language: JavaScript (same as stored procedures)
-- Request object: getRequest().getBody() to read/modify input
-- Response object: getResponse().getBody() to read operation result
-- Validation: Use pre-triggers for input validation
-- Metadata: Use post-triggers for audit logs, counters, derived data
-- Error handling: Throwing error in trigger rolls back operation
-- Registration: Scripts.CreateTriggerAsync() for triggers
-- Registration: Scripts.CreateUserDefinedFunctionAsync() for UDFs
-- TriggerOperation enum: All, Create, Update, Delete, Replace
-- TriggerType enum: Pre, Post
-- Query usage: SELECT udf.functionName(c.field) FROM c
-- Pre-trigger execution: PreTriggers property in ItemRequestOptions
-- Post-trigger execution: PostTriggers property in ItemRequestOptions
-- Multiple triggers: Can specify array of trigger IDs
-- Transactional: Triggers execute within same transaction
-- UDF scope: Query expressions only (SELECT, WHERE, ORDER BY)
-- UDF read-only: Cannot modify documents or create new ones
-- Performance: Keep triggers lightweight to avoid timeouts
+- 💡 **Pre-triggers** — выполняются до операции, могут изменять входные данные
+- 🎯 **Post-triggers** — выполняются после операции, могут создавать связанные документы
+- ✅ **UDF** — пользовательские функции для запросов (SELECT, WHERE, ORDER BY)
+- ⚠️ **Опциональные** — триггеры должны быть явно указаны в каждом запросе
+- 🔄 **JavaScript** — всё реализуется на JavaScript
+- 📊 **Валидация** — pre-triggers подходят для проверки входных данных
+- 💡 **Метаданные** — post-triggers подходят для audit-логов, счётчиков
+- ✅ **Только чтение** — UDF не могут изменять данные
+- ⚠️ **Транзакционность** — триггеры выполняются в рамках той же транзакции
+- 🔒 **Обработка ошибок** — выброс ошибки в триггере приводит к откату операции
+- 🎯 **Регистрация** — необходимо зарегистрировать перед использованием
+- 💡 **Request options** — триггеры указываются в ItemRequestOptions
+- ⚠️ **Несколько триггеров** — можно указать несколько pre/post триггеров
+- ✅ **TriggerOperation** — All, Create, Update, Delete, Replace
+- 🔄 **Context objects** — getContext(), getRequest(), getResponse(), getCollection()
+
+---
+
+# Exam Tips (AZ-204)
+
+- Pre-triggers — выполняются до операций (Create, Update, Delete)
+- Post-triggers — выполняются после успешного завершения операций
+- UDF — используются только в запросах
+- Триггеры опциональны — нужно явно указать в ItemRequestOptions
+- Язык — JavaScript (как и Stored Procedures)
+
+---
+
+## Работа с объектами
+
+- Request object — getRequest().getBody() для чтения/изменения входных данных
+- Response object — getResponse().getBody() для получения результата
+
+---
+
+## Назначение
+
+- Валидация — pre-triggers
+- Метаданные, audit, счётчики — post-triggers
+
+---
+
+## Регистрация
+
+- Триггеры — Scripts.CreateTriggerAsync()
+- UDF — Scripts.CreateUserDefinedFunctionAsync()
+
+---
+
+## Перечисления
+
+- TriggerOperation — All, Create, Update, Delete, Replace
+- TriggerType — Pre, Post
+
+---
+
+## Использование UDF в запросе
+
+- Используются в SELECT, WHERE, ORDER BY
+- Только для чтения
+- Не могут изменять документы
+
+---
+
+## Дополнительно
+
+- PreTriggers — задаются в ItemRequestOptions
+- PostTriggers — задаются в ItemRequestOptions
+- Можно указать массив идентификаторов триггеров
+- Выполняются в рамках одной транзакции
+- Поддерживаются только внутри одного partition key
+- Триггеры должны быть лёгкими по логике (чтобы избежать timeout)
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/work-with-cosmos-db/5-cosmos-db-triggers-user-defined-functions)

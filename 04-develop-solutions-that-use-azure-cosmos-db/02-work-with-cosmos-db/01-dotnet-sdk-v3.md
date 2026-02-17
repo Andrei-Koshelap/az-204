@@ -1,22 +1,55 @@
 # Azure Cosmos DB .NET SDK v3
 
-## Key Concepts
-- **Microsoft.Azure.Cosmos** - NuGet package for .NET SDK v3
-- **CosmosClient** - Thread-safe client (singleton pattern)
-- **Async operations** - All operations are asynchronous
-- **Generic terms** - Container (not collection), Item (not document)
+## Ключевые понятия (Key Concepts)
 
-## SDK Overview
+- **Microsoft.Azure.Cosmos** — NuGet-пакет для .NET SDK v3
+- **CosmosClient** — потокобезопасный клиент (использовать как singleton)
+- **Async-операции** — все операции асинхронные
+- **Универсальные термины** — Container (не collection), Item (не document)
 
-### What is .NET SDK v3?
+---
 
-**Modern .NET SDK** for Azure Cosmos DB:
+# Обзор SDK
 
-- **Package**: `Microsoft.Azure.Cosmos`
-- **Target**: .NET Standard 2.0 (compatible with .NET Core, .NET Framework)
-- **Generic terminology**: Container and Item (works across all APIs)
-- **Performance**: Optimized for throughput and latency
-- **Async-first**: All operations return `Task`
+## Что такое .NET SDK v3?
+
+Современный SDK для работы с Azure Cosmos DB из .NET-приложений.
+
+- **Пакет:** `Microsoft.Azure.Cosmos`
+- **Target:** .NET Standard 2.0  
+  (совместим с .NET Core, .NET Framework, .NET 5+)
+- **Унифицированная терминология:**  
+  Container и Item (независимо от выбранного API)
+- **Оптимизация:**  
+  Производительность, низкая задержка, эффективная работа с RU
+- **Async-first подход:**  
+  Все операции возвращают `Task` или `Task<T>`
+
+---
+
+## Важные особенности
+
+- CosmosClient создаётся один раз и переиспользуется.
+- Поддерживает:
+    - Point reads
+    - Query
+    - Change Feed
+    - Transactional batch
+    - Bulk operations
+- Автоматически обрабатывает:
+    - Retry (429)
+    - Retry-After
+    - Session tokens
+
+---
+
+## Рекомендуемый паттерн
+
+### Singleton CosmosClient
+
+```csharp
+CosmosClient client = new CosmosClient(connectionString);
+
 
 ### SDK Evolution
 
@@ -105,18 +138,42 @@ CosmosClient client = new CosmosClient(endpoint, key, clientOptions);
 string connectionString = "AccountEndpoint=https://myaccount.documents.azure.com:443/;AccountKey=your-key;";
 CosmosClient client = new CosmosClient(connectionString);
 ```
+## Client Lifetime — Best Practices
 
-### Client Lifetime Best Practices
+### ✅ Делайте так
 
-✅ **Do**:
-- Create single `CosmosClient` instance per application
-- Reuse across entire application lifetime
-- Register as singleton in DI container
+- Создавайте **один экземпляр `CosmosClient`** на всё приложение
+- Переиспользуйте его на протяжении всего жизненного цикла приложения
+- Регистрируйте как **Singleton** в DI-контейнере
 
-❌ **Don't**:
-- Create new client per request
-- Dispose client after each operation
-- Create multiple clients for same account
+Пример (ASP.NET Core):
+
+```csharp
+builder.Services.AddSingleton(s =>
+{
+    return new CosmosClient(
+        configuration["Cosmos:ConnectionString"]);
+});
+```
+❌ Не делайте так
+Не создавайте новый CosmosClient на каждый HTTP-запрос
+Не вызывайте Dispose() после каждой операции
+Не создавайте несколько клиентов для одного и того же аккаунта
+
+Почему это важно
+CosmosClient потокобезопасен (thread-safe).
+Внутри управляет подключениями и кэшированием метаданных.
+Частое создание клиентов → лишние TCP-соединения и рост latency.
+Может привести к socket exhaustion.
+
+Экзаменационный акцент (AZ-204)
+Если в вопросе:
+«performance issue»
+«high latency»
+«connection problems»
+«best practice for CosmosClient»
+→ правильный ответ:
+Использовать один singleton CosmosClient на всё приложение.
 
 ```csharp
 // ❌ Bad: New client per request
@@ -723,37 +780,68 @@ var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @id")
 // More RUs than point read
 ```
 
-## Critical Notes
-- 💡 **CosmosClient** - Thread-safe singleton, reuse across application
-- 🎯 **Async operations** - All methods return Task, use async/await
-- ✅ **CreateIfNotExists** - Prefer over Create (idempotent)
-- ⚠️ **Point read** - Most efficient (id + partition key = 1 RU for 1KB)
-- 🔄 **Queries** - Use partition key in filter for efficiency
-- 📊 **Batch operations** - Transactional within same partition key
-- 💡 **Bulk execution** - Enable for high-throughput scenarios
-- ✅ **Error handling** - Catch CosmosException for status codes
-- ⚠️ **Connection mode** - Direct is default and faster than Gateway
-- 🔒 **Resource hierarchy** - Client → Database → Container → Item
+# Critical Notes — .NET SDK v3
+
+- 💡 **CosmosClient** — потокобезопасный singleton, переиспользуется в приложении
+- 🎯 **Async-only API** — все методы возвращают `Task`, используйте async/await
+- ✅ **CreateIfNotExistsAsync** — идемпотентный метод, предпочтительнее CreateAsync
+- ⚠️ **Point read** — самая эффективная операция (id + partition key = ~1 RU за 1KB)
+- 🔄 **Queries** — включайте partition key в фильтр для снижения RU
+- 📊 **Transactional Batch** — атомарность в пределах одного partition key
+- 💡 **Bulk execution** — включайте для high-throughput сценариев
+- ✅ **Обработка ошибок** — перехватывайте `CosmosException`
+- ⚠️ **Connection mode** — Direct (по умолчанию) быстрее, чем Gateway
+- 🔒 **Иерархия ресурсов** — Client → Database → Container → Item
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы SDK
+
+- **CosmosClient** — thread-safe, singleton.
+- NuGet пакет: `Microsoft.Azure.Cosmos` (v3).
+- Термины: Container (не collection), Item (не document).
+
+---
+
+## Создание ресурсов
+
+- `CreateIfNotExistsAsync()` — идемпотентный, предпочтительный метод.
+- Избегайте прямого `CreateAsync()` без проверки.
+
+---
+
+## Чтение данных
+
+### Самая эффективная операция:
+```csharp
+ReadItemAsync<T>(id, new PartitionKey(pk))
+
+```
+Требует id + partition key.
+Минимальная стоимость RU.
 
 ## Exam Tips
-- CosmosClient: Thread-safe, singleton pattern, reuse per application lifetime
-- NuGet package: Microsoft.Azure.Cosmos (v3)
-- Generic terms: Container (not collection), Item (not document)
-- CreateIfNotExistsAsync: Idempotent, preferred over CreateAsync
-- Point read: ReadItemAsync with id + partition key (most efficient)
-- Query: GetItemQueryIterator, returns FeedIterator
-- Partition key: Include in QueryRequestOptions for efficiency
-- Transactional batch: All operations same partition key, all succeed or fail
-- Bulk execution: Enable with AllowBulkExecution = true
-- CosmosException: Catch for error handling, check StatusCode
-- Common status codes: 404 (Not Found), 409 (Conflict), 429 (Throttled)
-- Retry logic: SDK handles 429 automatically with MaxRetryAttempts
-- Connection modes: Direct (default, better performance), Gateway
-- Request charge: Available in response.RequestCharge (RU consumed)
-- Async pattern: All operations async, use await, never block with .Result
-- Patch operations: PatchItemAsync for partial updates (more efficient than replace)
-- LINQ queries: GetItemLinqQueryable for type-safe queries
-- SQL queries: QueryDefinition with parameterized values
-- Client options: Configure consistency, timeouts, retry policy at client level
+- CosmosClient — потокобезопасный, используется по шаблону singleton, переиспользуется на протяжении всего жизненного цикла приложения
+- NuGet-пакет — Microsoft.Azure.Cosmos (v3)
+- Универсальные термины — Container (не collection), Item (не document)
+- CreateIfNotExistsAsync — идемпотентный метод, предпочтительнее CreateAsync
+- Point read — ReadItemAsync с id и partition key (самый эффективный способ чтения)
+- Query — GetItemQueryIterator, возвращает FeedIterator
+- Partition key — указывать в QueryRequestOptions для повышения эффективности
+- Transactional batch — все операции в пределах одного partition key, либо все успешны, либо все отклонены
+- Bulk execution — включается через AllowBulkExecution = true
+- CosmosException — перехватывается для обработки ошибок, проверяется StatusCode
+- Частые коды статуса — 404 (Not Found), 409 (Conflict), 429 (Throttled)
+- Retry logic — SDK автоматически обрабатывает 429 через MaxRetryAttempts
+- Режимы подключения — Direct (по умолчанию, выше производительность), Gateway
+- Request charge — доступен в response.RequestCharge (потреблённые RU)
+- Async-паттерн — все операции асинхронные, использовать await, не блокировать через .Result
+- Patch-операции — PatchItemAsync для частичных обновлений (эффективнее, чем replace)
+- LINQ-запросы — GetItemLinqQueryable для типобезопасных запросов
+- SQL-запросы — QueryDefinition с параметризованными значениями
+- Параметры клиента — настройка согласованности, таймаутов и политики повторов на уровне клиента
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/work-with-cosmos-db/2-cosmos-db-dotnet-overview)

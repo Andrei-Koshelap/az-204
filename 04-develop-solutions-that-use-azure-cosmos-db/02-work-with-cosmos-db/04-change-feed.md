@@ -1,32 +1,58 @@
 # Azure Cosmos DB Change Feed
 
-## Key Concepts
-- **Persistent log** - Record of all changes to container
-- **Push model** - Azure Functions or Change Feed Processor
-- **Pull model** - Manual processing with SDK
-- **Time-ordered** - Changes in order within partition
+## Ключевые понятия (Key Concepts)
 
-## What is Change Feed?
+- **Persistent log** — постоянный журнал всех изменений контейнера
+- **Push model** — обработка через Azure Functions или Change Feed Processor
+- **Pull model** — ручная обработка через SDK
+- **Time-ordered** — изменения упорядочены по времени внутри партиции
 
-**Persistent, ordered record of changes** to Azure Cosmos DB container:
+---
 
-- **Captures**: Creates and updates (not deletes by default)
-- **Order**: Time-ordered within each partition key
-- **Persistent**: Retained based on container TTL
-- **Processing**: Push (automated) or Pull (manual) models
-- **Use cases**: Real-time processing, data synchronization, event sourcing
+# Что такое Change Feed?
 
-### Key Characteristics
+**Постоянный, упорядоченный журнал изменений** контейнера Azure Cosmos DB.
 
-| Feature | Description |
-|---------|-------------|
-| **Scope** | Container-level (monitors one container) |
-| **Operations** | Inserts and updates (deletes optional with change feed mode) |
-| **Order** | Guaranteed within partition key |
-| **Cross-partition** | No ordering guarantee across partitions |
-| **Retention** | Based on container TTL or manual checkpoint |
-| **Starting point** | Beginning, now, or specific point in time |
-| **Processing** | Real-time or batch |
+- **Фиксирует**: операции создания и обновления  
+  (удаления по умолчанию не включаются)
+- **Порядок**: гарантирован внутри одного partition key
+- **Хранение**: зависит от TTL контейнера
+- **Модели обработки**: Push (автоматическая) или Pull (ручная)
+- **Сценарии использования**: real-time обработка, синхронизация данных, event sourcing
+
+---
+
+## Основные характеристики
+
+| Свойство | Описание |
+|-----------|------------|
+| **Область действия** | Уровень контейнера (отслеживает один контейнер) |
+| **Операции** | Insert и Update (delete — при использовании соответствующего режима) |
+| **Порядок** | Гарантирован внутри одного partition key |
+| **Между партициями** | Порядок не гарантируется |
+| **Retention** | Зависит от TTL контейнера или checkpoint-механизма |
+| **Точка старта** | С начала, с текущего момента или с конкретного времени |
+| **Обработка** | Реальное время или batch |
+
+---
+
+## Что важно помнить
+
+- Change Feed не блокирует основную нагрузку.
+- Используется для реактивной архитектуры.
+- Часто применяется в микросервисах.
+- Поддерживает горизонтальное масштабирование.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Отслеживает изменения на уровне контейнера.
+- Порядок гарантируется только внутри partition key.
+- По умолчанию не включает delete.
+- Может запускаться с начала или «сейчас».
+- Используется для real-time обработки и синхронизации.
+
 
 ### Change Feed Modes
 
@@ -296,11 +322,44 @@ Container leaseContainer = await database.CreateContainerIfNotExistsAsync(
 }
 ```
 
-**Key points**:
-- One lease document per partition
-- Tracks which instance owns which partition
-- Stores continuation token (checkpoint)
-- Enables automatic partition rebalancing
+## Lease и масштабирование в Change Feed
+
+### Ключевые моменты
+
+- Один lease-документ на каждую партицию
+- Отслеживает, какой экземпляр обработчика владеет какой партицией
+- Хранит continuation token (checkpoint)
+- Обеспечивает автоматическое перераспределение партиций (rebalancing)
+
+---
+
+## Что это означает
+
+- Для каждой физической партиции создаётся отдельный lease-документ.
+- Lease хранится в отдельном lease-контейнере.
+- Continuation token позволяет продолжить обработку с последней позиции.
+- При добавлении или удалении экземпляров обработчика:
+    - Партиции автоматически перераспределяются.
+    - Нагрузка балансируется между инстансами.
+
+---
+
+## Почему это важно
+
+- Поддерживается горизонтальное масштабирование.
+- Обеспечивается fault tolerance.
+- Не требуется ручное управление распределением партиций.
+- Обработка может возобновиться после сбоя без потери данных.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Lease container обязателен для Change Feed Processor.
+- Один lease на партицию.
+- Continuation token хранится в lease-документе.
+- Поддерживается автоматический rebalancing.
+
 
 ## Pull Model
 
@@ -692,18 +751,48 @@ static async Task UpdateAnalytics(
 }
 ```
 
-## Push vs Pull Model Comparison
+# Push vs Pull Model — Сравнение моделей обработки Change Feed
 
-| Aspect | Push Model (Processor/Functions) | Pull Model (Manual) |
-|--------|----------------------------------|---------------------|
-| **Ease of use** | Easy, automated | More complex |
-| **Control** | Less control | Full control |
-| **Checkpointing** | Automatic | Manual |
-| **Scaling** | Automatic | Manual |
-| **Best for** | Real-time processing | Batch processing, custom logic |
-| **Infrastructure** | Managed | Self-managed |
-| **Error handling** | Built-in retry | Custom |
-| **Starting point** | Configurable | Full flexibility |
+| Аспект | Push Model (Processor / Azure Functions) | Pull Model (Manual) |
+|--------|--------------------------------------------|----------------------|
+| **Простота использования** | Легко, автоматизировано | Более сложная реализация |
+| **Контроль** | Меньше контроля | Полный контроль |
+| **Checkpointing** | Автоматический | Ручной |
+| **Масштабирование** | Автоматическое | Ручное |
+| **Лучше всего подходит для** | Real-time обработки | Batch-обработки, кастомной логики |
+| **Инфраструктура** | Управляемая | Самостоятельное управление |
+| **Обработка ошибок** | Встроенные retry | Реализуется вручную |
+| **Точка старта** | Настраиваемая | Полная гибкость |
+
+---
+
+## Когда выбирать Push Model
+
+- Реактивная архитектура
+- Интеграция с Azure Functions
+- Минимальная инфраструктурная логика
+- Auto-scaling без ручной настройки
+- Реальное время (event-driven processing)
+
+---
+
+## Когда выбирать Pull Model
+
+- Нужна тонкая настройка обработки
+- Batch-обработка больших объёмов
+- Полный контроль над checkpoint
+- Специальная логика retry и обработки ошибок
+- Интеграция с нестандартной инфраструктурой
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- «Минимум кода, автоматическая обработка» → Push Model
+- «Полный контроль, ручная логика» → Pull Model
+- Push → автоматический checkpoint и scaling
+- Pull → разработчик управляет continuation token
+
 
 ## Error Handling
 
@@ -904,45 +993,90 @@ Console.WriteLine($"RU consumed: {response.RequestCharge}");
 // Adjust polling frequency based on RU consumption
 ```
 
-## Critical Notes
-- 💡 **Persistent log** - Ordered record of all changes to container
-- 🎯 **Operations** - Captures creates and updates (deletes optional)
-- ✅ **Time-ordered** - Changes ordered within each partition key
-- ⚠️ **No cross-partition order** - No ordering guarantee across partitions
-- 🔄 **Push model** - Azure Functions or Change Feed Processor (automated)
-- 📊 **Pull model** - Manual processing with SDK (full control)
-- 💡 **Lease container** - Stores checkpoints and partition ownership
-- ✅ **Scale out** - Multiple instances process different partitions
-- ⚠️ **Starting point** - Beginning, Now, Time, or ContinuationToken
-- 🔒 **Checkpointing** - Save continuation token to resume processing
-- 🎯 **Change feed modes** - LatestVersion (default) or AllVersionsAndDeletes
-- 💡 **Azure Functions** - Easiest with CosmosDBTrigger
-- ⚠️ **Polling interval** - Balance between latency and RU consumption
-- ✅ **Idempotent** - Design processing to handle duplicates
-- 🔄 **Error handling** - WithErrorNotification for processor-level errors
+# Critical Notes — Change Feed
 
-## Exam Tips
-- Change feed: Persistent, time-ordered log of changes to container
-- Captures: Creates and updates (deletes with AllVersionsAndDeletes mode)
-- Ordering: Guaranteed within partition key, not across partitions
-- Push model: Azure Functions (CosmosDBTrigger) or Change Feed Processor
-- Pull model: Manual processing with GetChangeFeedIterator
-- Components: Monitored container, lease container, compute instance, delegate
-- Lease container: Stores checkpoints and partition ownership
-- Scaling: Multiple processor instances automatically partition workload
-- Starting points: Beginning(), Now(), Time(), ContinuationToken()
-- Azure Functions: Easiest option with automatic scaling
-- Change Feed Processor: GetChangeFeedProcessorBuilder()
-- Delegate: HandleChangesAsync receives batch of changes
-- Configuration: WithInstanceName, WithLeaseContainer, WithPollInterval, WithMaxItems
-- Pull model iterator: GetChangeFeedIterator<T>()
-- Status codes: NotModified = no new changes
-- Checkpointing: ContinuationToken for resuming processing
-- Change feed modes: LatestVersion (default), AllVersionsAndDeletes
-- Error handling: WithErrorNotification() for processor errors
-- Best practice: Use Change Feed Processor for most scenarios
-- Idempotent: Design processing to handle duplicate messages
-- RU consumption: Monitor RequestCharge, adjust polling frequency
-- Use cases: Real-time indexing, data sync, event-driven workflows, cache invalidation
+- 💡 **Persistent log** — постоянный, упорядоченный журнал изменений контейнера
+- 🎯 **Операции** — фиксирует create и update (delete — при специальном режиме)
+- ✅ **Time-ordered** — порядок гарантирован внутри одного partition key
+- ⚠️ **Нет порядка между партициями** — межпартиционный порядок не гарантируется
+- 🔄 **Push model** — Azure Functions или Change Feed Processor (автоматизация)
+- 📊 **Pull model** — ручная обработка через SDK (полный контроль)
+- 💡 **Lease container** — хранит checkpoint и информацию о владении партициями
+- ✅ **Масштабирование** — несколько инстансов обрабатывают разные партиции
+- ⚠️ **Точка старта** — Beginning, Now, Time или ContinuationToken
+- 🔒 **Checkpointing** — сохранение continuation token для возобновления обработки
+- 🎯 **Режимы Change Feed** — LatestVersion (по умолчанию) или AllVersionsAndDeletes
+- 💡 **Azure Functions** — самый простой вариант через CosmosDBTrigger
+- ⚠️ **Polling interval** — баланс между задержкой и потреблением RU
+- ✅ **Idempotent дизайн** — обработка должна учитывать возможные дубликаты
+- 🔄 **Обработка ошибок** — WithErrorNotification для ошибок процессора
+
+---
+
+# Exam Tips (AZ-204)
+
+- Change Feed — постоянный, упорядоченный журнал изменений контейнера
+- Фиксирует create и update (delete — при режиме AllVersionsAndDeletes)
+- Порядок гарантирован только внутри partition key
+- Push model — Azure Functions (CosmosDBTrigger) или Change Feed Processor
+- Pull model — ручная обработка через GetChangeFeedIterator
+
+---
+
+## Компоненты
+
+- Monitored container — отслеживаемый контейнер
+- Lease container — хранит checkpoint и владение партициями
+- Compute instance — обработчик изменений
+- Delegate — метод обработки изменений
+
+---
+
+## Масштабирование
+
+- Lease container управляет распределением партиций
+- Несколько инстансов автоматически делят нагрузку
+- Change Feed Processor масштабируется горизонтально
+
+---
+
+## Точки старта
+
+- Beginning() — с начала журнала
+- Now() — только новые изменения
+- Time() — с указанного времени
+- ContinuationToken() — с сохранённой позиции
+
+---
+
+## Реализация
+
+- Azure Functions — самый простой способ с авто-масштабированием
+- Change Feed Processor — через GetChangeFeedProcessorBuilder()
+- Delegate — HandleChangesAsync получает batch изменений
+- Pull model — через GetChangeFeedIterator<T>()
+
+---
+
+## Дополнительно
+
+- StatusCode NotModified — нет новых изменений
+- ContinuationToken — используется для checkpoint
+- Режимы Change Feed — LatestVersion (по умолчанию), AllVersionsAndDeletes
+- WithErrorNotification() — обработка ошибок процессора
+- Лучший выбор в большинстве случаев — Change Feed Processor
+- Обработка должна быть idempotent
+- Контролируйте RU через RequestCharge и настраивайте polling
+
+---
+
+## Типовые сценарии
+
+- Real-time индексирование
+- Синхронизация данных
+- Event-driven архитектура
+- Инвалидация кэша
+- Реактивные микросервисы
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/work-with-cosmos-db/6-cosmos-db-change-feed)

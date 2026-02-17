@@ -1,10 +1,39 @@
 # Azure Cosmos DB Consistency Levels
+(Уровни консистентности в Azure Cosmos DB)
 
-## Key Concepts
-- **Consistency spectrum** - 5 levels from Strong to Eventual
-- **Tradeoffs** - Consistency vs Availability vs Latency vs Throughput
-- **Global scope** - Applied across all regions
-- **Per-request override** - Relax consistency for specific reads
+## Key Concepts (Ключевые концепции)
+
+- 🔄 **Consistency spectrum**  
+  — 5 уровней консистентности: от **Strong** до **Eventual**
+
+- ⚖ **Trade-offs**  
+  — Баланс между:
+    - Консистентностью
+    - Доступностью
+    - Задержкой (Latency)
+    - Throughput (RU/s)
+
+- 🌍 **Global scope**  
+  — Уровень консистентности применяется ко всем регионам аккаунта
+
+- 🎛 **Per-request override**  
+  — Можно ослабить консистентность для конкретного запроса чтения
+
+---
+
+## Почему это важно
+
+Cosmos DB позволяет выбрать подходящий баланс:
+
+- Максимальная точность данных (Strong)
+- Максимальная производительность (Eventual)
+- Компромиссные варианты (Bounded Staleness, Session, Consistent Prefix)
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Cosmos DB поддерживает **5 уровней консистентности**  
+> и позволяет переопределять уровень на уровне запроса.
 
 ## Consistency Spectrum
 
@@ -21,50 +50,109 @@ Strong → Bounded Staleness → Session → Consistent Prefix → Eventual
 
 ### Visual Representation
 
-```
-Strong
-├── Always reads latest committed write
-├── Linearizability guarantee
-├── Highest latency
-└── May sacrifice availability
 
-Bounded Staleness
-├── Lag limited by K versions or T time
-├── Consistent within staleness window
-├── Good for single-write, multi-read
-└── Predictable staleness
+## Consistency Levels Overview (Обзор уровней консистентности)
 
-Session (DEFAULT)
-├── Consistent within client session
-├── Read-your-writes guarantee
-├── Most common choice
-└── Balance of consistency and performance
+### 1️⃣ Strong
 
-Consistent Prefix
-├── Reads never see out-of-order writes
-├── Eventually consistent
-├── Maintains write order
-└── Good for social media feeds
+- Всегда возвращает **последнюю подтверждённую запись**  
+- Гарантия **линеаризуемости (linearizability)**  
+- Самая высокая задержка  
+- Может снижать доступность (особенно в multi-region)
 
-Eventual
-├── No ordering guarantee
-├── Highest availability
-├── Lowest latency
-├── Replicas converge eventually
-└── Good for analytics, counters
-```
+> Подходит для критичных финансовых и банковских операций.
 
-## Consistency Level Comparison
+---
 
-### Quick Reference Table
+### 2️⃣ Bounded Staleness
+
+- Отставание ограничено **K версиями** или **T временем**  
+- Консистентность в пределах заданного окна устаревания  
+- Хорошо подходит для single-write, multi-read сценариев  
+- Предсказуемая степень устаревания данных  
+
+> Используется, когда допускается небольшая задержка обновлений.
+
+---
+
+### 3️⃣ Session (DEFAULT)
+
+- Консистентность в рамках **клиентской сессии**  
+- Гарантия **read-your-writes**  
+- Самый распространённый выбор  
+- Баланс между производительностью и консистентностью  
+
+> Рекомендуемый уровень по умолчанию для большинства приложений.
+
+---
+
+### 4️⃣ Consistent Prefix
+
+- Чтение никогда не увидит записи вне порядка  
+- По сути eventual consistency, но с сохранением порядка  
+- Гарантирует последовательность операций записи  
+- Подходит для лент новостей, социальных сетей  
+
+---
+
+### 5️⃣ Eventual
+
+- Нет гарантии порядка чтения  
+- Максимальная доступность  
+- Минимальная задержка  
+- Реплики со временем сходятся  
+
+> Подходит для аналитики, счётчиков, non-critical данных.
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> - По умолчанию используется **Session**
+> - Strong снижает доступность при multi-region
+> - Eventual даёт максимальную производительность
+> - Всего 5 уровней консистентности
+
+
+## Consistency Level Comparison (Сравнение уровней консистентности)
+
+### Quick Reference Table (Краткая таблица)
 
 | Level | Reads | Latency | Throughput | Availability | Use Case |
-|-------|-------|---------|------------|--------------|----------|
-| **Strong** | Most recent | Highest | Lowest | Lowest | Banking, inventory |
-| **Bounded Staleness** | Within lag | High | Low | Medium | Stock quotes |
-| **Session** | Your writes | Medium | Medium | High | Shopping carts, profiles |
-| **Consistent Prefix** | In order | Low | High | High | Social feeds |
-| **Eventual** | May be stale | Lowest | Highest | Highest | Likes, views, analytics |
+|--------|--------|----------|------------|--------------|------------|
+| **Strong** | Самые актуальные | Самая высокая | Самый низкий | Самая низкая | Банкинг, склад |
+| **Bounded Staleness** | В пределах заданного лага | Высокая | Низкий | Средняя | Котировки акций |
+| **Session** | Ваши записи | Средняя | Средний | Высокая | Корзины, профили |
+| **Consistent Prefix** | В правильном порядке | Низкая | Высокий | Высокая | Ленты новостей |
+| **Eventual** | Возможна устаревшая версия | Самая низкая | Самый высокий | Самая высокая | Лайки, просмотры, аналитика |
+
+---
+
+## Ключевые различия
+
+- 🔒 **Strong** — максимальная точность, но выше latency
+- ⚖ **Session** — лучший баланс (используется по умолчанию)
+- 🚀 **Eventual** — максимальная производительность
+
+---
+
+## Логика trade-off
+
+Больше консистентности →  
+⬆ Latency  
+⬇ Throughput  
+⬇ Availability
+
+Меньше консистентности →  
+⬇ Latency  
+⬆ Throughput  
+⬆ Availability
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> - По умолчанию используется **Session**
+> - Strong снижает доступность при multi-region
+> - Eventual обеспечивает максимальную производительность
 
 ### CAP Theorem Tradeoffs
 
@@ -82,17 +170,40 @@ Azure Cosmos DB provides:
 └── Eventual: A + P (maximum)
 ```
 
-## Strong Consistency
+## Strong Consistency (Строгая консистентность)
 
-### Characteristics
+### Characteristics (Характеристики)
 
-**Linearizability guarantee**:
+**Гарантия линеаризуемости (Linearizability)**
 
-- ✅ Always reads most recent committed write
-- ✅ Writes visible to all readers immediately
-- ✅ Never see uncommitted or partial writes
-- ❌ Highest latency (cross-region coordination)
-- ❌ May block during regional failures
+- ✅ Всегда возвращает **последнюю подтверждённую запись**
+- ✅ Запись сразу видна всем читателям
+- ✅ Никогда не возвращаются частично записанные или неподтверждённые данные
+- ❌ Самая высокая задержка (требуется координация между регионами)
+- ❌ Возможны блокировки при сбоях региона
+
+---
+
+### Когда использовать
+
+- Финансовые транзакции
+- Управление складскими остатками
+- Критичные бизнес-операции
+- Сценарии, где допустима только актуальная версия данных
+
+---
+
+### Что важно понимать
+
+- В multi-region конфигурации требует синхронной репликации
+- Может снижать общую доступность системы
+- Самый «дорогой» уровень с точки зрения latency
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Strong = всегда актуальные данные + максимальная задержка.
+
 
 ### How It Works
 
@@ -110,6 +221,29 @@ Read from ANY region sees latest data
 Result: Highest consistency, highest cost
 ```
 
+---
+
+### Что это означает
+
+- Запись считается успешной только после подтверждения всеми регионами
+- Все регионы синхронизированы перед ответом клиенту
+- Любое чтение из любого региона возвращает последнюю версию данных
+
+---
+
+### Итог
+
+**Result:**  
+🔒 Максимальная консистентность  
+💰 Самая высокая стоимость  
+⏱ Самая высокая задержка
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> При Strong запись подтверждается только после репликации во все регионы.
+
+
 ### Multi-Region Behavior
 
 ```
@@ -126,12 +260,60 @@ Read from Region B immediately sees "value=100"
 Cost: Cross-region round-trip latency
 ```
 
-### Use Cases
+---
 
-✅ **Financial transactions** - Money transfers, account balances
-✅ **Inventory management** - Stock levels, reservations
-✅ **Voting systems** - Election results
-✅ **Compliance** - Regulatory requirements
+### Что происходит
+
+- Запись выполняется в одном регионе
+- Данные синхронно реплицируются во все регионы
+- Ожидается кворум в каждом регионе
+- Только после этого клиент получает подтверждение
+- Любое чтение из любого региона возвращает актуальное значение
+
+---
+
+### Цена Strong consistency
+
+💰 **Cross-region round-trip latency**  
+— задержка из-за синхронной межрегиональной репликации
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> При Strong consistency запись подтверждается  
+> только после согласования во всех регионах.
+
+
+### Use Cases (Когда использовать Strong consistency)
+
+✅ **Финансовые транзакции**  
+— переводы денег, балансы счетов
+
+✅ **Управление складом**  
+— остатки товаров, бронирование
+
+✅ **Системы голосования**  
+— выборы, подсчёт результатов
+
+✅ **Compliance-сценарии**  
+— строгие регуляторные требования
+
+---
+
+### Общий принцип
+
+Используйте **Strong consistency**, когда:
+
+- Нельзя допустить устаревших данных
+- Любая ошибка может привести к финансовым или юридическим последствиям
+- Приоритет — точность данных, а не latency
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Strong consistency применяется в критичных бизнес-сценариях,  
+> где данные должны быть абсолютно актуальными.
+
 
 ### Configuration
 
@@ -156,24 +338,50 @@ var response = await container.ReadItemAsync<Product>(
 ```
 
 ## Bounded Staleness Consistency
+(Консистентность с ограниченным отставанием)
 
-### Characteristics
+### Characteristics (Характеристики)
 
-**Configurable lag guarantee**:
+**Гарантия настраиваемого лага**
 
-- ✅ Staleness bounded by K versions OR T time
-- ✅ Predictable maximum staleness
-- ✅ Good for single-write, multi-read scenarios
-- ⚠️ Writes throttled if lag exceeds bounds
+- ✅ Отставание ограничено **K версиями** ИЛИ **T временем**
+- ✅ Предсказуемая максимальная устарелость данных
+- ✅ Подходит для single-write / multi-read сценариев
+- ⚠️ Записи могут быть throttled, если превышены заданные границы лага
 
-### Configuration Options
+---
 
-**Staleness window**:
+## Configuration Options (Параметры настройки)
+
+### Staleness Window (Окно устаревания)
 
 | Parameter | Description | Min | Max |
-|-----------|-------------|-----|-----|
-| **K versions** | Number of item versions lag | 1 | 1,000,000 |
-| **T time** | Time interval lag (seconds) | 5 | 86,400 (24 hours) |
+|------------|------------|------|------|
+| **K versions** | Максимальное число версий отставания | 1 | 1 000 000 |
+| **T time (sec)** | Максимальный временной лаг (в секундах) | 5 | 86 400 (24 часа) |
+
+---
+
+### Как это работает
+
+- Если используется **K versions**, чтение может отставать не более чем на K обновлений
+- Если используется **T time**, чтение может отставать не более чем на T секунд
+- Cosmos DB гарантирует, что данные никогда не будут старше заданного окна
+
+---
+
+### Когда использовать
+
+- Котировки акций
+- Каталоги товаров
+- Системы, где допустима небольшая задержка обновлений
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Bounded Staleness ограничивает устаревание  
+> либо количеством версий (K), либо временем (T).
+
 
 ### How It Works
 
@@ -211,12 +419,36 @@ If lag > configured bounds:
 Writes throttled to maintain guarantee
 ```
 
-### Use Cases
+### Use Cases (Когда использовать Bounded Staleness)
 
-✅ **Stock quotes** - Real-time within seconds acceptable
-✅ **Monitoring dashboards** - Recent data acceptable
-✅ **Leaderboards** - Near real-time rankings
-✅ **News feeds** - Slight delay acceptable
+✅ **Биржевые котировки**  
+— данные могут отставать на несколько секунд
+
+✅ **Мониторинговые панели (Dashboards)**  
+— допустима небольшая задержка отображения
+
+✅ **Лидерборды**  
+— ранжирование в режиме «почти реального времени»
+
+✅ **Новостные ленты**  
+— небольшая задержка публикации приемлема
+
+---
+
+### Общая логика
+
+Используйте **Bounded Staleness**, когда:
+
+- Нужна предсказуемая задержка
+- Полная строгая консистентность избыточна
+- Важно сохранить баланс между производительностью и точностью
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Bounded Staleness гарантирует ограниченное устаревание  
+> (по времени или по количеству версий).
+
 
 ### Configuration
 
@@ -238,16 +470,41 @@ az cosmosdb update \
 
 ## Session Consistency (DEFAULT)
 
-### Characteristics
+### Session Consistency (DEFAULT)
 
-**Read-your-writes within session**:
+### Characteristics (Характеристики)
 
-- ✅ Client sees own writes immediately
-- ✅ Monotonic reads (don't go backwards)
-- ✅ Monotonic writes (writes ordered)
-- ✅ Read-your-writes guarantee
-- ✅ Write-follows-reads guarantee
-- ⚠️ Only within single client session
+**Read-your-writes в рамках одной сессии**
+
+- ✅ Клиент сразу видит свои собственные записи
+- ✅ Monotonic reads — чтения не «откатываются назад»
+- ✅ Monotonic writes — записи сохраняют порядок
+- ✅ Гарантия read-your-writes
+- ✅ Гарантия write-follows-reads
+- ⚠️ Гарантии действуют только в рамках одной клиентской сессии
+
+---
+
+### Что это означает
+
+- Один пользователь всегда видит свои изменения
+- Другие пользователи могут видеть данные с небольшой задержкой
+- Лучший баланс между latency и консистентностью
+
+---
+
+### Почему это уровень по умолчанию
+
+- Подходит для большинства приложений
+- Не требует межрегиональной синхронной координации
+- Обеспечивает хорошую производительность
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> По умолчанию используется **Session consistency**,  
+> гарантирующая read-your-writes в рамках сессии клиента.
+
 
 ### Session Scope
 
@@ -284,14 +541,28 @@ ItemResponse<Product> readResponse = await container.ReadItemAsync<Product>(
 // SDK manages session tokens automatically for same client
 ```
 
-### Guarantees
+### Session Consistency Guarantees (Гарантии Session consistency)
 
 | Guarantee | Description | Example |
-|-----------|-------------|---------|
-| **Read-your-writes** | See your own writes | Write then immediately read |
-| **Monotonic reads** | Never go backwards | Read v2, never see v1 later |
-| **Monotonic writes** | Writes ordered | Write A before B, all see same order |
-| **Write-follows-reads** | Writes see prior reads | Read v1, write based on v1 |
+|------------|------------|------------|
+| **Read-your-writes** | Клиент видит свои собственные записи | Записал → сразу прочитал |
+| **Monotonic reads** | Чтения не возвращаются к более старой версии | Прочитал v2 → больше никогда не увидишь v1 |
+| **Monotonic writes** | Записи сохраняют порядок | Если A записано до B, порядок будет одинаков для всех |
+| **Write-follows-reads** | Запись учитывает ранее прочитанные данные | Прочитал v1 → записал изменения на основе v1 |
+
+---
+
+### Что это даёт
+
+- Предсказуемое поведение для одного пользователя
+- Отсутствие «скачков назад» в данных
+- Удобно для веб- и мобильных приложений
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Session гарантирует read-your-writes и monotonic reads  
+> только в рамках одной клиентской сессии.
 
 ### Multi-Region Behavior
 
@@ -307,12 +578,35 @@ Region B ensures read is >= LSN from token
 If not caught up, waits or reads from another region
 ```
 
-### Use Cases
+### Use Cases (Когда использовать Session consistency)
 
-✅ **Shopping carts** - See items you just added
-✅ **User profiles** - See your own edits
-✅ **Document editing** - See your changes
-✅ **Most applications** - Best balance of consistency and performance
+✅ **Shopping carts**  
+— пользователь видит товары, которые только что добавил
+
+✅ **User profiles**  
+— пользователь сразу видит свои изменения
+
+✅ **Редактирование документов**  
+— отображаются собственные правки
+
+✅ **Большинство приложений**  
+— оптимальный баланс между производительностью и консистентностью
+
+---
+
+### Общий принцип
+
+Используйте **Session consistency**, когда:
+
+- Важно, чтобы пользователь видел свои изменения
+- Полная строгая консистентность избыточна
+- Нужен баланс между latency, throughput и доступностью
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Session — уровень по умолчанию и лучший выбор для большинства приложений.
+
 
 ### Configuration
 
@@ -324,19 +618,35 @@ az cosmosdb update \
   --default-consistency-level Session
 ```
 
-**💡 Session is the default** - No need to explicitly set unless changing from another level
+💡 **Session — уровень по умолчанию**  
+Не нужно явно настраивать, если вы не меняете уровень с другого значения.
+
+---
 
 ## Consistent Prefix Consistency
+(Консистентность с сохранением порядка)
 
-### Characteristics
+### Characteristics (Характеристики)
 
-**Ordered eventual consistency**:
+**Ordered eventual consistency**
 
-- ✅ Reads never see out-of-order writes
-- ✅ Maintains causal relationships
-- ✅ Eventually consistent
-- ❌ May see stale data
-- ❌ No staleness bounds
+- ✅ Чтения никогда не видят записи вне порядка
+- ✅ Сохраняются причинно-следственные связи
+- ✅ В конечном итоге данные становятся консистентными
+- ❌ Возможны устаревшие данные
+- ❌ Нет гарантированного ограничения по времени или версиям устаревания
+
+---
+
+### Что это означает
+
+Если операции записи происходят в порядке:
+A → B → C
+Чтение может увидеть:
+A
+A → B
+Но никогда:
+A → C (без B)
 
 ### How It Works
 
@@ -356,17 +666,55 @@ Guarantee: If you see B, you've seen A
 
 ### Causal Consistency Example
 
-```
-Social Media Scenario:
-User posts: "Check out this photo!" (Write 1)
-User uploads: photo.jpg (Write 2)
+
+Social Media Scenario (Пример для Consistent Prefix)
+
+Write 1: User posts → "Check out this photo!"
+Write 2: User uploads → photo.jpg
+
+### Что гарантирует Consistent Prefix
+
+- ✅ Никогда не увидим **photo.jpg без самого поста**
+- ✅ Никогда не увидим события вне логического порядка
+- ⏳ Может потребоваться время, чтобы увидеть оба изменения
+- 🔢 Но порядок всегда будет корректным
+
+---
+
+### Как это может выглядеть при чтении
+
+Возможные состояния:
+(ничего)
+↓
+Post
+↓
+Post + Photo
+
+Но никогда:
+Photo (без Post) ❌
 
 Consistent Prefix ensures:
 - Never see photo without post
 - Never see post without context
 - May take time to see both
 - But always in correct order
-```
+
+
+---
+
+### Когда это полезно
+
+- Социальные сети
+- Ленты активности
+- Event-driven системы
+- Сценарии, где важен порядок, но допустима задержка
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Consistent Prefix сохраняет порядок операций,
+> но не гарантирует их немедленную видимость.
+
 
 ### Single vs Batch Writes
 
@@ -417,18 +765,49 @@ az cosmosdb update \
 ```
 
 ## Eventual Consistency
+(Слабая консистентность)
 
-### Characteristics
+### Characteristics (Характеристики)
 
-**Weakest guarantee, highest performance**:
+**Минимальные гарантии, максимальная производительность**
 
-- ❌ No ordering guarantee
-- ❌ May read stale or old data
-- ❌ May see values older than previous reads
-- ✅ Lowest latency
-- ✅ Highest throughput
-- ✅ Highest availability
-- ✅ Replicas eventually converge
+- ❌ Нет гарантии порядка операций
+- ❌ Возможны устаревшие данные
+- ❌ Можно увидеть значение старее предыдущего чтения
+- ✅ Минимальная задержка
+- ✅ Максимальный throughput
+- ✅ Максимальная доступность
+- ✅ Реплики со временем сходятся (eventually converge)
+
+---
+
+### Что это означает
+
+- Чтение может вернуть старую версию данных
+- Разные регионы могут временно содержать разные значения
+- Со временем данные синхронизируются
+
+---
+
+### Когда использовать
+
+- Лайки и просмотры
+- Счётчики
+- Аналитика
+- Telemetry / IoT
+
+---
+
+### Главное преимущество
+
+Максимальная производительность и доступность  
+при минимальных требованиях к консистентности.
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Eventual — самый слабый уровень консистентности  
+> и самый быстрый по latency.
 
 ### How It Works
 
@@ -457,21 +836,48 @@ T3: Read from Region B → value=0 ⚠️ (went backwards!)
 T4: All regions caught up → value=100
 ```
 
-### Use Cases
+### Use Cases (Когда использовать Eventual consistency)
 
-✅ **Analytics** - Aggregations, counts (eventual accuracy OK)
-✅ **Social counters** - Likes, views, shares
-✅ **Non-critical metrics** - Download counts, page views
-✅ **Caching** - Read-heavy, infrequently updated
-✅ **IoT telemetry** - Sensor data (individual values less critical)
+✅ **Аналитика**  
+— агрегации, подсчёты (допустима eventual-точность)
 
-### Anti-Patterns
+✅ **Социальные счётчики**  
+— лайки, просмотры, репосты
 
-❌ **Don't use for**:
-- User-facing data requiring consistency
-- Financial data
-- Inventory management
-- Any scenario requiring read-your-writes
+✅ **Некритичные метрики**  
+— количество загрузок, просмотры страниц
+
+✅ **Кэширование**  
+— read-heavy сценарии с редкими обновлениями
+
+✅ **IoT telemetry**  
+— данные датчиков (точность отдельных значений не критична)
+
+---
+
+### Anti-Patterns (Когда НЕ использовать)
+
+❌ Пользовательские данные, требующие строгой консистентности  
+❌ Финансовые операции  
+❌ Управление складскими остатками  
+❌ Сценарии, где требуется read-your-writes
+
+---
+
+### Общий принцип
+
+Используйте **Eventual consistency**, когда:
+
+- Производительность важнее точности
+- Допустима временная рассинхронизация данных
+- Ошибка в несколько секунд или версий не критична
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Eventual — максимальная производительность,  
+> но нет гарантий порядка и актуальности данных.
+
 
 ### Configuration
 
@@ -500,19 +906,42 @@ Account with 5 regions:
 Consistency level applies uniformly across ALL regions
 ```
 
-### Guaranteed Regardless Of:
+### Guaranteed Regardless Of (Гарантируется независимо от)
 
-✅ **Region serving reads/writes** - Works in any region
-✅ **Number of regions** - 1 region or 50 regions
-✅ **Read/write region configuration** - Single or multi-write
+✅ **Региона обслуживания чтения/записи**  
+— Работает в любом регионе
 
-### Partition-Scoped Operations
+✅ **Количество регионов**  
+— 1 регион или 50 регионов
 
-**Read consistency applies to**:
+✅ **Конфигурации записи**  
+— Single-write или multi-write
 
-- Single read operation
-- Scoped within partition-key range
-- Or logical partition
+---
+
+## Partition-Scoped Operations
+(Ограничения области консистентности)
+
+### Read consistency применяется к:
+
+- 🔹 Одной операции чтения
+- 🔹 В пределах одного диапазона partition key
+- 🔹 Или в пределах одной logical partition
+
+---
+
+### Важно понимать
+
+- Гарантии консистентности действуют **на уровне операции**
+- Транзакции ограничены одной logical partition
+- Для максимальной производительности запросы должны быть partition-aware
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> Гарантии консистентности применяются  
+> к отдельной операции чтения и в пределах partition.
+
 
 ```csharp
 // Consistency applies to this specific read
@@ -573,15 +1002,32 @@ var response2 = await container.ReadItemAsync<Product>(
 );
 ```
 
-### Override Rules
+### Правила переопределения уровней согласованности (Override Rules)
 
-| Account Level | Can Override To |
-|---------------|-----------------|
-| **Strong** | None (already strongest) |
-| **Bounded Staleness** | Session, Consistent Prefix, Eventual |
-| **Session** | Consistent Prefix, Eventual |
-| **Consistent Prefix** | Eventual |
-| **Eventual** | None (already weakest) |
+| Уровень учетной записи | Можно понизить до |
+|------------------------|-------------------|
+| **Strong (Строгая согласованность)** | Нет (уже самый высокий уровень) |
+| **Bounded Staleness (Ограниченная устаревание)** | Session, Consistent Prefix, Eventual |
+| **Session (Сеансовая)** | Consistent Prefix, Eventual |
+| **Consistent Prefix (Согласованный префикс)** | Eventual |
+| **Eventual (В конечном итоге)** | Нет (уже самый слабый уровень) |
+
+---
+
+### Дополнительные пояснения
+
+- Переопределение возможно **только в сторону ослабления согласованности**.
+- Нельзя повысить уровень согласованности в рамках запроса выше уровня, установленного на уровне учетной записи.
+- Более высокий уровень согласованности = выше гарантия целостности данных, но потенциально выше задержка.
+- Более низкий уровень согласованности = выше производительность и масштабируемость, но меньше гарантий актуальности данных.
+
+### Практический совет для AZ-204
+
+На экзамене важно помнить:
+- **Strong** обеспечивает линейную согласованность (чтение всегда возвращает последнюю запись).
+- **Session** — наиболее часто используемый баланс между производительностью и гарантией чтения своих записей (read-your-own-writes).
+- **Eventual** — лучший выбор для глобально распределённых систем с высокой нагрузкой, где допустима временная несогласованность.
+
 
 ## Performance & Cost Impact
 
@@ -646,50 +1092,83 @@ Analytics, counters, non-critical?
 └── Yes → Eventual
 ```
 
-### Common Scenarios
+### Типовые сценарии использования (Common Scenarios)
 
-| Scenario | Recommended Level | Reason |
-|----------|------------------|---------|
-| **E-commerce cart** | Session | User sees their actions |
-| **Banking** | Strong | Money correctness critical |
-| **Social feed** | Consistent Prefix | Chronological order |
-| **Page views counter** | Eventual | Accuracy not time-critical |
-| **Stock quotes** | Bounded Staleness | Near real-time acceptable |
-| **User profile** | Session | User sees their edits |
-| **Analytics dashboard** | Eventual | Aggregate data, eventual accuracy OK |
+| Сценарий | Рекомендуемый уровень | Причина |
+|-----------|----------------------|----------|
+| **Корзина интернет-магазина** | Session | Пользователь видит собственные действия (read-your-writes) |
+| **Банковские операции** | Strong | Критическая важность корректности денежных данных |
+| **Лента социальной сети** | Consistent Prefix | Сохранение хронологического порядка событий |
+| **Счётчик просмотров страницы** | Eventual | Абсолютная точность не критична в реальном времени |
+| **Котировки акций** | Bounded Staleness | Допустима небольшая задержка обновления |
+| **Профиль пользователя** | Session | Пользователь видит внесённые изменения |
+| **Аналитическая панель (Dashboard)** | Eventual | Агрегированные данные, допустима eventual-точность |
 
-## Critical Notes
-- 💡 **Five levels** - Strong, Bounded Staleness, Session, Consistent Prefix, Eventual
-- 🎯 **Session default** - Best balance for most applications
-- ✅ **Region-agnostic** - Applied globally across all regions
-- ⚠️ **Override rule** - Can only relax consistency, not strengthen
-- 🔄 **Tradeoff** - Consistency ↔ Availability + Latency + Throughput
-- 📊 **Strong** - Highest consistency, highest cost, may sacrifice availability
-- 💡 **Session** - Read-your-writes within client session
-- ✅ **Bounded Staleness** - Configurable lag (K versions or T time)
-- ⚠️ **Eventual** - No ordering, highest performance, lowest cost
-- 🔒 **100% guarantee** - All consistency levels backed by SLA
+---
 
-## Exam Tips
-- Default consistency: Session (read-your-writes within session)
-- Strongest: Strong (linearizability, most recent write always)
-- Weakest: Eventual (no ordering, highest availability)
-- Bounded Staleness: Lag limited by K versions OR T time (whichever first)
-- Bounded Staleness limits: K (1 to 1M), T (5 sec to 24 hours)
-- Session guarantees: Read-your-writes, monotonic reads, monotonic writes
-- Consistent Prefix: Ordered eventual consistency (never out-of-order)
-- Override rule: Can only relax consistency, not strengthen
-- Strong RU cost: ~2x compared to Session/Eventual
-- Region-agnostic: Consistency applies across all regions
-- Single-region Bounded Staleness: Behaves like Session + Eventual
-- Session token: Managed by SDK automatically
-- 100% guarantee: All reads meet consistency level SLA
-- Partition-scoped: Consistency applies within partition-key range
-- Account-level: Default set at account, override per request
-- Strong use case: Banking, inventory, voting
-- Session use case: Shopping carts, user profiles (most apps)
-- Eventual use case: Analytics, counters, non-critical metrics
-- Consistency spectrum: Strong → BS → Session → CP → Eventual
-- CAP tradeoffs: Strong (C+P), Session (balanced), Eventual (A+P)
+## Важные замечания (Critical Notes)
+
+- 💡 **Пять уровней согласованности** — Strong, Bounded Staleness, Session, Consistent Prefix, Eventual
+- 🎯 **Session — уровень по умолчанию** — оптимальный баланс для большинства приложений
+- ✅ **Независимость от региона (Region-agnostic)** — применяется глобально во всех регионах
+- ⚠️ **Правило переопределения** — можно только ослабить согласованность, усилить нельзя
+- 🔄 **Компромисс** — Consistency ↔ Availability + Latency + Throughput
+- 📊 **Strong** — максимальная согласованность, высокая стоимость RU, возможное снижение доступности
+- 💡 **Session** — гарантия "read-your-writes" в рамках клиентской сессии
+- ✅ **Bounded Staleness** — настраиваемая задержка (K версий или T времени)
+- ⚠️ **Eventual** — нет гарантии порядка, максимальная производительность и минимальная стоимость
+- 🔒 **100% гарантия SLA** — все уровни согласованности поддерживаются SLA
+
+Дополнение:
+- Чем выше согласованность, тем больше потребление RU (Request Units).
+- При глобальной репликации Strong может увеличить задержки между регионами.
+- В большинстве реальных cloud-сценариев используется **Session**.
+
+---
+
+## Подсказки для экзамена AZ-204 (Exam Tips)
+
+- Уровень по умолчанию: **Session** (read-your-writes в рамках сессии)
+- Самый строгий: **Strong** (линеаризуемость, всегда последнее записанное значение)
+- Самый слабый: **Eventual** (нет гарантии порядка, максимальная доступность)
+- **Bounded Staleness**: задержка ограничена K версиями ИЛИ T временем (что наступит раньше)
+- Ограничения Bounded Staleness:
+    - K: от 1 до 1 000 000 версий
+    - T: от 5 секунд до 24 часов
+- Гарантии Session:
+    - Read-your-writes
+    - Monotonic reads
+    - Monotonic writes
+- **Consistent Prefix** — упорядоченная eventual-согласованность (никогда не будет "перепутанного" порядка)
+- Правило override — можно только ослаблять уровень
+- Стоимость Strong по RU — примерно в 2 раза выше, чем Session/Eventual
+- Region-agnostic — согласованность применяется ко всем регионам
+- Bounded Staleness в одном регионе — по поведению близок к Session + Eventual
+- Session token — автоматически управляется SDK
+- 100% гарантия — все чтения соответствуют SLA выбранного уровня
+- Область действия — внутри диапазона partition key
+- Account-level — уровень по умолчанию задаётся на уровне аккаунта, можно переопределить в запросе
+
+---
+
+### Типовые use cases
+
+- **Strong** — банковские операции, инвентаризация, голосования
+- **Session** — корзины, профили пользователей (большинство приложений)
+- **Eventual** — аналитика, счётчики, некритичные метрики
+
+---
+
+### Спектр согласованности
+
+Strong → Bounded Staleness → Session → Consistent Prefix → Eventual
+
+---
+
+### Связь с CAP-теоремой
+
+- **Strong** → C + P (жертвуем доступностью при сбоях)
+- **Session** → баланс
+- **Eventual** → A + P (жертвуем строгой согласованностью ради доступности)
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-azure-cosmos-db/4-cosmos-db-consistency-levels-overview)

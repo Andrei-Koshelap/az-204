@@ -1,28 +1,34 @@
 # Azure Cosmos DB Stored Procedures
 
-## Key Concepts
-- **JavaScript execution** - Server-side code in JavaScript
-- **Transactional** - ACID within single partition
-- **Collection-scoped** - Registered per container
-- **Bounded execution** - Time-limited operations
+## Ключевые понятия (Key Concepts)
 
-## What are Stored Procedures?
+- **JavaScript execution** — серверный код выполняется на JavaScript
+- **Transactional** — ACID-гарантии в пределах одной партиции
+- **Collection-scoped** — регистрируются на уровне контейнера
+- **Bounded execution** — ограничение по времени выполнения
 
-**Server-side JavaScript code** in Azure Cosmos DB:
+---
 
-- **Language**: JavaScript (not T-SQL)
-- **Execution**: Server-side in database engine
-- **Scope**: Container-level (operates on items in one container)
-- **Transactions**: ACID guarantees within partition
-- **Performance**: Reduced network roundtrips
+# Что такое Stored Procedures?
 
-### Benefits
+**Серверный JavaScript-код**, выполняемый внутри Azure Cosmos DB.
 
-✅ **Transactional** - Multiple operations in single transaction
-✅ **Performance** - Server-side execution (no network latency)
-✅ **Atomic** - All succeed or all fail
-✅ **Consistent** - ACID guarantees
-❌ **Partition-bound** - Cannot span partitions
+- **Язык**: JavaScript (не T-SQL)
+- **Выполнение**: на стороне сервера, внутри движка базы данных
+- **Область действия**: уровень контейнера (работают с элементами одного контейнера)
+- **Транзакции**: ACID-гарантии в пределах одной партиции
+- **Производительность**: уменьшение сетевых roundtrip-запросов
+
+---
+
+## Преимущества
+
+✅ **Транзакционность** — несколько операций в одной транзакции  
+✅ **Производительность** — выполнение на сервере без сетевой задержки  
+✅ **Атомарность** — либо все операции выполняются, либо ни одна  
+✅ **Согласованность** — ACID-гарантии  
+❌ **Ограничение партицией** — не могут работать с несколькими partition key
+
 
 ## Writing Stored Procedures
 
@@ -780,38 +786,79 @@ function complexBusinessOperation() {
 }
 ```
 
-## Critical Notes
-- 💡 **JavaScript** - Server-side code written in JavaScript
-- 🎯 **Transactional** - ACID guarantees within single partition
-- ✅ **Container-scoped** - Registered per container
-- ⚠️ **Partition-bound** - Cannot span multiple partitions
-- 🔄 **Bounded execution** - Time-limited, return boolean acceptance
-- 📊 **Context objects** - getContext() provides collection, request, response
-- 💡 **Async callbacks** - All operations use callbacks
-- ✅ **Arrays as strings** - Parse JSON if input from Azure Portal
-- ⚠️ **Continuation** - Use for large datasets to avoid timeout
-- 🔒 **Atomic** - All operations succeed or all fail within partition
+# Critical Notes — Stored Procedures
 
-## Exam Tips
-- Stored procedures: Server-side JavaScript in Azure Cosmos DB
-- Language: JavaScript (not T-SQL or other SQL variants)
-- Scope: Container-level, registered per container
-- Partition: All operations within single partition key value
-- Transactions: ACID guarantees within partition, no cross-partition
-- Context: getContext() returns context object
-- Collection methods: createDocument, readDocument, replaceDocument, deleteDocument, queryDocuments
-- Return value: response.setBody() to return data to client
-- Boolean return: All collection methods return true (accepted) or false (not accepted)
-- Bounded execution: Operations must complete within time limit
-- Continuation: Use continuation token for large datasets
-- Arrays: Parse JSON.parse() if string (from Azure Portal)
-- Registration: Scripts.CreateStoredProcedureAsync()
-- Execution: Scripts.ExecuteStoredProcedureAsync() with partition key
-- Error handling: Throw errors, catch in client code
-- Async: All operations use callbacks, not promises/async-await
-- Parameters: Pass as array in ExecuteStoredProcedureAsync
-- Benefits: Reduced network roundtrips, server-side execution, transactional
-- Limitations: Cannot span partitions, time-bound execution
-- Use cases: Bulk operations, atomic updates, server-side validation
+- 💡 **JavaScript** — серверный код пишется на JavaScript
+- 🎯 **Транзакционность** — ACID-гарантии в пределах одной партиции
+- ✅ **Container-scoped** — регистрируются на уровне контейнера
+- ⚠️ **Partition-bound** — не могут работать с несколькими partition key
+- 🔄 **Bounded execution** — ограничены по времени выполнения, методы возвращают boolean (accepted / not accepted)
+- 📊 **Context objects** — getContext() предоставляет доступ к collection, request, response
+- 💡 **Async callbacks** — все операции работают через callback-функции
+- ✅ **Массивы как строки** — требуется JSON.parse() при передаче из Azure Portal
+- ⚠️ **Continuation** — используется для больших наборов данных, чтобы избежать timeout
+- 🔒 **Атомарность** — все операции внутри партиции либо выполняются, либо откатываются
+
+---
+
+# Exam Tips (AZ-204)
+
+- Stored procedures — серверный JavaScript в Azure Cosmos DB
+- Язык — JavaScript (не T-SQL и не другие SQL-диалекты)
+- Область действия — уровень контейнера
+- Все операции — в пределах одного значения partition key
+- Транзакции — ACID внутри партиции, без cross-partition
+
+---
+
+## Внутренние объекты
+
+- getContext() возвращает context object
+- Методы коллекции:
+    - createDocument
+    - readDocument
+    - replaceDocument
+    - deleteDocument
+    - queryDocuments
+
+- Возврат результата — через response.setBody()
+- Все методы возвращают boolean (true — принято, false — не принято)
+
+---
+
+## Ограничения
+
+- Выполнение ограничено по времени
+- Для больших выборок использовать continuation token
+- Асинхронность реализована через callbacks (не promises, не async/await)
+- Нельзя работать с несколькими partition key одновременно
+
+---
+
+## Использование из SDK
+
+- Регистрация — Scripts.CreateStoredProcedureAsync()
+- Выполнение — Scripts.ExecuteStoredProcedureAsync() с указанием partition key
+- Параметры передаются как массив
+- Ошибки выбрасываются и обрабатываются на стороне клиента
+
+---
+
+## Когда использовать
+
+- Bulk-операции внутри одной партиции
+- Атомарные обновления нескольких элементов
+- Серверная валидация данных
+- Минимизация сетевых roundtrip
+
+---
+
+## Частые экзаменационные ловушки
+
+- «Несколько документов атомарно» → Stored Procedure (одна партиция)
+- «Cross-partition транзакция» → невозможно
+- «Язык?» → JavaScript
+- «ACID где действует?» → только внутри одного partition key
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/work-with-cosmos-db/4-cosmos-db-stored-procedures)

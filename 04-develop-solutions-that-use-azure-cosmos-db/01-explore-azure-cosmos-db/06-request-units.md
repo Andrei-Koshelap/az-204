@@ -1,16 +1,92 @@
-# Azure Cosmos DB Request Units
+# Azure Cosmos DB Request Units (RU)
 
-## Key Concepts
-- **Request Units (RU)** - Normalized cost of database operations
-- **Throughput provisioning** - Reserve RU/s capacity
-- **Provisioning modes** - Manual, Autoscale, Serverless
-- **Cost model** - Pay for throughput (RU/s) + storage (GB)
+## Ключевые понятия (Key Concepts)
 
-## What are Request Units?
+- **Request Units (RU)** — нормализованная стоимость операций в базе данных
+- **Provisioning throughput** — резервирование пропускной способности в RU/сек
+- **Режимы выделения** — Manual, Autoscale, Serverless
+- **Модель стоимости** — оплата за throughput (RU/сек) + хранение (GB)
 
-### Unified Cost Metric
+---
 
-**Request Unit (RU)** - Abstraction of system resources:
+# Что такое Request Units?
+
+## Единая метрика стоимости
+
+**Request Unit (RU)** — это абстракция вычислительных ресурсов, объединяющая:
+
+- CPU
+- IOPS (дисковые операции)
+- Память
+- Сетевые ресурсы
+
+RU позволяет измерять стоимость любой операции в одной унифицированной единице.
+
+---
+
+## Пример стоимости операций
+
+| Операция | Примерная стоимость |
+|-----------|---------------------|
+| Чтение 1KB документа | ~1 RU |
+| Запись 1KB документа | ~5 RU |
+| Сложный запрос | Зависит от фильтрации и индексов |
+| Кросс-партиционный запрос | Выше, чем внутри одной партиции |
+
+> Запись дороже чтения.  
+> Чем больше документ — тем больше RU.
+
+---
+
+## Что влияет на потребление RU
+
+- Размер документа
+- Количество свойств
+- Использование индексов
+- Фильтрация и сортировка
+- Кросс-партиционные запросы
+- Тип операции (read vs write)
+
+---
+
+# Provisioning Modes (Режимы выделения)
+
+## 1️⃣ Manual Throughput
+- Фиксированное RU/сек
+- Подходит для стабильной нагрузки
+- Оплата за выделенную мощность
+
+## 2️⃣ Autoscale
+- Автоматическое масштабирование RU
+- Диапазон: 10%–100% от max RU
+- Хорошо подходит для переменной нагрузки
+
+## 3️⃣ Serverless
+- Нет резервирования RU
+- Оплата только за фактическое потребление
+- Подходит для непредсказуемых или редких нагрузок
+
+---
+
+# Важные замечания
+
+- RU — это пропускная способность в секунду (RU/с).
+- Если превышаете лимит RU → получите 429 (throttling).
+- Можно увеличить RU без downtime.
+- RU настраивается на уровне контейнера или базы данных.
+
+---
+
+# Экзаменационный акцент (AZ-204)
+
+- 1KB read ≈ 1 RU
+- Writes дороже reads
+- 429 status code → превышение RU
+- Autoscale подходит для переменной нагрузки
+- Serverless — для нерегулярной нагрузки
+- Manual — для предсказуемой нагрузки
+- RU зависит от размера документа и сложности запроса
+
 
 ```
 1 RU = Resources to read 1 KB item by ID + partition key
@@ -119,37 +195,76 @@ var query = container.GetItemQueryIterator<Product>(
 // Cost: 100-10000+ RU (depends on data volume)
 ```
 
-**Query factors affecting RU cost**:
-- ✅ Partition key in filter (efficient)
-- ⚠️ Cross-partition query (expensive)
-- ⚠️ Aggregations (COUNT, AVG, etc.)
-- ⚠️ ORDER BY (sorting cost)
-- ⚠️ Result set size
+## Факторы запроса, влияющие на стоимость RU
 
-## Operation Cost Comparison
+- ✅ Фильтрация по Partition Key — наиболее эффективно
+- ⚠️ Кросс-партиционные запросы — значительно дороже
+- ⚠️ Агрегации (COUNT, AVG и т.д.)
+- ⚠️ ORDER BY — дополнительные затраты на сортировку
+- ⚠️ Размер результирующего набора
 
-### Cost Table
+---
 
-| Operation | Item Size | RU Cost | Notes |
-|-----------|-----------|---------|-------|
-| **Point read** | 1 KB | 1 RU | Most efficient |
-| **Point read** | 10 KB | 10 RU | Linear scaling |
-| **Create** | 1 KB | ~5 RU | Indexing cost |
-| **Update** | 1 KB | ~5 RU | Re-indexing cost |
-| **Delete** | 1 KB | ~5 RU | Index cleanup |
-| **Query (in-partition)** | - | 2-10 RU | With partition key |
-| **Query (cross-partition)** | - | 10-1000+ RU | Scans partitions |
+# Сравнение стоимости операций
 
-### Cost Factors
+## Таблица затрат
 
-**What affects RU consumption**:
+| Операция | Размер элемента | RU | Примечание |
+|-----------|----------------|-----|-------------|
+| **Point read** | 1 KB | 1 RU | Самый эффективный вариант |
+| **Point read** | 10 KB | 10 RU | Линейный рост |
+| **Create** | 1 KB | ~5 RU | Стоимость индексации |
+| **Update** | 1 KB | ~5 RU | Переиндексация |
+| **Delete** | 1 KB | ~5 RU | Очистка индексов |
+| **Query (в пределах партиции)** | - | 2–10 RU | При наличии partition key |
+| **Query (кросс-партиционный)** | - | 10–1000+ RU | Сканирование нескольких партиций |
 
-1. **Item size** - Larger items = more RUs (linear)
-2. **Operation type** - Writes > Reads
-3. **Indexing** - More indexes = higher write cost
-4. **Consistency** - Strong ≈ 2× cost of Session/Eventual
-5. **Query complexity** - Aggregations, joins, sorting
-6. **Partition key** - In-partition vs cross-partition queries
+---
+
+# Факторы, влияющие на потребление RU
+
+### 1️⃣ Размер элемента
+Чем больше документ — тем больше RU.  
+Рост почти линейный.
+
+### 2️⃣ Тип операции
+Запись (create/update/delete) дороже чтения.
+
+### 3️⃣ Индексация
+Чем больше индексов — тем выше стоимость записи.
+
+### 4️⃣ Уровень согласованности
+Strong ≈ ~2× дороже Session/Eventual.
+
+### 5️⃣ Сложность запроса
+Агрегации, JOIN (внутри документа), сортировка увеличивают RU.
+
+### 6️⃣ Partition key
+- In-partition query → дешевле
+- Cross-partition query → дороже
+
+---
+
+# Практические рекомендации
+
+- Используйте **point reads** вместо query, если знаете id + partition key.
+- Всегда проектируйте хороший partition key.
+- Избегайте кросс-партиционных запросов.
+- Минимизируйте размер документов.
+- Настраивайте индексацию (убирайте лишние индексы).
+
+---
+
+# Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+- «минимальная стоимость RU» → point read + partition key
+- «429 error» → превышение RU
+- «как снизить стоимость?» → оптимизировать partition key и запрос
+- «Strong consistency» → выше RU
+
+Главное правило:  
+**Partition key + Point Read = самая дешёвая операция.**
 
 ### Optimize RU Usage
 
@@ -193,17 +308,35 @@ az cosmosdb sql container create \
 # - Can exceed briefly (burst), then throttled
 ```
 
-**Characteristics**:
-- ✅ Predictable cost ($0.008/hour per 100 RU/s)
-- ✅ Lowest cost for steady workloads
-- ⚠️ Manual scaling required
-- ⚠️ Throttled if exceeded (429 errors)
+## Manual Throughput (Provisioned RU/s)
 
-**Pricing example**:
+### Характеристики
+
+- ✅ Предсказуемая стоимость (~$0.008 в час за 100 RU/s)
+- ✅ Самый выгодный вариант при стабильной нагрузке
+- ⚠️ Масштабирование выполняется вручную
+- ⚠️ При превышении лимита — throttling (ошибка 429)
+
+---
+
+## Пример расчёта стоимости
+
 ```
 1,000 RU/s × 730 hours/month × $0.008/100 RU/s
 = $58.40/month
 ```
+
+### Как считать правильно
+
+1. Делим RU/s на 100  
+   1000 / 100 = 10
+2. Умножаем на стоимость в час  
+   10 × $0.008 = $0.08 в час
+3. Умножаем на часы в месяце (~730)  
+   0.08 × 730 = $58.40
+---
+## Когда выбирать Manual
+
 
 ### 2. Autoscale (Provisioned Throughput)
 
@@ -295,19 +428,52 @@ vs Manual 10,000 RU/s:
 $584/month (serverless much cheaper for sporadic use)
 ```
 
-### Mode Comparison
+## Сравнение режимов выделения throughput (Mode Comparison)
 
-| Feature | Manual | Autoscale | Serverless |
-|---------|--------|-----------|------------|
-| **Provisioning** | Fixed RU/s | Max RU/s | None |
-| **Scaling** | Manual | Automatic | Automatic |
-| **Min RU/s** | 400 | 400 (10% max) | 0 |
-| **Max RU/s** | Unlimited | Unlimited | 5,000/container |
-| **Cost** | Lowest (steady) | 1.5× manual | Pay-per-use |
-| **Throttling** | Yes (429) | No | No |
-| **Best for** | Steady traffic | Variable traffic | Sporadic/dev |
-| **SLA** | Yes | Yes | No (best-effort) |
-| **Max storage** | Unlimited | Unlimited | 50 GB/container |
+| Возможность | Manual | Autoscale | Serverless |
+|-------------|--------|------------|-------------|
+| **Provisioning** | Фиксированные RU/s | Максимальный RU/s (динамически) | Нет резервирования |
+| **Масштабирование** | Вручную | Автоматически | Автоматически |
+| **Минимальный RU/s** | 400 | 400 (10% от max) | 0 |
+| **Максимальный RU/s** | Без ограничений | Без ограничений | 5 000 на контейнер |
+| **Стоимость** | Самая низкая (при стабильной нагрузке) | ~1.5× Manual | Оплата по факту |
+| **Throttling (429)** | Да | Нет (в пределах max RU) | Нет |
+| **Лучше всего подходит для** | Стабильного трафика | Переменной нагрузки | Редкого трафика / Dev |
+| **SLA** | Да | Да | Нет (best-effort) |
+| **Макс. объём хранения** | Без ограничений | Без ограничений | 50 GB на контейнер |
+
+---
+
+## Как выбирать режим
+
+### 🔹 Manual
+- Минимальная стоимость при постоянной нагрузке.
+- Требует ручного масштабирования.
+- Подходит для production с предсказуемым трафиком.
+
+### 🔹 Autoscale
+- RU автоматически масштабируются от 10% до max.
+- Лучше для приложений с пиками нагрузки.
+- Дороже примерно на 50% по сравнению с Manual.
+
+### 🔹 Serverless
+- Нет фиксированного RU.
+- Оплата только за фактические операции.
+- Нет SLA.
+- Ограничения по объёму и RU.
+- Идеально для dev/test или нерегулярных нагрузок.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+- «переменная нагрузка» → **Autoscale**
+- «редкие запросы» или «dev/test» → **Serverless**
+- «стабильный постоянный трафик» → **Manual**
+- «минимальная стоимость при steady workload» → **Manual**
+- «нужен SLA» → не Serverless
+
 
 ## Provisioning Levels
 
@@ -357,12 +523,45 @@ az cosmosdb sql container create \
   # Also shares same 1,000 RU/s
 ```
 
-**Shared throughput characteristics**:
-- ✅ Cost-effective for many small containers
-- ✅ Up to 25 containers can share
-- ⚠️ Minimum 400 RU/s per database
-- ⚠️ No guarantees per container (dynamic allocation)
-- ⚠️ Cannot mix: Containers either all shared or have dedicated
+## Shared Throughput (Общий throughput на уровне базы данных)
+
+### Характеристики
+
+- ✅ Экономически выгодно для множества небольших контейнеров
+- ✅ До 25 контейнеров могут совместно использовать RU
+- ⚠️ Минимум 400 RU/s на базу данных
+- ⚠️ Нет гарантированного RU для каждого контейнера (динамическое распределение)
+- ⚠️ Нельзя смешивать режимы — контейнеры либо все shared, либо с выделенным throughput
+
+---
+
+## Как это работает
+
+- RU выделяются **на уровне базы данных**, а не контейнера.
+- Контейнеры «конкурируют» за общий пул RU.
+- Если один контейнер потребляет больше, другим может не хватить RU.
+- При превышении лимита — возможен 429 (throttling).
+
+---
+
+## Когда использовать
+
+✅ Много небольших контейнеров
+✅ Низкая или непостоянная нагрузка
+✅ Экономия затрат важнее изоляции
+❌ Нужны гарантированные RU для каждого контейнера
+❌ Один контейнер сильно нагружен
+
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Shared throughput настраивается на уровне **database**.
+- Минимум 400 RU/s на базу.
+- До 25 контейнеров.
+- Нет изоляции производительности между контейнерами.
+- Нельзя смешивать shared и dedicated в одной базе данных.
 
 ### Cost Comparison
 
@@ -487,13 +686,58 @@ x-ms-request-charge: 10.0
 x-ms-retry-after-ms: 50
 ```
 
-### Azure Portal Metrics
+## Мониторинг RU в Azure Portal
 
-**Monitor in Azure Portal**:
-- **Metrics blade** → Select Cosmos DB account
-- **Request Units** → View RU/s consumption over time
-- **Throttled Requests** → See 429 errors
-- **Normalized RU Consumption** → % of provisioned capacity used
+### Где смотреть метрики
+
+1. Откройте **Cosmos DB account**
+2. Перейдите в раздел **Metrics**
+3. Выберите нужные показатели
+
+---
+
+### Основные метрики
+
+- **Request Units**
+    - Показывает потребление RU/s во времени
+    - Помогает определить пики нагрузки
+
+- **Throttled Requests**
+    - Отображает количество 429 ошибок
+    - Индикатор нехватки выделенного throughput
+
+- **Normalized RU Consumption**
+    - Процент использования выделенных RU
+    - Если близко к 100% → риск throttling
+
+---
+
+## Как интерпретировать
+
+- 📈 Частые пики до 100% → стоит увеличить RU или включить Autoscale
+- 🔁 Постоянное использование <30% → возможно переплата
+- 🚨 429 ошибки → превышение лимита RU/s
+- 📊 Резкие скачки → переменная нагрузка (рассмотрите Autoscale)
+
+---
+
+## Практический совет
+
+- Для production регулярно отслеживайте:
+    - Normalized RU Consumption
+    - Throttled Requests
+- Настройте Azure Monitor Alerts на 429 ошибки.
+- Оптимизируйте запросы перед увеличением RU.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+- «429 errors» → нехватка RU
+- «как проверить нагрузку?» → Metrics → Request Units
+- «как понять перегрузку?» → Normalized RU Consumption ≈ 100%
+- «как решить проблему?» → увеличить RU или оптимизировать запрос
 
 ## Throttling (429 Errors)
 
@@ -628,40 +872,109 @@ var indexingPolicy = new IndexingPolicy
 // Result: Lower write costs (less indexing)
 ```
 
-## Critical Notes
-- 💡 **1 RU** - Cost to read 1 KB item by ID + partition key
-- 🎯 **Modes** - Manual, Autoscale, Serverless
-- ✅ **Manual** - Fixed RU/s, lowest cost for steady workloads
-- ⚠️ **Autoscale** - 10%-100% of max, scales automatically, 1.5× cost
-- 🔄 **Serverless** - Pay-per-request, no provisioning, $0.25/million RUs
-- 📊 **Point read** - 1 RU per KB (most efficient)
-- 💡 **Writes** - ~5 RU per KB (indexing cost)
-- ✅ **Queries** - Variable (2-1000+ RU depending on complexity)
-- ⚠️ **Throttling** - 429 errors when exceeding capacity
-- 🔒 **Minimum** - 400 RU/s for manual, 400 RU/s min for autoscale (10% of max)
+# Critical Notes (Критически важные моменты)
 
-## Exam Tips
-- Request Unit (RU): Normalized cost of database operations
-- 1 RU cost: Read 1 KB item by ID + partition key
-- Point read formula: Item size (KB) × 1 RU
-- Write formula: Item size (KB) × ~5 RU (approximate)
-- Provisioning modes: Manual, Autoscale, Serverless
-- Manual: Fixed RU/s, predictable cost, can be throttled
-- Autoscale: Scales 10%-100% of max, automatic, 1.5× cost
-- Serverless: Pay-per-request, no provisioning, $0.25/million RUs
-- Minimum RU/s: 400 for container/database (manual mode)
-- Autoscale min: 10% of max RU/s (e.g., max 4000 → min 400)
-- Shared throughput: Up to 25 containers share database RU/s
-- Dedicated throughput: Guaranteed per container, more expensive
-- Throttling: 429 error when exceeding provisioned capacity
-- Retry-after header: SDK uses to wait before retry
-- Scale-down limit: Max(400, Storage GB / 100 × 10) RU/s
-- Strong consistency: ~2× RU cost vs Session/Eventual
-- Query optimization: Use partition key in WHERE clause
-- Cross-partition query: More expensive (scans multiple partitions)
-- Serverless limits: 5,000 RU/s per container, 50 GB max storage
-- Autoscale benefit: No throttling, scales instantly on demand
-- Cost calculation: RU/s × hours × $0.008/100 RU/s
-- Free tier: 1000 RU/s and 25 GB free (first account)
+- 💡 **1 RU** — стоимость чтения элемента 1 KB по ID + partition key
+- 🎯 **Режимы** — Manual, Autoscale, Serverless
+- ✅ **Manual** — фиксированные RU/s, самая низкая стоимость при стабильной нагрузке
+- ⚠️ **Autoscale** — 10%–100% от max RU, автоматическое масштабирование, ~1.5× дороже Manual
+- 🔄 **Serverless** — оплата за фактические запросы, без резервирования, ~$0.25 за 1 млн RU
+- 📊 **Point read** — 1 RU за 1 KB (самый эффективный вариант)
+- 💡 **Записи (writes)** — ~5 RU за 1 KB (из-за индексации)
+- ✅ **Запросы (queries)** — 2–1000+ RU (зависит от сложности)
+- ⚠️ **Throttling** — 429 ошибка при превышении лимита RU
+- 🔒 **Минимум** — 400 RU/s (Manual), 400 RU/s минимум для Autoscale (10% от max)
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы RU
+
+- RU — нормализованная стоимость операций.
+- 1 RU → чтение 1 KB по ID + partition key.
+- Формула point read:  
+  `Размер (KB) × 1 RU`
+- Формула записи:  
+  `Размер (KB) × ~5 RU`
+
+---
+
+## Режимы выделения
+
+### Manual
+- Фиксированные RU/s.
+- Предсказуемая стоимость.
+- Возможен throttling (429).
+
+### Autoscale
+- Масштабируется от 10% до 100% max RU.
+- Автоматически реагирует на нагрузку.
+- ~1.5× дороже Manual.
+- Минимум = 10% от max (например: max 4000 → min 400).
+
+### Serverless
+- Нет резервирования.
+- Оплата за фактическое потребление.
+- ~$0.25 за 1 млн RU.
+- Ограничения: 5 000 RU/s на контейнер, 50 GB хранения.
+
+---
+
+## Throughput
+
+- Минимум 400 RU/s (Manual).
+- Shared throughput → до 25 контейнеров делят RU базы.
+- Dedicated throughput → гарантированные RU для контейнера (дороже).
+
+---
+
+## Ошибки и масштабирование
+
+- 429 → превышен лимит RU.
+- Retry-After header → SDK автоматически ждёт перед повтором.
+- Scale-down ограничение:  
+  `Max(400, Storage GB / 100 × 10) RU/s`
+
+---
+
+## Согласованность и RU
+
+- Strong ≈ ~2× дороже Session/Eventual.
+- Session — лучший баланс.
+- Eventual — минимальная стоимость.
+
+---
+
+## Оптимизация запросов
+
+- Используйте partition key в WHERE.
+- Избегайте cross-partition query.
+- Предпочитайте point read.
+
+---
+
+## Расчёт стоимости
+RU/s × часы × $0.008 / 100 RU/s
+
+
+---
+
+## Free Tier
+
+- 1000 RU/s бесплатно
+- 25 GB хранения бесплатно
+- Только для первого аккаунта
+
+---
+
+## Частые экзаменационные ловушки
+
+- «Минимальная стоимость» → Manual.
+- «Переменная нагрузка» → Autoscale.
+- «Редкие запросы / dev» → Serverless.
+- «429 error» → недостаточно RU.
+- «Самая дешёвая операция» → Point read + partition key.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-azure-cosmos-db/7-cosmos-db-request-units)

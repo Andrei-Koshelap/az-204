@@ -1,42 +1,93 @@
-# Azure Cosmos DB Key Benefits
+# Azure Cosmos DB Key Benefits (Ключевые преимущества Azure Cosmos DB)
 
-## Key Concepts
-- **Globally distributed** - Multi-region replication with multi-master writes
-- **Low latency** - <10ms at 99th percentile for reads/writes
-- **High availability** - 99.999% SLA for multi-region databases
-- **Elastic scalability** - Unlimited throughput and storage
+## Key Concepts (Основные концепции)
 
-## What is Azure Cosmos DB?
+- 🌍 **Глобальная распределённость** — репликация в несколько регионов с поддержкой multi-master (запись в нескольких регионах)
+- ⚡ **Низкая задержка** — < 10 мс на 99-м перцентиле для чтения и записи
+- 🛡 **Высокая доступность** — SLA до 99.999% для multi-region конфигураций
+- 📈 **Эластичное масштабирование** — практически неограниченные throughput и объём хранения
 
-**Fully managed NoSQL database** for modern applications:
+---
 
-- **Low latency** - Single-digit millisecond response times
-- **Elastic scalability** - Automatic and instant scale
-- **Global distribution** - Turnkey multi-region replication
-- **Multi-model** - NoSQL, MongoDB, Cassandra, Gremlin, Table APIs
-- **Guaranteed SLAs** - 99.999% availability, latency, throughput, consistency
+## What is Azure Cosmos DB? (Что такое Azure Cosmos DB?)
+
+**Полностью управляемая NoSQL-база данных** для современных облачных приложений.
+
+### Основные характеристики
+
+- ⚡ **Low latency** — однозначные миллисекунды ответа
+- 📈 **Elastic scalability** — мгновенное масштабирование throughput
+- 🌍 **Global distribution** — встроенная репликация по регионам
+- 🧩 **Multi-model API** — поддержка разных API:
+    - Core (SQL) API
+    - MongoDB API
+    - Cassandra API
+    - Gremlin API
+    - Table API
+- 🛡 **Гарантированные SLA** — на доступность, задержку, throughput и консистентность
+
+---
+
+## Почему Cosmos DB часто выбирают
+
+- Подходит для глобальных SaaS-приложений
+- Обеспечивает предсказуемую производительность (через RU/s модель)
+- Позволяет выбрать уровень консистентности
+- Не требует управления инфраструктурой
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Cosmos DB предоставляет SLA не только на доступность,  
+> но и на latency, throughput и consistency — это уникальная особенность сервиса.
+
 
 ### Core Value Proposition
 ```
-Traditional Database          Azure Cosmos DB
-├── Single region      →     ├── Multi-region (turnkey)
-├── Fixed capacity     →     ├── Unlimited elastic scale
-├── High latency       →     ├── <10ms @ P99
-├── Manual scaling     →     ├── Automatic scaling
-└── 99.9% SLA          →     └── 99.999% SLA
+Traditional Database Azure Cosmos DB
+├── Single region →  ├── Multi-region (готовая глобальная репликация)
+├── Fixed capacity → ├── Неограниченное эластичное масштабирование
+├── Higher latency → ├── < 10 мс @ P99
+├── Manual scaling → ├── Автоматическое масштабирование
+└── 99.9% SLA      → └── До 99.999% SLA
 ```
 
 ## Global Distribution Benefits
 
 ### Multi-Master Replication
 
-**Novel replication protocol** enables:
+## Novel Replication Protocol (Инновационный протокол репликации)
 
-✅ **Unlimited elastic write scalability** - Write to any region
-✅ **Unlimited elastic read scalability** - Read from any region  
-✅ **99.999% availability** - Read and write availability worldwide
-✅ **<10ms latency** - Guaranteed at 99th percentile
-✅ **Instant failover** - Automatic multi-homing
+Azure Cosmos DB использует собственный протокол репликации, который обеспечивает:
+
+✅ **Неограниченное эластичное масштабирование записи**  
+— Возможность записи в любой регион (multi-master)
+
+✅ **Неограниченное эластичное масштабирование чтения**  
+— Чтение из любого региона
+
+✅ **99.999% доступность**  
+— Гарантированная доступность операций чтения и записи по всему миру
+
+✅ **< 10 мс задержка**  
+— Гарантия на 99-м перцентиле
+
+✅ **Мгновенный failover**  
+— Автоматическое переключение при сбое (multi-homing)
+
+---
+
+### Почему это важно
+
+- Приложения остаются доступными даже при отказе региона
+- Пользователи подключаются к ближайшему региону
+- Нет необходимости вручную настраивать репликацию
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Cosmos DB поддерживает multi-region writes и гарантирует SLA на latency и availability.
+
 
 ### How Global Distribution Works
 
@@ -53,13 +104,38 @@ Consistency Level Applied
 Response <10ms @ P99
 ```
 
-### Multi-Region Configuration
+### Multi-Region Configuration (Конфигурации по регионам)
 
 | Configuration | Reads | Writes | Availability | Use Case |
-|---------------|-------|--------|--------------|----------|
-| **Single region** | Single region | Single region | 99.99% | Development, low cost |
-| **Multi-region, single write** | All regions | One region | 99.99% | Read-heavy workloads |
-| **Multi-region, multi-write** | All regions | All regions | 99.999% | Mission-critical apps |
+|---------------|--------|---------|--------------|-----------|
+| **Single region** | Один регион | Один регион | 99.99% | Разработка, минимальные затраты |
+| **Multi-region, single write** | Все регионы | Один регион | 99.99% | Нагрузка с преобладанием чтения |
+| **Multi-region, multi-write** | Все регионы | Все регионы | 99.999% | Критически важные приложения |
+
+---
+
+### Объяснение сценариев
+
+🔹 **Single region**
+- Самая простая конфигурация
+- Нет глобальной отказоустойчивости
+- Подходит для dev/test
+
+🔹 **Multi-region, single write**
+- Чтение из ближайшего региона
+- Запись только в primary регион
+- Хорошо подходит для read-heavy workloads
+
+🔹 **Multi-region, multi-write (multi-master)**
+- Чтение и запись в любом регионе
+- Максимальная доступность (99.999%)
+- Подходит для глобальных SaaS и mission-critical систем
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> 99.999% SLA достигается при **multi-region + multi-write** конфигурации.
+
 
 ### Add/Remove Regions
 
@@ -75,16 +151,18 @@ az cosmosdb update \
 
 # Application continues running - no pause/redeploy needed
 ```
+### Key Features (Ключевые особенности)
 
-**Key features**:
-- ✅ No application downtime
-- ✅ No redeployment required
-- ✅ Automatic replication
-- ✅ Instant read/write availability in new region
+- ✅ Без простоя приложения (no downtime)
+- ✅ Не требуется redeployment
+- ✅ Автоматическая репликация между регионами
+- ✅ Мгновенная доступность чтения/записи в новом регионе
 
-## Availability Guarantees
+---
 
-### SLA Comparison
+## Availability Guarantees (Гарантии доступности)
+
+### SLA Comparison (Сравнение SLA)
 
 | Database Type | Read Availability | Write Availability |
 |---------------|-------------------|-------------------|
@@ -92,11 +170,25 @@ az cosmosdb update \
 | **Multi-region (single write)** | 99.999% | 99.99% |
 | **Multi-region (multi-write)** | 99.999% | 99.999% |
 
-### Downtime Calculation
+---
 
-**99.999% availability** = 5 minutes downtime per year
+### Downtime Calculation (Расчёт простоя)
 
-**99.99% availability** = 52 minutes downtime per year
+- **99.999% availability** ≈ ~5 минут простоя в год
+- **99.99% availability** ≈ ~52 минуты простоя в год
+
+---
+
+### Что это означает на практике
+
+- Multi-region увеличивает **read availability**
+- Multi-write увеличивает **write availability**
+- Для mission-critical систем выбирают multi-region + multi-write
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> 99.999% write SLA достигается только при multi-region + multi-write конфигурации.
 
 ### Automatic Failover
 
@@ -112,23 +204,49 @@ Client Auto-Reconnects
 Zero Data Loss (depending on consistency)
 ```
 
-**Features**:
-- **Automatic** - No manual intervention
-- **Transparent** - SDKs handle reconnection
-- **Configurable** - Set failover priorities
-- **Zero downtime** - Seamless transition
+### Failover Features (Особенности failover)
 
-## Performance Guarantees
+- **Automatic** — переключение происходит без ручного вмешательства
+- **Transparent** — SDK автоматически переподключается к новому региону
+- **Configurable** — можно задать приоритеты регионов (failover priority)
+- **Zero downtime** — переход выполняется без остановки приложения
 
-### Latency SLA
+---
+
+## Performance Guarantees (Гарантии производительности)
+
+### Latency SLA (SLA по задержке)
 
 | Operation | Latency Guarantee | Percentile |
-|-----------|------------------|------------|
-| **Point read** | <10ms | 99th |
-| **Write** | <10ms | 99th |
-| **Query** | Variable | N/A |
+|------------|------------------|------------|
+| **Point read** | < 10 мс | 99th |
+| **Write** | < 10 мс | 99th |
+| **Query** | Зависит от сложности | N/A |
 
-**Point read** = Fetch single item by ID + partition key
+---
+
+### Что такое Point Read?
+
+**Point read** — это получение одного документа по:
+
+- `id`
+- `partition key`
+
+Это самая быстрая и дешёвая операция в Cosmos DB (минимальное потребление RU).
+
+---
+
+### Важно понимать
+
+- SLA < 10 мс применяется к point read и write
+- Query не имеет фиксированного SLA по latency
+- Производительность напрямую зависит от выбора partition key
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Самая производительная операция — **point read (id + partition key)**  
+> SLA < 10 мс гарантируется на 99-м перцентиле.
 
 ### Throughput Scalability
 
@@ -142,11 +260,28 @@ Instant Scale (no downtime)
 Linear performance increase
 ```
 
-**Characteristics**:
-- **Unlimited** - No upper limit on throughput
-- **Instant** - Scale up/down in seconds
-- **Elastic** - Autoscale based on demand
-- **Granular** - Provision per container or database
+### Elastic Scalability Characteristics (Характеристики эластичного масштабирования)
+
+- **Unlimited** — практически нет верхнего предела по throughput (RU/s)
+- **Instant** — масштабирование вверх или вниз за секунды
+- **Elastic** — поддержка autoscale в зависимости от нагрузки
+- **Granular** — можно выделять throughput на уровне контейнера или базы данных
+
+---
+
+### Что это означает на практике
+
+- RU/s можно изменять без остановки приложения
+- Autoscale автоматически увеличивает RU при росте нагрузки
+- Можно изолировать нагрузку, назначая RU отдельным контейнерам
+- Подходит для burst-нагрузок и глобальных приложений
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Throughput в Cosmos DB измеряется в **RU/s**  
+> и может быть назначен на уровне **container** или **database**.
+
 
 ## Data Placement Strategy
 
@@ -167,12 +302,38 @@ Writes: Replicated (async)
 
 ### Choosing Regions
 
-**Factors to consider**:
+### Factors to Consider (Факторы при выборе регионов)
 
-1. **User location** - Where are your users?
-2. **Data residency** - Legal requirements?
-3. **Paired regions** - Azure region pairs for DR
-4. **Cost** - Different regions have different pricing
+1. **User location**  
+   — Где находятся ваши пользователи?  
+   Размещайте данные ближе к пользователям для минимальной задержки.
+
+2. **Data residency**  
+   — Есть ли юридические требования к хранению данных?  
+   Некоторые страны требуют хранение данных внутри своей территории.
+
+3. **Paired regions**  
+   — Используйте региональные пары Azure для Disaster Recovery.  
+   Это повышает устойчивость к сбоям на уровне региона.
+
+4. **Cost**  
+   — Стоимость отличается в зависимости от региона.  
+   Multi-region развертывание увеличивает расходы.
+
+---
+
+### Практический подход
+
+- Выберите primary регион рядом с основной аудиторией
+- Добавьте secondary регион для DR
+- Для mission-critical систем — включайте multi-write
+- Проверяйте compliance и требования по резидентности данных
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Регион выбирается с учётом latency, compliance, DR и стоимости.
+
 
 **Example strategy**:
 ```bash
@@ -202,11 +363,36 @@ Off-peak: 1,000 RU/s
 
 # Pay only for provisioned throughput
 ```
+### Throughput Modes (Режимы настройки throughput)
 
-**Modes**:
-- **Manual** - Set specific RU/s
-- **Autoscale** - Automatic scaling between min/max
-- **Serverless** - Pay per request (no provisioning)
+**Modes:**
+
+- **Manual (Provisioned Throughput)**  
+  — Вы вручную задаёте фиксированное значение RU/s.  
+  Подходит для предсказуемой нагрузки.
+
+- **Autoscale**  
+  — Автоматическое масштабирование RU/s в пределах min/max.  
+  Хорошо подходит для переменной или burst-нагрузки.
+
+- **Serverless**  
+  — Оплата за фактические запросы (без предварительного provision).  
+  Подходит для нерегулярной или низкой нагрузки.
+
+---
+
+### Когда что использовать
+
+- 📊 Стабильная нагрузка → Manual
+- 📈 Переменная нагрузка → Autoscale
+- 🧪 Dev/Test или редкие запросы → Serverless
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> RU/s применяется в Manual и Autoscale режимах,  
+> Serverless не требует предварительного выделения throughput.
+
 
 ### Storage Scaling
 
@@ -222,29 +408,58 @@ No manual intervention
 Consistent performance maintained
 ```
 
-## Multi-Model Support
+## Multi-Model Support (Поддержка нескольких моделей данных)
 
-### Supported APIs
+### Supported APIs (Поддерживаемые API)
 
 | API | Use Case | Data Model |
-|-----|----------|------------|
-| **NoSQL** | Modern apps, JSON documents | Document |
-| **MongoDB** | Existing MongoDB apps | Document |
-| **PostgreSQL** | Relational workloads (Citus) | Relational |
-| **Cassandra** | Wide-column, high-scale | Column-family |
-| **Gremlin** | Graph relationships | Graph |
-| **Table** | Key-value, Azure Table migration | Key-value |
+|------|------------|-------------|
+| **NoSQL (Core/SQL)** | Современные cloud-приложения | Document (JSON) |
+| **MongoDB** | Миграция существующих MongoDB-приложений | Document |
+| **PostgreSQL** | Реляционные нагрузки (на базе Citus) | Relational |
+| **Cassandra** | Wide-column, высоконагруженные системы | Column-family |
+| **Gremlin** | Графовые связи | Graph |
+| **Table** | Key-value, миграция с Azure Table | Key-value |
 
-**Benefit**: Use familiar APIs without vendor lock-in
+---
 
-## Cost Model
+### Benefit (Преимущество)
 
-### Pay for What You Use
+- Можно использовать привычный API
+- Минимальные изменения в коде при миграции
+- Нет жёсткой привязки к конкретному движку
 
-**Two dimensions**:
+> 💡 Cosmos DB предоставляет разные API поверх одной глобально распределённой инфраструктуры.
 
-1. **Throughput** - Provisioned RU/s (hourly charge)
-2. **Storage** - Consumed GB (monthly charge)
+---
+
+## Cost Model (Модель оплаты)
+
+### Pay for What You Use (Оплата за фактическое использование)
+
+Стоимость рассчитывается по двум основным параметрам:
+
+1️⃣ **Throughput**  
+— Provisioned RU/s (почасовая тарификация)
+
+2️⃣ **Storage**  
+— Фактически использованные GB (помесячная тарификация)
+
+---
+
+### Что важно учитывать
+
+- RU/s — главный фактор стоимости при высокой нагрузке
+- Storage оплачивается отдельно
+- Multi-region увеличивает стоимость (репликация данных)
+- Autoscale стоит дороже, но снижает риск throttling
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Cosmos DB тарифицируется по двум измерениям:  
+> **RU/s + Storage (GB)**.
+
 
 **Example**:
 ```
@@ -253,30 +468,54 @@ Storage: 100 GB ($0.25/GB) = $25/month
 Total: ~$31/month
 ```
 
-### Free Tier
+### Free Tier (Бесплатный уровень)
 
-**First Azure Cosmos DB account**:
-- ✅ First 1000 RU/s free
-- ✅ First 25 GB storage free
-- ✅ Lifetime offer
+**Для первого Azure Cosmos DB аккаунта:**
 
-## Developer Experience
+- ✅ Первые **1000 RU/s** бесплатно
+- ✅ Первые **25 GB хранения** бесплатно
+- ✅ Предложение действует бессрочно (lifetime offer)
 
-### SDKs Available
+> 💡 Отличный вариант для pet-проектов, обучения и подготовки к экзамену.
 
-**Languages**:
+---
+
+## Developer Experience (Удобство разработки)
+
+### SDKs Available (Доступные SDK)
+
+**Поддерживаемые языки:**
+
 - .NET / .NET Core
 - Java
 - Python
 - Node.js
 - Go
 
-**Tools**:
+---
+
+### Tools (Инструменты)
+
 - Azure Portal
 - Azure CLI
 - Azure PowerShell
-- VS Code extension
-- Data Explorer (browser-based)
+- Расширение для VS Code
+- **Data Explorer** (встроенный браузерный инструмент)
+
+---
+
+### Что это даёт разработчику
+
+- Быстрое прототипирование
+- Полноценная работа через SDK
+- Возможность тестировать запросы прямо в браузере
+- Интеграция с CI/CD через CLI и PowerShell
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Free Tier предоставляет **1000 RU/s + 25 GB** бесплатно для первого аккаунта Cosmos DB.
+
 
 ### Sample Connection
 
@@ -298,63 +537,73 @@ var item = await container.ReadItemAsync<Product>(
 );
 ```
 
-## Use Cases
+## Use Cases (Сценарии использования)
 
-### Ideal Workloads
+### Ideal Workloads (Идеальные нагрузки)
 
-✅ **Web/mobile apps** - Low latency, global scale
-✅ **IoT** - High-volume writes, time-series data
-✅ **Gaming** - Player profiles, leaderboards
-✅ **Retail** - Product catalog, shopping carts
-✅ **Financial services** - Real-time transactions
-✅ **Content management** - Articles, media metadata
+✅ **Web / Mobile приложения** — низкая задержка и глобальный масштаб  
+✅ **IoT** — большое количество записей, time-series данные  
+✅ **Игровые платформы** — профили игроков, лидерборды  
+✅ **Retail** — каталоги товаров, корзины  
+✅ **Финансовые сервисы** — транзакции в реальном времени  
+✅ **Content management** — статьи, метаданные медиа
 
-### When to Use Cosmos DB
+---
+
+## When to Use Cosmos DB (Когда выбирать Cosmos DB)
 
 | Requirement | Cosmos DB Solution |
 |-------------|-------------------|
-| Global users | Multi-region replication |
-| Low latency | <10ms at P99 |
-| Variable traffic | Autoscale RU/s |
-| 99.999% uptime | Multi-write regions |
-| Flexible schema | NoSQL, JSON documents |
-| Massive scale | Unlimited throughput/storage |
+| Глобальная аудитория | Multi-region репликация |
+| Низкая задержка | < 10 мс @ P99 |
+| Переменная нагрузка | Autoscale RU/s |
+| 99.999% uptime | Multi-write регионы |
+| Гибкая схема | NoSQL (JSON документы) |
+| Масштабирование | Практически неограниченные RU/s и storage |
 
-### When NOT to Use
+---
 
-❌ **Small datasets** (<10 GB) - May be cost-inefficient
-❌ **Complex transactions** - Limited multi-document transactions
-❌ **On-premises requirement** - Cloud-only service
-❌ **Relational-only** - Use Azure SQL unless PostgreSQL API fits
+## When NOT to Use (Когда не стоит использовать)
 
-## Critical Notes
-- 💡 **Fully managed** - No servers, patches, or maintenance
-- 🎯 **Multi-master** - Write to any region, automatic replication
-- ✅ **99.999% SLA** - For multi-region, multi-write configurations
-- ⚠️ **<10ms latency** - Guaranteed at 99th percentile
-- 🔄 **Elastic scale** - Unlimited throughput and storage
-- 📊 **Global distribution** - Add/remove regions without downtime
-- 💡 **Multi-model** - 6 APIs, choose what fits your needs
-- ✅ **Free tier** - 1000 RU/s and 25 GB free forever (first account)
+❌ **Малые объёмы данных (<10 GB)** — может быть экономически невыгодно  
+❌ **Сложные транзакции** — ограниченная поддержка multi-document транзакций  
+❌ **On-premises требования** — сервис полностью облачный  
+❌ **Чисто реляционная модель** — лучше Azure SQL (если не подходит PostgreSQL API)
 
-## Exam Tips
-- Cosmos DB: Globally distributed, fully managed NoSQL database
-- Multi-master: Write to any region, read from any region
-- SLA guarantees: 99.999% availability (multi-region, multi-write)
-- Latency guarantee: <10ms at P99 for reads and writes
-- Scalability: Unlimited throughput (RU/s) and storage
-- Global distribution: Turnkey multi-region replication
-- Add regions: No downtime, no redeployment required
-- Consistency levels: 5 options (Strong to Eventual)
-- APIs supported: NoSQL, MongoDB, PostgreSQL, Cassandra, Gremlin, Table
-- Free tier: First account gets 1000 RU/s and 25 GB free
-- Cost model: Pay for provisioned throughput (RU/s) + storage (GB)
-- Provisioned throughput modes: Manual, Autoscale, Serverless
-- Use cases: Global apps, IoT, gaming, retail, financial services
-- Point read: Fetch item by ID + partition key (1 RU for 1KB item)
-- Multi-region benefits: High availability, low latency, disaster recovery
-- Automatic failover: Transparent to applications, configurable priorities
-- SDKs: .NET, Java, Python, Node.js, Go
-- Elastic scaling: Instant scale up/down without downtime
+---
+
+## Critical Notes (Ключевые моменты)
+
+- 💡 Полностью управляемый сервис — без серверов и патчей
+- 🌍 Multi-master — запись в любой регион
+- 🛡 99.999% SLA — при multi-region + multi-write
+- ⚡ < 10 мс — SLA на 99-м перцентиле
+- 🔄 Эластичное масштабирование RU/s
+- 🌐 Добавление/удаление регионов без downtime
+- 🧩 6 API — выбор подходящей модели
+- 🎁 Free tier — 1000 RU/s + 25 GB бесплатно (первый аккаунт)
+
+---
+
+## Exam Tips (Советы к экзамену AZ-204)
+
+- Cosmos DB — глобально распределённая управляемая NoSQL БД
+- Multi-master — запись и чтение в любом регионе
+- SLA 99.999% — только при multi-region + multi-write
+- Latency SLA — < 10 мс @ P99 (read/write)
+- Throughput измеряется в **RU/s**
+- Глобальная репликация — без redeployment
+- 5 уровней консистентности (Strong → Eventual)
+- Поддерживаемые API: NoSQL, MongoDB, PostgreSQL, Cassandra, Gremlin, Table
+- Free tier: 1000 RU/s + 25 GB
+- Стоимость = RU/s + Storage
+- Режимы throughput: Manual, Autoscale, Serverless
+- **Point read** (id + partition key) — самая быстрая операция (~1 RU для 1KB)
+- Автоматический failover — прозрачный для приложения
+- Поддержка SDK: .NET, Java, Python, Node.js, Go
+- Масштабирование происходит мгновенно, без простоя
+
+---
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-azure-cosmos-db/2-cosmos-db-benefits)
