@@ -1,27 +1,47 @@
-# Explore Dapr Integration with Azure Container Apps
+# Изучение интеграции Dapr с Azure Container Apps
 
-## Key Concepts
-- **Dapr** - Distributed Application Runtime for microservices
-- **Building blocks** - APIs for common microservices patterns
-- **Components** - Pluggable implementations (Azure, AWS, etc.)
-- **Sidecar architecture** - Dapr runs alongside your container
+## Ключевые понятия
 
-## What is Dapr?
+- **Dapr (Distributed Application Runtime)** — рантайм для построения распределённых микросервисных приложений
+- **Building blocks** — готовые API для типовых паттернов микросервисной архитектуры
+- **Components** — подключаемые реализации (Azure, AWS и др.)
+- **Sidecar-архитектура** — Dapr работает рядом с вашим контейнером как отдельный процесс
 
-**Distributed Application Runtime** - Portable, event-driven runtime:
+---
 
-- **Simplifies microservices** - Common patterns as APIs
-- **Language-agnostic** - HTTP/gRPC APIs
-- **Platform-independent** - Run anywhere (cloud, edge, on-premises)
-- **Open-source** - CNCF incubating project
+## Что такое Dapr?
 
-### Dapr Benefits in Container Apps
+**Distributed Application Runtime** — переносимый событийно-ориентированный runtime для распределённых систем.
 
-✅ **Zero infrastructure** - Managed by platform
-✅ **Automatic sidecar** - Enable with one flag
-✅ **No code changes** - HTTP/gRPC API calls
-✅ **Built-in components** - Azure services pre-configured
-✅ **Microservices patterns** - Service invocation, pub/sub, state
+Основные характеристики:
+
+- **Упрощает микросервисы** — реализует распространённые паттерны через стандартные API
+- **Независим от языка** — взаимодействие через HTTP или gRPC
+- **Независим от платформы** — может работать в облаке, на edge-устройствах и on-premises
+- **Open-source проект** — развивается под эгидой CNCF
+
+> 💡 Dapr абстрагирует инфраструктуру, позволяя разработчику работать с единым API независимо от используемого облачного провайдера.
+
+---
+
+## Преимущества Dapr в Azure Container Apps
+
+✅ **Без управления инфраструктурой** — платформа управляет Dapr автоматически  
+✅ **Автоматический sidecar** — включается одной настройкой  
+✅ **Минимальные изменения кода** — взаимодействие через HTTP/gRPC  
+✅ **Готовые компоненты** — преднастроенная интеграция с сервисами Azure  
+✅ **Поддержка микросервисных паттернов** — service invocation, pub/sub, управление состоянием
+
+---
+
+## Дополнительные важные моменты для AZ-204
+
+- Dapr запускается как sidecar-контейнер рядом с основным контейнером приложения.
+- Взаимодействие между сервисами происходит через локальный HTTP/gRPC endpoint.
+- В Azure Container Apps включение Dapr относится к изменениям уровня ревизии.
+- Dapr помогает уменьшить связность (coupling) между сервисами за счёт абстракции инфраструктуры.
+
+---
 
 ## Dapr Architecture
 
@@ -53,23 +73,55 @@ Your App → HTTP localhost:3500 → Dapr Sidecar → Azure Service
 
 ## Dapr Building Blocks
 
-### Core APIs
+### Основные API (Core APIs)
 
-| Building Block | Purpose | Example Use Case |
-|----------------|---------|------------------|
-| **Service Invocation** | Call services by name | Microservice-to-microservice calls |
-| **State Management** | CRUD key/value state | Session state, user preferences |
-| **Pub/Sub** | Publish/subscribe messaging | Event-driven communication |
-| **Bindings** | Trigger/output to external systems | Queue polling, file uploads |
-| **Secrets** | Retrieve secrets securely | Database passwords, API keys |
-| **Actors** | Stateful virtual actors | IoT devices, game characters |
-| **Observability** | Distributed tracing | Monitor requests across services |
-| **Configuration** | Dynamic config retrieval | Feature flags, settings |
+| Building Block        | Назначение | Типовой сценарий использования |
+|-----------------------|------------|--------------------------------|
+| **Service Invocation** | Вызов сервисов по имени | Взаимодействие между микросервисами |
+| **State Management**   | CRUD для key/value состояния | Сессии, пользовательские настройки |
+| **Pub/Sub**            | Публикация и подписка на события | Event-driven архитектура |
+| **Bindings**           | Интеграция с внешними системами | Очереди, файловые хранилища |
+| **Secrets**            | Безопасное получение секретов | Пароли БД, API-ключи |
+| **Actors**             | Stateful virtual actors | IoT-устройства, игровые объекты |
+| **Observability**      | Распределённая трассировка | Мониторинг межсервисных вызовов |
+| **Configuration**      | Динамическое получение конфигурации | Feature flags, настройки |
 
-### Most Common in Azure Container Apps
+---
 
-#### 1. Service Invocation
-**Call services by app ID**:
+## Наиболее часто используемые возможности в Azure Container Apps
+
+В контексте Azure Container Apps чаще всего используются следующие building blocks:
+
+- **Service Invocation**
+- **Pub/Sub**
+- **State Management**
+- **Secrets**
+
+---
+
+### 1. Service Invocation
+
+Позволяет вызывать другой сервис по его **app ID**, без знания его физического адреса.
+
+Основные особенности:
+
+- Dapr автоматически выполняет service discovery.
+- Вызовы происходят через HTTP или gRPC.
+- Поддерживается безопасное взаимодействие между сервисами.
+- Упрощает внутреннюю коммуникацию в микросервисной архитектуре.
+
+> 💡 В Azure Container Apps каждый сервис может иметь свой app ID, который используется Dapr для маршрутизации вызовов.
+
+---
+
+### Важно для AZ-204
+
+- Service Invocation уменьшает связанность между сервисами.
+- Нет необходимости управлять внутренними URL-адресами.
+- Dapr работает как sidecar и перехватывает вызовы.
+- Включение Dapr относится к изменениям уровня ревизии.
+
+---
 
 ```bash
 # Your code calls Dapr sidecar
@@ -129,18 +181,59 @@ curl -X POST http://localhost:3500/v1.0/bindings/blob-storage \
 
 ## Dapr Components
 
-### What Are Components?
+### Что такое Components?
 
-**Pluggable implementations** of building blocks:
+**Components** — это подключаемые реализации (pluggable implementations) для building blocks Dapr.  
+Они определяют, какая конкретная технология используется под капотом.
+
+Примеры:
 
 - **State store** → Azure Cosmos DB, Redis, Azure Table Storage
-- **Pub/sub** → Azure Service Bus, Event Hubs, Redis Streams
+- **Pub/Sub** → Azure Service Bus, Event Hubs, Redis Streams
 - **Secret store** → Azure Key Vault, Kubernetes secrets
-- **Binding** → Azure Storage Queue, Azure Blob Storage
+- **Bindings** → Azure Storage Queue, Azure Blob Storage
 
-### Component Definition
+> 💡 Dapr абстрагирует инфраструктуру: код работает с универсальным API, а конкретная реализация задаётся через компонент.
 
-**YAML configuration** for Dapr components:
+---
+
+## Что важно понимать
+
+- Компонент определяет **конкретный backend-сервис**, но приложение взаимодействует только через Dapr API.
+- Можно заменить реализацию (например, Redis → Cosmos DB) без изменения бизнес-логики.
+- Компоненты позволяют строить переносимые (portable) архитектуры.
+
+---
+
+## Component Definition
+
+Компоненты Dapr описываются через **YAML-конфигурацию**.
+
+В конфигурации указывается:
+
+- Тип компонента (state, pubsub, binding, secret store)
+- Версия API
+- Конкретная реализация
+- Метаданные подключения
+- Настройки аутентификации
+
+В Azure Container Apps компоненты обычно создаются и управляются через:
+
+- Azure CLI
+- Azure Portal
+- Infrastructure as Code (Bicep / ARM / Terraform)
+
+> ⚠️ Для AZ-204 важно помнить: компоненты — это не код приложения, а инфраструктурная конфигурация.
+
+---
+
+## Экзаменационный фокус
+
+- Building block — это API.
+- Component — это конкретная реализация этого API.
+- Один building block может иметь разные компоненты.
+- Замена компонента не требует изменения логики приложения.
+
 
 ```yaml
 apiVersion: dapr.io/v1alpha1
@@ -275,14 +368,55 @@ az containerapp dapr enable \
   --dapr-app-protocol http
 ```
 
-### Dapr Configuration Parameters
+### Параметры конфигурации Dapr
 
-| Parameter | Description | Required |
-|-----------|-------------|----------|
-| `--enable-dapr` | Enable Dapr sidecar | ✅ Yes |
-| `--dapr-app-id` | Unique app identifier | ✅ Yes |
-| `--dapr-app-port` | Port your app listens on | No (if only outbound) |
-| `--dapr-app-protocol` | `http` or `grpc` | No (default: http) |
+| Параметр | Описание | Обязательный |
+|----------|----------|--------------|
+| `--enable-dapr` | Включает Dapr sidecar | ✅ Да |
+| `--dapr-app-id` | Уникальный идентификатор приложения | ✅ Да |
+| `--dapr-app-port` | Порт, на котором слушает ваше приложение | Нет (если только исходящие вызовы) |
+| `--dapr-app-protocol` | Протокол: `http` или `grpc` | Нет (по умолчанию: http) |
+
+---
+
+## Пояснения к параметрам
+
+### `--enable-dapr`
+Активирует запуск sidecar-контейнера Dapr рядом с вашим приложением.  
+Без этого флага Dapr работать не будет.
+
+### `--dapr-app-id`
+Уникальный идентификатор сервиса внутри среды Container Apps.  
+Используется для:
+- service invocation
+- маршрутизации запросов
+- взаимодействия между микросервисами
+
+> ⚠️ App ID должен быть уникальным в пределах Container Apps Environment.
+
+### `--dapr-app-port`
+Указывает порт, на котором работает ваше приложение.  
+Требуется, если:
+- сервис принимает входящие вызовы через Dapr
+
+Не обязателен, если приложение только публикует события или вызывает другие сервисы.
+
+### `--dapr-app-protocol`
+Определяет протокол взаимодействия:
+- `http`
+- `grpc`
+
+По умолчанию используется HTTP.
+
+---
+
+## Важно для AZ-204
+
+- Включение Dapr относится к изменениям уровня ревизии.
+- App ID — ключевой параметр для межсервисного взаимодействия.
+- Sidecar автоматически управляется платформой, дополнительная инфраструктура не требуется.
+- Dapr работает локально через sidecar, а не напрямую между контейнерами.
+
 
 ### ARM Template Example
 
@@ -635,12 +769,43 @@ def process_order():
 
 ## Observability
 
-### Distributed Tracing
+### Distributed Tracing (Распределённая трассировка)
 
-**Automatic with Dapr**:
-- Dapr adds trace headers (W3C Trace Context)
-- Sends traces to Application Insights
-- Correlates requests across services
+**Работает автоматически при использовании Dapr**:
+
+- Dapr добавляет trace-заголовки (W3C Trace Context)
+- Отправляет трассировки в Application Insights
+- Коррелирует запросы между несколькими сервисами
+
+---
+
+## Как это работает
+
+- Каждый входящий запрос получает уникальный trace identifier.
+- При межсервисных вызовах Dapr автоматически передаёт trace-контекст дальше.
+- Это позволяет видеть полный путь запроса через все микросервисы.
+- Логи, метрики и трассировки объединяются в единую цепочку.
+
+---
+
+## Почему это важно
+
+В распределённых системах сложно определить:
+- где возникла ошибка
+- какой сервис вызвал другой
+- на каком этапе увеличилась задержка
+
+Distributed tracing решает эту проблему, обеспечивая сквозную видимость (end-to-end visibility).
+
+---
+
+## Важно для AZ-204
+
+- Трассировка работает автоматически при включённом Dapr.
+- Используется стандарт W3C Trace Context.
+- Интеграция с Application Insights позволяет анализировать цепочку вызовов.
+- Dapr уменьшает необходимость ручной реализации корреляции запросов.
+
 
 ### Configure Application Insights
 
@@ -685,12 +850,39 @@ scopes:
 --dapr-instrumentation-key "<key>"
 ```
 
-### 4. Use Appropriate Building Blocks
-- **Service-to-service** → Service Invocation
-- **Async events** → Pub/Sub
-- **Session state** → State Management
-- **Queue polling** → Input Bindings
-- **File uploads** → Output Bindings
+### 4. Используйте подходящие Building Blocks
+
+Правильный выбор building block упрощает архитектуру и снижает связанность сервисов.
+
+- **Взаимодействие сервис–сервис** → Service Invocation  
+  Используется для синхронных вызовов между микросервисами.
+
+- **Асинхронные события** → Pub/Sub  
+  Подходит для событийно-ориентированной архитектуры и слабой связанности компонентов.
+
+- **Сессионное состояние** → State Management  
+  Применяется для хранения пользовательского состояния и временных данных.
+
+- **Опрос очередей** → Input Bindings  
+  Позволяет реагировать на внешние источники событий без прямого подключения к ним в коде.
+
+- **Загрузка файлов** → Output Bindings  
+  Используется для отправки данных во внешние системы или хранилища.
+
+---
+
+## Архитектурный принцип
+
+- Синхронное взаимодействие → Service Invocation
+- Асинхронное взаимодействие → Pub/Sub
+- Хранение состояния → State
+- Интеграция с внешними системами → Bindings
+
+> 🎯 Для AZ-204 важно уметь сопоставить сценарий с правильным building block.
+- Если требуется слабая связанность — выбирайте Pub/Sub.
+- Если требуется прямой вызов — Service Invocation.
+- Если требуется хранение состояния — State Management.
+
 
 ### 5. Test Locally with Dapr CLI
 ```bash
@@ -698,38 +890,128 @@ scopes:
 dapr run --app-id myapp --app-port 8080 --dapr-http-port 3500 -- python app.py
 ```
 
-## Critical Notes
-- 💡 **Dapr** - Distributed Application Runtime for microservices
-- ✅ **Sidecar** - Automatically injected when enabled
-- 🎯 **Building blocks** - Service invocation, pub/sub, state, bindings, secrets
-- 🔄 **Components** - Pluggable implementations (Azure, AWS, etc.)
-- 📊 **HTTP API** - `localhost:3500` for Dapr calls
-- 🔒 **Scopes** - Limit component access to specific apps
-- ⚠️ **App ID** - Must be unique within environment
-- 💡 **App port** - Required if app receives requests from Dapr
-- ✅ **Observability** - Automatic distributed tracing
-- 🎯 **Zero infrastructure** - Managed by Container Apps platform
+## Критически важные моменты (Critical Notes)
 
-## Exam Tips
-- Dapr: Distributed Application Runtime for microservices
-- Sidecar architecture: Dapr runs alongside your container
-- Enable Dapr: `--enable-dapr --dapr-app-id <id> --dapr-app-port <port>`
-- Building blocks: Service invocation, pub/sub, state, bindings, secrets, actors
-- Service invocation: Call services by app ID, not URL
-- Service invocation format: `http://localhost:3500/v1.0/invoke/<app-id>/method/<method>`
-- Pub/sub: Publish with `/publish`, subscribe with `/dapr/subscribe` endpoint
-- State management: CRUD via `/state/<statestore>/<key>`
-- Bindings: Input (trigger from queue), Output (write to storage)
-- Components: YAML definitions (type, version, metadata, scopes)
-- Component types: state.azure.cosmosdb, pubsub.azure.servicebus, secretstores.azure.keyvault
-- Scopes: Limit component access to specific apps
-- HTTP API: `localhost:3500` for Dapr sidecar
-- gRPC API: `localhost:50001` for Dapr sidecar
-- App ID: Must be unique within Container Apps environment
-- App port: Port your application listens on (required if receiving calls)
-- Distributed tracing: Automatic with Application Insights integration
-- No code changes: Use HTTP/gRPC APIs from any language
-- Managed components: Azure services pre-configured (Service Bus, Cosmos DB, Key Vault)
-- Local testing: Use Dapr CLI (`dapr run`)
+- 💡 **Dapr** — Distributed Application Runtime для построения микросервисных систем
+- ✅ **Sidecar** — автоматически добавляется при включении Dapr
+- 🎯 **Building blocks** — service invocation, pub/sub, state management, bindings, secrets, actors
+- 🔄 **Components** — подключаемые реализации (Azure, AWS и др.)
+- 📊 **HTTP API** — используется локальный endpoint `localhost:3500` для вызовов Dapr
+- 🔒 **Scopes** — позволяют ограничить доступ компонента определённым приложениям
+- ⚠️ **App ID** — должен быть уникальным в пределах Container Apps Environment
+- 💡 **App port** — обязателен, если приложение принимает вызовы от Dapr
+- ✅ **Observability** — автоматическая распределённая трассировка
+- 🎯 **Zero infrastructure** — полностью управляется платформой Azure Container Apps
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- Dapr — runtime для микросервисной архитектуры.
+- Архитектура sidecar — Dapr работает рядом с вашим контейнером.
+- Включение Dapr требует указания флага активации и уникального app ID.
+
+---
+
+## Building Blocks
+
+Основные возможности:
+
+- **Service invocation** — вызов сервисов по app ID
+- **Pub/Sub** — публикация и подписка на события
+- **State management** — операции CRUD для хранения состояния
+- **Bindings** — интеграция с внешними системами
+- **Secrets** — безопасное получение секретов
+- **Actors** — stateful виртуальные акторы
+
+---
+
+## Service Invocation
+
+- Сервисы вызываются по **app ID**, а не по URL.
+- Вызовы проходят через локальный endpoint Dapr.
+- Поддерживаются HTTP и gRPC.
+
+---
+
+## Pub/Sub
+
+- Публикация выполняется через API публикации событий.
+- Подписка реализуется через специальный endpoint приложения.
+- Используется для слабосвязанной событийной архитектуры.
+
+---
+
+## State Management
+
+- Поддерживает операции создания, чтения, обновления и удаления.
+- Работает через настроенный state store компонент.
+- Позволяет сохранять состояние независимо от инфраструктуры.
+
+---
+
+## Bindings
+
+- **Input bindings** — получение событий из внешних источников.
+- **Output bindings** — отправка данных во внешние системы.
+
+---
+
+## Components
+
+- Описываются через YAML-конфигурацию.
+- Содержат тип, версию, метаданные и scopes.
+- Примеры типов:
+    - state.azure.cosmosdb
+    - pubsub.azure.servicebus
+    - secretstores.azure.keyvault
+
+---
+
+## API Endpoints Sidecar
+
+- HTTP API — `localhost:3500`
+- gRPC API — `localhost:50001`
+
+---
+
+## Важные ограничения
+
+- App ID должен быть уникальным в среде.
+- App port обязателен, если приложение принимает входящие вызовы.
+- Можно ограничивать доступ компонентов через scopes.
+
+---
+
+## Observability
+
+- Распределённая трассировка работает автоматически.
+- Интеграция с Application Insights.
+- Поддержка W3C Trace Context.
+
+---
+
+## Дополнительные моменты
+
+- Не требуется изменение бизнес-логики — используется HTTP/gRPC API.
+- Azure предоставляет управляемые компоненты для популярных сервисов.
+- Для локального тестирования используется Dapr CLI.
+
+---
+
+## Частые экзаменационные вопросы
+
+- Как включается Dapr?
+- Что такое sidecar-архитектура?
+- В чём разница между building block и component?
+- Как ограничить доступ к компоненту?
+- Когда требуется указание app port?
+- Как реализуется service-to-service communication?
+- Как обеспечивается distributed tracing?
+
+---
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-azure-container-apps/7-explore-distributed-application-runtime)

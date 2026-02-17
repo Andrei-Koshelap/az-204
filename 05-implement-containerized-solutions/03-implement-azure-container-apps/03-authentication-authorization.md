@@ -1,45 +1,72 @@
-# Authentication and Authorization in Azure Container Apps
+# Authentication and Authorization в Azure Container Apps
 
-## Key Concepts
-- **Built-in auth** - Federated identity with minimal code
-- **Identity providers** - Microsoft, Google, Facebook, GitHub, X, OpenID Connect
-- **Sidecar architecture** - Auth handled by platform middleware
-- **Server-directed flow** - Browser-based auth
-- **Client-directed flow** - Mobile/API auth
+## Ключевые понятия (Key Concepts)
 
-## Built-In Authentication
+- **Built-in auth** — встроенная аутентификация с минимальным кодом
+- **Identity providers** — Microsoft, Google, Facebook, GitHub, X, OpenID Connect
+- **Sidecar-архитектура** — аутентификация обрабатывается платформенным middleware
+- **Server-directed flow** — браузерная аутентификация
+- **Client-directed flow** — аутентификация для мобильных приложений и API
 
-### What Is It?
+---
 
-**Platform-level authentication** without custom code:
+# Built-In Authentication
 
-- Federated identity providers
-- Runs as sidecar container
-- Intercepts HTTP requests before reaching app
-- Manages authentication session
-- Injects identity info in headers
+## Что это такое?
 
-### Benefits
-✅ **No code required** - Platform handles auth
-✅ **Multiple providers** - Support various identity systems
-✅ **Session management** - Platform manages tokens
-✅ **Identity injection** - User info in request headers
-✅ **HTTPS only** - Secure authentication
+**Аутентификация на уровне платформы** без необходимости писать собственный код.
 
-⚠️ **Important**: Only works with HTTPS. Disable `allowInsecure` on ingress.
+- Поддержка федеративных identity providers
+- Работает как sidecar-контейнер
+- Перехватывает HTTP-запросы до попадания в приложение
+- Управляет сессией пользователя
+- Добавляет информацию о пользователе в HTTP-заголовки
 
-## Identity Providers
+---
 
-### Supported Providers
+## Преимущества
 
-| Provider | Sign-In Endpoint | Description |
-|----------|-----------------|-------------|
+✅ Не требует реализации аутентификации в коде  
+✅ Поддержка нескольких провайдеров  
+✅ Управление токенами выполняется платформой  
+✅ Информация о пользователе передаётся через заголовки  
+✅ Работает только через HTTPS
+
+⚠️ Важно: Работает **только по HTTPS**. Необходимо отключить `allowInsecure` в настройках ingress.
+
+---
+
+# Identity Providers
+
+## Поддерживаемые провайдеры
+
+| Провайдер | Endpoint входа | Описание |
+|------------|----------------|------------|
 | **Microsoft Identity Platform** | `/.auth/login/aad` | Microsoft Entra ID (Azure AD) |
-| **Facebook** | `/.auth/login/facebook` | Facebook accounts |
-| **GitHub** | `/.auth/login/github` | GitHub accounts |
-| **Google** | `/.auth/login/google` | Google accounts |
-| **X (Twitter)** | `/.auth/login/twitter` | X/Twitter accounts |
-| **OpenID Connect** | `/.auth/login/<providerName>` | Any OIDC provider |
+| **Facebook** | `/.auth/login/facebook` | Аккаунты Facebook |
+| **GitHub** | `/.auth/login/github` | Аккаунты GitHub |
+| **Google** | `/.auth/login/google` | Аккаунты Google |
+| **X (Twitter)** | `/.auth/login/twitter` | Аккаунты X/Twitter |
+| **OpenID Connect** | `/.auth/login/<providerName>` | Любой OIDC-провайдер |
+
+---
+
+## Что важно понимать
+
+- Аутентификация выполняется до попадания запроса в приложение
+- Приложение получает данные пользователя через HTTP-заголовки
+- Можно подключать корпоративные или внешние identity providers
+- HTTPS обязателен для работы встроенной аутентификации
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Built-in authentication не требует кода
+- Работает через sidecar-механизм
+- Поддерживает несколько identity providers
+- Работает только через HTTPS
+- Информация о пользователе передаётся через headers
 
 ### Provider Configuration
 
@@ -86,23 +113,52 @@ Auth Sidecar Container (middleware)
 Application Container
 └── Receives authenticated requests
 ```
+## Auth Middleware Responsibilities
 
-### Auth Middleware Responsibilities
+Платформенный middleware выполняет следующие функции:
 
-✅ **Authenticates users** - Validates credentials with providers
-✅ **Manages sessions** - Handles tokens and cookies
-✅ **Injects identity** - Adds user info to request headers
-✅ **Token validation** - Verifies JWT tokens
+✅ **Аутентификация пользователей** — проверка учётных данных через identity provider  
+✅ **Управление сессиями** — работа с токенами и cookie  
+✅ **Инъекция идентификации** — добавление информации о пользователе в HTTP-заголовки  
+✅ **Проверка токенов** — валидация JWT
 
-### No In-Process Integration
-⚠️ **Separate container** - Auth runs isolated from app code
-💡 **Identity via headers** - App reads user info from HTTP headers
+---
 
-## Authentication Flows
+## Нет интеграции внутри процесса приложения
 
-### 1. Server-Directed Flow (Browser Apps)
+⚠️ **Отдельный контейнер** — механизм аутентификации работает изолированно от кода приложения  
+💡 **Идентификация через заголовки** — приложение получает данные пользователя из HTTP-заголовков
 
-**Platform handles sign-in**:
+---
+
+# Authentication Flows
+
+## 1. Server-Directed Flow (Browser-приложения)
+
+**Платформа управляет процессом входа:**
+
+- Пользователь обращается к защищённому endpoint
+- Платформа перенаправляет на страницу входа identity provider
+- После успешной аутентификации создаётся сессия
+- Запрос возвращается в приложение с информацией о пользователе
+
+---
+
+## Когда использовать Server-Directed Flow
+
+- Веб-приложения с браузерной аутентификацией
+- UI-приложения с редиректом на страницу входа
+- Минимизация логики аутентификации в коде
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Аутентификация выполняется вне кода приложения
+- Middleware добавляет identity в HTTP-заголовки
+- Browser-сценарии → Server-Directed Flow
+- JWT валидируется платформой
+
 
 ```
 1. User → GET /protected-resource
@@ -114,16 +170,54 @@ Application Container
 7. App → Receives request with identity headers
 ```
 
-**Use for**:
-- Web applications
-- Browser-based apps
-- Server-side rendered apps
+## Использовать для (Server-Directed Flow)
 
-**Example**: User clicks "Sign in with Google" button
+- Веб-приложения
+- Браузерные приложения
+- Server-side rendered приложения
 
-### 2. Client-Directed Flow (Mobile/API Apps)
+**Пример:** пользователь нажимает кнопку «Sign in with Google», платформа выполняет редирект и управляет всей аутентификацией.
 
-**App handles sign-in, platform validates**:
+---
+
+# 2. Client-Directed Flow (Mobile / API-приложения)
+
+## Приложение выполняет вход, платформа проверяет токен
+
+В этом сценарии:
+
+- Клиентское приложение (mobile, SPA, API client) самостоятельно получает токен у identity provider
+- Токен (обычно JWT) отправляется в запросе к Container App
+- Платформа валидирует токен
+- При успешной проверке запрос передаётся в приложение
+
+---
+
+## Когда использовать Client-Directed Flow
+
+- Мобильные приложения
+- SPA (Single Page Applications)
+- Чистые API без браузерных редиректов
+- Сценарии с OAuth2 / OpenID Connect
+
+---
+
+## Что важно понимать
+
+- Приложение отвечает за получение access token
+- Платформа отвечает за валидацию токена
+- Токен передаётся в заголовке Authorization
+- Нет редиректа на страницу входа
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Browser → Server-Directed Flow
+- Mobile / API → Client-Directed Flow
+- В Client-flow приложение получает токен само
+- Платформа выполняет валидацию JWT
+
 
 ```
 1. Mobile App → Sign in with provider SDK
@@ -135,13 +229,33 @@ Application Container
 7. App → Receives authenticated requests
 ```
 
-**Use for**:
-- Native mobile apps
-- Single-page applications (SPAs)
-- Browser-less apps
-- API clients
+## Использовать для (Client-Directed Flow)
 
-**Example**: Mobile app uses Google SDK, then validates with Container Apps
+- Нативные мобильные приложения
+- Single-page applications (SPA)
+- Приложения без браузера
+- API-клиенты
+
+**Пример:** мобильное приложение использует Google SDK для получения токена, затем отправляет его в Azure Container Apps, где платформа выполняет валидацию.
+
+---
+
+## Что происходит в этом сценарии
+
+1. Клиент получает access token у identity provider
+2. Токен передаётся в запросе к Container App
+3. Платформа проверяет подпись и валидность JWT
+4. При успешной проверке запрос передаётся в приложение
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Mobile / SPA → Client-Directed Flow
+- Клиент получает токен самостоятельно
+- Container Apps валидирует JWT
+- Нет редиректов, как в браузерном сценарии
+
 
 ## Access Restrictions
 
@@ -169,27 +283,58 @@ az containerapp auth update \
   --unauthenticated-client-action AllowAnonymous
 ```
 
-### Configuration Comparison
+# Configuration Comparison (Режимы поведения аутентификации)
 
-| Mode | Behavior | Use Case |
-|------|----------|----------|
-| **RedirectToLoginPage** | Auto-redirect to sign-in | Web apps |
-| **Return401** | Return unauthorized | APIs, SPAs |
-| **Return403** | Return forbidden | APIs |
-| **AllowAnonymous** | Optional auth | Mixed public/private content |
+| Режим | Поведение | Сценарий |
+|--------|------------|------------|
+| **RedirectToLoginPage** | Автоматический редирект на страницу входа | Web-приложения |
+| **Return401** | Возврат 401 Unauthorized | API, SPA |
+| **Return403** | Возврат 403 Forbidden | API |
+| **AllowAnonymous** | Необязательная аутентификация | Смешанный публичный/приватный контент |
 
-## Identity Information in Headers
+---
 
-### Standard Headers Injected
+## Что важно понимать
 
-| Header | Description |
-|--------|-------------|
-| `X-MS-CLIENT-PRINCIPAL-ID` | User's unique ID |
-| `X-MS-CLIENT-PRINCIPAL-NAME` | User's name |
-| `X-MS-CLIENT-PRINCIPAL-IDP` | Identity provider used |
-| `X-MS-CLIENT-PRINCIPAL` | Base64-encoded JSON with user claims |
-| `X-MS-TOKEN-<provider>-ACCESS-TOKEN` | Provider access token |
-| `X-MS-TOKEN-<provider>-ID-TOKEN` | Provider ID token |
+- **RedirectToLoginPage** подходит для браузерных приложений
+- **Return401** используется, когда клиент сам управляет логикой входа
+- **Return403** — доступ запрещён даже при наличии токена
+- **AllowAnonymous** позволяет комбинировать защищённые и публичные маршруты
+
+---
+
+# Identity Information in Headers
+
+## Стандартные заголовки, добавляемые платформой
+
+| Заголовок | Описание |
+|------------|------------|
+| `X-MS-CLIENT-PRINCIPAL-ID` | Уникальный идентификатор пользователя |
+| `X-MS-CLIENT-PRINCIPAL-NAME` | Имя пользователя |
+| `X-MS-CLIENT-PRINCIPAL-IDP` | Используемый identity provider |
+| `X-MS-CLIENT-PRINCIPAL` | Base64-закодированный JSON с claims пользователя |
+| `X-MS-TOKEN-<provider>-ACCESS-TOKEN` | Access token от провайдера |
+| `X-MS-TOKEN-<provider>-ID-TOKEN` | ID token от провайдера |
+
+---
+
+## Что это означает для приложения
+
+- Приложение может читать данные пользователя из HTTP-заголовков
+- Нет необходимости самостоятельно валидировать JWT
+- Claims доступны через декодирование `X-MS-CLIENT-PRINCIPAL`
+- Можно использовать access token для вызова внешних API
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Built-in auth передаёт identity через HTTP headers
+- 401 → не аутентифицирован
+- 403 → доступ запрещён
+- RedirectToLoginPage → для web-приложений
+- API-сценарии → Return401
+
 
 ### Reading Identity in Application
 
@@ -340,35 +485,112 @@ az containerapp auth update \
 <a href="/.auth/logout">Sign Out</a>
 ```
 
-## Limitations
+# Limitations (Ограничения встроенной аутентификации)
 
-❌ **HTTPS required** - Won't work with HTTP
-❌ **External ingress** - Must be externally accessible
-❌ **No offline validation** - Requires provider connectivity
-❌ **Session cookies** - Some mobile scenarios may need client-directed flow
+❌ **Требуется HTTPS** — не работает по HTTP  
+❌ **External ingress** — приложение должно быть доступно извне  
+❌ **Нет офлайн-валидации** — требуется подключение к identity provider  
+❌ **Session cookies** — для некоторых mobile-сценариев лучше использовать client-directed flow
 
-## Critical Notes
-- 💡 **Built-in auth** - No code required, platform handles it
-- ⚠️ **HTTPS only** - Disable allowInsecure for security
-- 🎯 **Sidecar architecture** - Auth runs in separate container
-- ✅ **Identity headers** - User info injected into HTTP headers
-- 📊 **Server flow** - Browser apps (redirect to provider)
-- 🔄 **Client flow** - Mobile apps (app signs in, platform validates)
-- 🔒 **Access control** - Require auth, allow anonymous, return 401/403
-- ⚠️ **Multiple providers** - Support multiple identity systems
+---
 
-## Exam Tips
-- Built-in authentication: Federated identity without code
-- Identity providers: Microsoft, Google, Facebook, GitHub, X, OpenID Connect
-- Sign-in endpoints: `/.auth/login/<provider>`
-- Sidecar architecture: Auth middleware in separate container
-- Server-directed flow: Browser apps, platform handles redirect
-- Client-directed flow: Mobile apps, app gets token then validates
-- Identity headers: X-MS-CLIENT-PRINCIPAL-ID, X-MS-CLIENT-PRINCIPAL-NAME
-- Access restriction: RedirectToLoginPage, Return401, Return403, AllowAnonymous
-- HTTPS required: Must disable allowInsecure
-- Token endpoints: /.auth/me (info), /.auth/refresh (refresh), /.auth/logout (logout)
-- Platform responsibilities: Authenticate, manage session, inject identity, validate tokens
-- No in-process integration: Identity via HTTP headers only
+# Critical Notes
+
+- 💡 **Built-in auth** — не требует кода, всё управляется платформой
+- ⚠️ **Только HTTPS** — необходимо отключить `allowInsecure`
+- 🎯 **Sidecar-архитектура** — аутентификация выполняется в отдельном контейнере
+- ✅ **Identity headers** — информация о пользователе передаётся через HTTP-заголовки
+- 📊 **Server-directed flow** — для браузерных приложений (редирект к провайдеру)
+- 🔄 **Client-directed flow** — для мобильных приложений (клиент получает токен)
+- 🔒 **Контроль доступа** — Require auth, AllowAnonymous, 401/403
+- ⚠️ **Несколько провайдеров** — можно подключить разные identity systems
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- Built-in authentication — федеративная аутентификация без кода
+- Поддерживаемые провайдеры:
+    - Microsoft
+    - Google
+    - Facebook
+    - GitHub
+    - X
+    - OpenID Connect
+
+---
+
+## Endpoint входа
+
+- `/.auth/login/<provider>`
+
+---
+
+## Архитектура
+
+- Аутентификация работает через sidecar
+- Нет интеграции в коде приложения
+- Identity передаётся только через HTTP headers
+
+---
+
+## Authentication Flows
+
+- **Server-directed flow** → браузерные приложения
+- **Client-directed flow** → мобильные приложения / API
+
+---
+
+## Identity Headers
+
+- `X-MS-CLIENT-PRINCIPAL-ID`
+- `X-MS-CLIENT-PRINCIPAL-NAME`
+- другие `X-MS-*` заголовки
+
+---
+
+## Access Restriction Modes
+
+- RedirectToLoginPage
+- Return401
+- Return403
+- AllowAnonymous
+
+---
+
+## HTTPS
+
+- Обязательно отключить `allowInsecure`
+- Работает только через HTTPS
+
+---
+
+## Token Endpoints
+
+- `/.auth/me` — информация о пользователе
+- `/.auth/refresh` — обновление токена
+- `/.auth/logout` — выход
+
+---
+
+## Ответственность платформы
+
+- Аутентификация пользователя
+- Управление сессией
+- Инъекция identity в headers
+- Валидация JWT
+
+---
+
+## Частые экзаменационные ловушки
+
+- Нет HTTPS → аутентификация не работает
+- Identity передаётся через заголовки, не через SDK
+- Browser → Server-directed flow
+- Mobile/API → Client-directed flow
+- Встроенная аутентификация не требует кода
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-azure-container-apps/5-container-apps-authentication)

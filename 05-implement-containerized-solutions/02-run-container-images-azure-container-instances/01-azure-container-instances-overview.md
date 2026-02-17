@@ -1,55 +1,91 @@
-# Azure Container Instances Overview
+# Azure Container Instances (ACI) — Обзор
 
-## Key Concepts
-- **ACI** - Fastest way to run containers in Azure
-- **Container groups** - Collection of containers on same host (like Kubernetes pod)
-- **Isolated containers** - No orchestration needed
-- **Per-second billing** - Pay only for compute time used
+## Ключевые понятия (Key Concepts)
 
-## What Is Azure Container Instances?
+- **ACI** — самый быстрый способ запустить контейнеры в Azure
+- **Container groups** — группа контейнеров на одном хосте (аналог Kubernetes pod)
+- **Изолированные контейнеры** — не требуется оркестратор
+- **Оплата посекундно** — платите только за фактически использованное время
 
-**Fastest and simplest way** to run containers in Azure:
+---
 
-- No VM management required
-- Start containers in seconds
-- Run single containers or container groups
-- Perfect for isolated workloads
-- Hypervisor-level security
+# Что такое Azure Container Instances?
 
-### When to Use ACI
-✅ **Simple applications** - Single containers, no orchestration
-✅ **Task automation** - Batch jobs, build tasks
-✅ **Build jobs** - CI/CD pipeline tasks
-✅ **Dev/test** - Quick container testing
-✅ **Event-driven workloads** - Process messages, respond to events
+**Самый быстрый и простой способ** запустить контейнер в Azure.
 
-### When to Use AKS Instead
-❌ **Full orchestration** - Service discovery, auto-scaling
-❌ **Complex apps** - Multiple interdependent services
-❌ **Long-running services** - Continuous high availability
+- Не требуется управление виртуальными машинами
+- Запуск контейнеров за секунды
+- Поддержка одиночных контейнеров и container groups
+- Подходит для изолированных нагрузок
+- Безопасность на уровне гипервизора
 
-## Benefits
+---
 
-| Feature | Description |
-|---------|-------------|
-| **Fast startup** | Start containers in seconds (not minutes) |
-| **Public IP + FQDN** | Expose containers with public IP and DNS name |
-| **Hypervisor-level security** | Complete isolation (like VMs) |
-| **Custom sizes** | Specify exact CPU cores and memory |
-| **Persistent storage** | Mount Azure Files shares |
-| **Linux & Windows** | Support both OS types |
-| **No infrastructure** | No VMs to manage |
+## Когда использовать ACI
 
-## Container Groups
+✅ Простые приложения — один контейнер, без оркестрации  
+✅ Автоматизация задач — batch-задачи  
+✅ Build-задачи — этапы CI/CD  
+✅ Dev/test — быстрое тестирование контейнеров  
+✅ Event-driven нагрузки — обработка сообщений и событий
 
-### What Is a Container Group?
+---
 
-**Collection of containers** scheduled on the same host machine:
+## Когда лучше выбрать AKS
 
-- Similar to Kubernetes **pod**
-- Share lifecycle, resources, network, storage
-- Top-level resource in ACI
-- Co-located containers work together
+❌ Нужна полноценная оркестрация (service discovery, auto-scaling)  
+❌ Сложные приложения с несколькими зависимыми сервисами  
+❌ Долгоживущие сервисы с высокой доступностью
+
+---
+
+# Преимущества ACI
+
+| Возможность | Описание |
+|-------------|----------|
+| **Быстрый запуск** | Контейнеры стартуют за секунды |
+| **Public IP + FQDN** | Публичный IP и DNS-имя |
+| **Безопасность гипервизора** | Полная изоляция (как у VM) |
+| **Гибкие размеры** | Точное указание CPU и памяти |
+| **Постоянное хранилище** | Подключение Azure Files |
+| **Linux и Windows** | Поддержка обеих ОС |
+| **Без инфраструктуры** | Нет VM для управления |
+
+---
+
+# Container Groups
+
+## Что такое Container Group?
+
+**Группа контейнеров**, запущенных на одном хосте.
+
+- Аналог Kubernetes pod
+- Общий жизненный цикл
+- Общие ресурсы (CPU, память)
+- Общая сеть
+- Общее хранилище
+- Является основным ресурсом в ACI
+
+---
+
+## Когда использовать Container Groups
+
+- Sidecar-контейнеры
+- Логирование и мониторинг рядом с основным контейнером
+- Контейнеры, которым нужно тесное взаимодействие
+- Общий сетевой namespace
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- ACI — самый быстрый способ запустить контейнер
+- Оплата посекундно
+- Не требует VM или Kubernetes
+- Container Group = аналог pod
+- Подходит для простых и изолированных сценариев
+- Для сложной оркестрации → AKS
+
 
 ### Container Group Architecture
 ```
@@ -64,14 +100,35 @@ Container Group (pod-like unit)
 └── Volume 2: Azure Files share → Container 2
 ```
 
-### Key Characteristics
-✅ **Single host** - All containers on same machine
-✅ **Shared IP** - One public IP for all containers
-✅ **Shared lifecycle** - Start/stop together
-✅ **Shared network** - Containers communicate via localhost
-✅ **Shared volumes** - Mount volumes to specific containers
+## Key Characteristics (Основные характеристики Container Group)
 
-⚠️ **Linux only** - Multi-container groups support Linux only (Windows = single container)
+✅ **Один хост** — все контейнеры размещаются на одной машине  
+✅ **Общий IP** — один публичный IP для всей группы  
+✅ **Общий жизненный цикл** — запускаются и останавливаются вместе  
+✅ **Общая сеть** — контейнеры взаимодействуют через localhost  
+✅ **Общие тома** — можно подключать volume к отдельным контейнерам
+
+⚠️ **Только Linux** — multi-container группы поддерживаются только для Linux  
+(Windows поддерживает только один контейнер в группе)
+
+---
+
+## Что это означает
+
+- Контейнеры внутри группы тесно связаны
+- Подходит для паттерна sidecar
+- Невозможно масштабировать контейнеры внутри группы независимо
+- В Windows ACI — только single-container сценарии
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Container Group = аналог Kubernetes pod
+- Один IP на группу
+- Контейнеры общаются через localhost
+- Multi-container поддерживается только для Linux
+
 
 ## Deployment Methods
 
@@ -116,15 +173,41 @@ properties:
   osType: Linux
 ```
 
-**Recommendation**:
-- **YAML** - For container-only deployments
-- **ARM template** - When deploying other Azure resources too
+## Recommendation (Рекомендации по развертыванию)
 
-## Resource Allocation
+- **YAML** — подходит для развёртывания только контейнеров
+- **ARM template** — использовать, если вместе с контейнерами развёртываются другие ресурсы Azure
 
-### How Resources Are Allocated
+---
 
-**Sum of all container requests** in the group:
+# Resource Allocation (Выделение ресурсов)
+
+## Как распределяются ресурсы
+
+Ресурсы рассчитываются как **сумма всех запросов контейнеров** в группе.
+
+- CPU суммируется по всем контейнерам
+- Память суммируется по всем контейнерам
+- Оплата рассчитывается исходя из общего объёма ресурсов
+
+---
+
+## Что это означает
+
+- Container Group получает общий пул CPU и памяти
+- Нельзя задать разные VM-уровни внутри одной группы
+- Если один контейнер использует много ресурсов — это влияет на всю группу
+- Планируйте ресурсы с учётом всех контейнеров
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Ресурсы выделяются на уровне Container Group
+- Общие CPU и память = сумма всех контейнеров
+- YAML — для контейнеров
+- ARM — для комплексных инфраструктурных развертываний
+
 
 ```
 Container Group CPU/Memory = Sum of all containers
@@ -159,13 +242,41 @@ az container create \
   --gpu-sku K80
 ```
 
-## Networking
+# Networking в Azure Container Instances
 
-### IP Address & Ports
-- **Single IP** - Shared by all containers in group
-- **Port namespace** - Shared across containers
-- **External access** - Expose ports on IP address
-- **Internal communication** - Use localhost
+## IP-адрес и порты
+
+- **Один IP-адрес** — общий для всех контейнеров в группе
+- **Общее пространство портов** — порты разделяются между контейнерами
+- **Внешний доступ** — публикация портов через общий IP-адрес
+- **Внутреннее взаимодействие** — через localhost
+
+---
+
+## Что это означает
+
+- Контейнеры внутри группы могут обращаться друг к другу по `localhost:<port>`
+- Нельзя использовать один и тот же порт в двух контейнерах группы
+- Для внешнего доступа необходимо явно указать порт
+- Публичный IP и FQDN назначаются на уровне всей группы
+
+---
+
+## Практические моменты
+
+- Если контейнеры используют одинаковый порт — потребуется изменить конфигурацию
+- Для внутренних sidecar-сценариев внешний IP может не требоваться
+- Можно использовать Private IP в VNet-сценариях
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Один IP на Container Group
+- Общее пространство портов
+- Внутренняя коммуникация через localhost
+- Порты должны быть явно опубликованы для внешнего доступа
+
 
 ### Port Configuration
 ```bash
@@ -215,16 +326,45 @@ properties:
   osType: Linux
 ```
 
-## Storage Volumes
+# Storage Volumes в Azure Container Instances
 
-### Supported Volume Types
+## Поддерживаемые типы томов
 
-| Volume Type | Description | Use Case |
-|-------------|-------------|----------|
-| **Azure Files** | SMB file share | Persistent data |
-| **Secret** | Sensitive data | Passwords, keys |
-| **Empty directory** | Temporary storage | Scratch space |
-| **Git repo** | Clone repository | Source code |
+| Тип тома | Описание | Сценарий использования |
+|-----------|------------|------------------------|
+| **Azure Files** | SMB-файловая шара | Постоянное хранение данных |
+| **Secret** | Чувствительные данные | Пароли, ключи, токены |
+| **Empty directory** | Временное хранилище | Scratch space, временные файлы |
+| **Git repo** | Клонирование репозитория | Исходный код приложения |
+
+---
+
+## Что важно понимать
+
+- Volume подключается к конкретному контейнеру в группе.
+- Azure Files обеспечивает персистентность данных.
+- Secret volume хранится в памяти (не сохраняется на диск).
+- Empty directory существует только в рамках жизненного цикла группы.
+- Git repo автоматически клонируется при старте контейнера.
+
+---
+
+## Когда использовать
+
+- **Azure Files** → данные должны сохраниться после перезапуска
+- **Secret** → конфиденциальные параметры
+- **Empty directory** → временные вычисления
+- **Git repo** → быстрый запуск контейнера с исходным кодом
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Для постоянного хранения → Azure Files
+- Для секретов → Secret volume
+- Для временных данных → Empty directory
+- Volume настраивается на уровне Container Group
+
 
 ### Volume Example
 ```bash
@@ -368,35 +508,109 @@ Example (East US):
 = $0.01 per hour
 ```
 
-### Cost Optimization
-✅ **Stop when not needed** - Pay only while running
-✅ **Right-size resources** - Don't over-provision
-✅ **Restart policy** - Use `OnFailure` or `Never` for tasks
-✅ **Spot containers** (Preview) - Lower cost for interruptible workloads
+# Cost Optimization (Оптимизация затрат)
 
-## Critical Notes
-- 💡 **Fastest way** - Start containers in seconds without VMs
-- ⚠️ **Container groups** - Like Kubernetes pods (shared host/network/lifecycle)
-- 🎯 **Multi-container groups** - Linux only (Windows = single container)
-- ✅ **Per-second billing** - Pay only for running time
-- 📊 **Resource allocation** - Sum of all container requests
-- 🔄 **Port namespace** - Shared, no port mapping
-- 🔒 **Localhost communication** - Containers reach each other via localhost
-- ⚠️ **Use AKS for orchestration** - ACI is for simple, isolated containers
+✅ **Останавливайте контейнеры, когда они не нужны** — оплата только во время работы  
+✅ **Правильно подбирайте ресурсы** — не выделяйте лишние CPU и память  
+✅ **Restart policy** — используйте `OnFailure` или `Never` для batch-задач  
+✅ **Spot containers (Preview)** — сниженная стоимость для прерываемых нагрузок
 
-## Exam Tips
-- ACI = Fastest way to run containers in Azure (seconds, no VMs)
-- Container group = Top-level resource (like Kubernetes pod)
-- Multi-container groups: Linux only, Windows = single container only
-- Container group features: Shared IP, lifecycle, network, storage volumes
-- Resource allocation: Sum of all container CPU/memory requests
-- Networking: Single IP per group, shared port namespace, no port mapping
-- Localhost: Containers communicate within group via localhost
-- Storage volumes: Azure Files, Secret, Empty directory, Git repo
-- Deployment: CLI, ARM template, YAML (YAML for container-only)
-- Billing: Per-second for CPU and memory (only while running)
-- Use cases: Simple apps, task automation, build jobs, dev/test
-- Use AKS instead: Full orchestration, service discovery, auto-scaling
-- DNS: `--dns-name-label` creates FQDN like `name.region.azurecontainer.io`
+---
+
+# Critical Notes (Критически важные моменты)
+
+- 💡 **Самый быстрый запуск** — контейнеры стартуют за секунды без VM
+- ⚠️ **Container groups** — аналог Kubernetes pod (общий хост, сеть, жизненный цикл)
+- 🎯 **Multi-container группы** — только Linux (Windows поддерживает только один контейнер)
+- ✅ **Оплата посекундно** — платите только за время работы
+- 📊 **Распределение ресурсов** — сумма CPU и памяти всех контейнеров
+- 🔄 **Общее пространство портов** — нет port mapping внутри группы
+- 🔒 **Связь через localhost** — контейнеры взаимодействуют через localhost
+- ⚠️ **Для оркестрации используйте AKS** — ACI подходит для простых, изолированных сценариев
+
+---
+
+# Exam Tips (AZ-204)
+
+- ACI — самый быстрый способ запустить контейнер в Azure (секунды, без VM)
+- Container Group — основной ресурс (аналог pod)
+- Multi-container → только Linux
+- Windows → только один контейнер
+
+---
+
+## Особенности Container Group
+
+- Один IP-адрес
+- Общий жизненный цикл
+- Общая сеть
+- Общие тома хранения
+
+---
+
+## Ресурсы
+
+- CPU и память = сумма всех контейнеров
+- Оплата посекундная за CPU и память
+
+---
+
+## Сеть
+
+- Один IP на группу
+- Общее пространство портов
+- Взаимодействие через localhost
+
+---
+
+## Хранилище
+
+- Azure Files — постоянное
+- Secret — конфиденциальные данные
+- Empty directory — временное
+- Git repo — клонирование репозитория
+
+---
+
+## Развертывание
+
+- CLI
+- ARM template
+- YAML (для container-only сценариев)
+
+---
+
+## Когда использовать ACI
+
+- Простые приложения
+- Batch-задачи
+- Build-задачи
+- Dev/test
+
+---
+
+## Когда использовать AKS
+
+- Полноценная оркестрация
+- Service discovery
+- Auto-scaling
+- Сложные микросервисные системы
+
+---
+
+## DNS
+
+- Параметр `--dns-name-label` создаёт FQDN вида:  
+  `name.region.azurecontainer.io`
+
+---
+
+## Частые экзаменационные ловушки
+
+- «Нужен быстрый запуск без VM» → ACI
+- «Нужна оркестрация и auto-scaling» → AKS
+- «Несколько контейнеров вместе» → Container Group (Linux)
+- «Оплата только за время выполнения» → ACI
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/create-run-container-images-azure-container-instances/2-azure-container-instances-overview)

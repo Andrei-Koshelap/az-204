@@ -1,25 +1,50 @@
-# Environment Variables in Container Instances
+# Environment Variables в Azure Container Instances
 
-## Key Concepts
-- **Environment variables** - Dynamic configuration for containers
-- **Standard variables** - Visible in portal and CLI
-- **Secure values** - Hidden sensitive data (passwords, keys)
-- **secureValue** - Property for sensitive information
+## Ключевые понятия (Key Concepts)
 
-## Why Use Environment Variables?
+- **Environment variables** — динамическая конфигурация контейнера
+- **Standard variables** — отображаются в Portal и CLI
+- **Secure values** — скрытые чувствительные данные (пароли, ключи)
+- **secureValue** — свойство для передачи конфиденциальной информации
 
-**Dynamic configuration** without rebuilding images:
+---
 
-- Configure apps at runtime
-- Different settings per environment (dev/prod)
-- Pass secrets securely
-- Similar to `docker run --env`
+# Зачем использовать Environment Variables?
 
-### Benefits
-✅ **No image rebuild** - Change config without rebuilding
-✅ **Environment-specific** - Different values per deployment
-✅ **Secure secrets** - Hide sensitive data
-✅ **12-factor app** - Follow cloud-native principles
+**Динамическая конфигурация** без пересборки образа.
+
+- Настройка приложения во время запуска
+- Разные параметры для dev/prod окружений
+- Безопасная передача секретов
+- Аналог `docker run --env`
+
+---
+
+## Преимущества
+
+✅ **Без пересборки образа** — конфигурацию можно менять при деплое  
+✅ **Разные значения для окружений** — dev, test, prod  
+✅ **Безопасность** — возможность скрывать чувствительные данные  
+✅ **Соответствие 12-factor app** — конфигурация через переменные окружения
+
+---
+
+## Что важно помнить
+
+- Переменные задаются при создании Container Group
+- Standard variables видны в конфигурации
+- Secure variables скрыты после создания
+- Поддерживаются в CLI, ARM, YAML
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Для передачи конфигурации без пересборки → Environment variables
+- Для секретов → использовать `secureValue`
+- Поддерживают cloud-native подход
+- Аналог `--env` в Docker
+
 
 ## Setting Environment Variables
 
@@ -79,24 +104,44 @@ properties:
   osType: Linux
 ```
 
-## Secure Values
+# Secure Values в Azure Container Instances
 
-### What Are Secure Values?
+## Что такое Secure Values?
 
-**Hidden environment variables** for sensitive data:
+**Скрытые переменные окружения** для передачи чувствительных данных.
 
-- Not visible in Azure Portal
-- Not shown in `az container show`
-- Only accessible from within container
-- Use for: passwords, API keys, connection strings
+- Не отображаются в Azure Portal
+- Не показываются в `az container show`
+- Доступны только внутри контейнера
+- Используются для: паролей, API-ключей, connection string
 
-### Standard vs Secure Values
+---
 
-| Feature | Standard (`value`) | Secure (`secureValue`) |
-|---------|-------------------|------------------------|
-| **Visibility** | Visible in portal/CLI | Hidden |
-| **In container** | Accessible | Accessible |
-| **Use for** | Non-sensitive config | Passwords, keys |
+## Standard vs Secure Values
+
+| Возможность | Standard (`value`) | Secure (`secureValue`) |
+|--------------|--------------------|------------------------|
+| **Видимость** | Отображается в Portal и CLI | Скрыта |
+| **Доступ внутри контейнера** | Доступна | Доступна |
+| **Назначение** | Нечувствительная конфигурация | Пароли, ключи, секреты |
+
+---
+
+## Что важно понимать
+
+- Secure values защищают данные от просмотра после развертывания.
+- После создания контейнера значение нельзя получить через API или CLI.
+- Для секретов всегда используйте `secureValue`.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Для передачи паролей → `secureValue`
+- Standard переменные видны в конфигурации
+- Secure переменные скрыты, но доступны приложению
+- Использовать для безопасной передачи чувствительных данных
+
 
 ### Setting Secure Values (CLI)
 ```bash
@@ -442,29 +487,75 @@ az container create \
     'API_URL'='https://new-api.example.com'  # Updated
 ```
 
-## Critical Notes
-- 💡 **Environment variables** - Dynamic configuration without rebuilding
-- ⚠️ **secureValue** - Use for sensitive data (hidden from portal/CLI)
-- 🎯 **value vs secureValue** - Regular vs secure environment variables
-- ✅ **Accessible in container** - Both types accessible via env vars
-- 📊 **Cannot update** - Must delete and recreate container
-- 🔒 **Best practice** - Use secure values for secrets
-- 🔑 **Key Vault better** - Store secrets in Azure Key Vault (fetch at startup)
-- ⚠️ **Shell syntax** - Different quote styles for Bash vs CMD vs PowerShell
+# Critical Notes — Environment Variables в ACI
 
-## Exam Tips
-- Environment variables: Dynamic configuration without rebuilding image
-- Set with: `--environment-variables` (CLI) or `environmentVariables` (YAML)
-- Standard variables: Use `value` property (visible in portal/CLI)
-- Secure variables: Use `secureValue` property (hidden from portal/CLI)
-- Both types accessible from within container via environment variables
-- Secure values: Only visible inside running container
-- CLI secure flag: `--secure-environment-variables`
-- Cannot view secure values after creation (only container can access)
-- Cannot update variables: Must delete and recreate container
-- Shell syntax: Bash `'KEY'='value'`, CMD `"KEY"="value"`
-- Use for: API keys, passwords, connection strings (secure values)
-- Best practice: Store secrets in Key Vault, not environment variables
-- 12-factor app: Configuration via environment variables
+- 💡 **Environment variables** — динамическая конфигурация без пересборки образа
+- ⚠️ **secureValue** — использовать для чувствительных данных (скрыто в Portal/CLI)
+- 🎯 **value vs secureValue** — обычные и защищённые переменные окружения
+- ✅ **Доступ внутри контейнера** — оба типа доступны как env-переменные
+- 📊 **Нельзя обновить** — требуется удалить и создать контейнер заново
+- 🔒 **Best practice** — использовать secureValue для секретов
+- 🔑 **Лучше Key Vault** — хранить секреты в Azure Key Vault и получать при старте
+- ⚠️ **Shell-синтаксис** — разные кавычки для Bash, CMD и PowerShell
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- Environment variables позволяют менять конфигурацию без пересборки образа
+- Настраиваются через:
+    - CLI → `--environment-variables`
+    - YAML → `environmentVariables`
+
+---
+
+## Типы переменных
+
+- **Standard variables** → свойство `value` (видно в Portal/CLI)
+- **Secure variables** → свойство `secureValue` (скрыто в Portal/CLI)
+
+---
+
+## Важно
+
+- Оба типа доступны внутри контейнера
+- Secure values видны только приложению внутри контейнера
+- После создания контейнера secureValue нельзя просмотреть
+- Для изменения переменных нужно пересоздать контейнер
+
+---
+
+## CLI
+
+- Для защищённых переменных используется флаг:  
+  `--secure-environment-variables`
+
+---
+
+## Shell-синтаксис
+
+- Bash → `'KEY'='value'`
+- CMD → `"KEY"="value"`
+- PowerShell → иной формат кавычек
+
+---
+
+## Best Practice
+
+- Для API-ключей, паролей и connection strings → secureValue
+- Для production-сценариев → хранить секреты в Azure Key Vault
+- Следовать принципам 12-factor app (конфигурация через env-переменные)
+
+---
+
+## Частые экзаменационные ловушки
+
+- Secure переменные нельзя просмотреть после создания
+- Переменные нельзя обновить — только пересоздать контейнер
+- Для секретов → secureValue или Key Vault
+- Конфигурация без пересборки → Environment variables
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/create-run-container-images-azure-container-instances/5-set-environment-variables-azure-container-instances)

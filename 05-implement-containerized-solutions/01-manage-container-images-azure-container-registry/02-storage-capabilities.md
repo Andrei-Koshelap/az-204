@@ -1,21 +1,44 @@
-# Azure Container Registry Storage Capabilities
+# Azure Container Registry — Возможности хранения (Storage Capabilities)
 
-## Key Concepts
-- **Encryption-at-rest** - All images encrypted automatically
-- **Regional storage** - Data stored in registry region
-- **Geo-replication** - Multi-region registry (Premium only)
-- **Zone redundancy** - Availability zones (Premium only)
-- **Scalable storage** - Unlimited repositories within tier limits
+## Ключевые понятия (Key Concepts)
 
-## Storage Features
+- **Encryption-at-rest** — все образы автоматически шифруются при хранении
+- **Regional storage** — данные хранятся в регионе, где создан registry
+- **Geo-replication** — многорегиональный registry (только Premium)
+- **Zone redundancy** — поддержка availability zones (только Premium)
+- **Scalable storage** — масштабируемое хранилище (в пределах лимитов тарифа)
 
-### Encryption-at-Rest
-**Automatic encryption** for all registry content:
+---
 
-- Images encrypted before storage
-- Automatic decryption on pull
-- Azure-managed encryption keys
-- Optional: Customer-managed keys (CMK)
+# Функции хранения
+
+## Encryption-at-Rest (Шифрование при хранении)
+
+**Автоматическое шифрование** всего содержимого registry:
+
+- Образы шифруются перед записью в хранилище
+- При pull выполняется автоматическая расшифровка
+- Используются ключи, управляемые Azure
+- Опционально: поддержка customer-managed keys (CMK)
+
+---
+
+## Что это означает
+
+- Не требует дополнительной настройки для базовой защиты
+- Соответствует требованиям безопасности enterprise-уровня
+- Поддерживает сценарии compliance
+- CMK позволяет контролировать жизненный цикл ключей
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Шифрование включено по умолчанию
+- Ключи управляются Azure
+- CMK — дополнительная опция
+- Geo-replication и zone redundancy доступны только в Premium
+
 
 ```bash
 # Enable customer-managed key (Premium only)
@@ -26,24 +49,46 @@ az acr encryption set \
   --identity <managed-identity-id>
 ```
 
-### Regional Storage
-**Data residency** for compliance:
+## Regional Storage (Региональное хранение)
 
-| Region | Storage Location | Paired Region |
-|--------|-----------------|---------------|
-| **Most regions** | Primary + paired region | Yes |
-| **Brazil South** | Brazil South only | No |
-| **Southeast Asia** | Southeast Asia only | No |
+**Data residency для соответствия требованиям compliance**
 
-⚠️ **Regional outage**: Data may become unavailable and is not automatically recovered
+| Регион | Место хранения | Парный регион |
+|---------|----------------|----------------|
+| **Большинство регионов** | Основной + парный регион | Да |
+| **Brazil South** | Только Brazil South | Нет |
+| **Southeast Asia** | Только Southeast Asia | Нет |
 
-## Geo-Replication (Premium Only)
+⚠️ **Сбой региона**  
+При региональном отказе данные могут стать недоступными и не восстанавливаются автоматически.
 
-### Benefits
-✅ **High availability** - Guard against regional failures
-✅ **Network-close storage** - Faster pushes/pulls
-✅ **Single registry** - Manage one registry across regions
-✅ **Regional deployment** - Deploy closer to users
+---
+
+## Geo-Replication (только Premium)
+
+### Преимущества
+
+✅ **Высокая доступность** — защита от региональных сбоев  
+✅ **Близость к сети** — более быстрый push/pull за счёт размещения рядом с потребителями  
+✅ **Единый registry** — управление одним реестром в нескольких регионах  
+✅ **Региональное развертывание** — деплой ближе к пользователям
+
+---
+
+## Что важно понимать
+
+- Geo-replication снижает задержку при загрузке образов.
+- Подходит для глобальных production-систем.
+- Требует тариф Premium.
+- Улучшает устойчивость к сбоям региона.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Нужна защита от регионального сбоя → Geo-replication (Premium).
+- Требуется соблюдение data residency → учитывать регион хранения.
+- Regional storage ≠ автоматическое восстановление при сбое.
 
 ### How It Works
 ```
@@ -92,14 +137,39 @@ docker push myregistry.azurecr.io/myapp:v1.0
 docker pull myregistry.azurecr.io/myapp:v1.0
 ```
 
-## Zone Redundancy (Premium Only)
+## Zone Redundancy (только Premium)
 
 ### Availability Zones
-**Replicate registry within a region**:
 
-- Minimum 3 separate zones per region
-- Protects against zone failures
-- Available in [supported regions](https://learn.microsoft.com/en-us/azure/availability-zones/az-overview)
+**Репликация registry внутри одного региона**:
+
+- Минимум 3 изолированные зоны доступности в регионе
+- Защита от отказа отдельной зоны
+- Доступно только в поддерживаемых регионах
+
+---
+
+## Что это даёт
+
+- Повышенную устойчивость внутри региона
+- Защиту от сбоя дата-центра
+- Более высокий уровень доступности для production-нагрузок
+
+---
+
+## Важно различать
+
+- **Zone Redundancy** → защита внутри одного региона
+- **Geo-Replication** → защита между регионами
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Защита от сбоя зоны → Zone Redundancy (Premium)
+- Защита от сбоя региона → Geo-replication (Premium)
+- Обе функции доступны только в тарифе Premium
+
 
 ```bash
 # Enable zone redundancy at creation
@@ -116,23 +186,53 @@ az acr update \
   --zone-redundancy enabled
 ```
 
-## Scalable Storage
+# Scalable Storage (Масштабируемое хранилище)
 
-### Storage Limits by Tier
+## Лимиты хранения по тарифам
 
-| Tier | Included Storage | Max Storage | Bandwidth |
-|------|-----------------|-------------|-----------|
-| **Basic** | 10 GB | 2 TB | Limited |
-| **Standard** | 100 GB | 2 TB | Medium |
-| **Premium** | 500 GB | 2 TB | High |
+| Tier | Включённое хранилище | Максимум | Пропускная способность |
+|------|----------------------|-----------|------------------------|
+| **Basic** | 10 GB | 2 TB | Ограниченная |
+| **Standard** | 100 GB | 2 TB | Средняя |
+| **Premium** | 500 GB | 2 TB | Высокая |
 
-### Unlimited Resources
-✅ **Repositories** - Create as many as needed
-✅ **Images** - No image count limit
-✅ **Layers** - Store all image layers
-✅ **Tags** - Unlimited tags per repository
+---
 
-⚠️ **Performance impact**: High numbers of repositories/tags can affect performance
+## Неограниченные ресурсы
+
+✅ **Repositories** — можно создавать неограниченное количество  
+✅ **Images** — нет лимита по количеству образов  
+✅ **Layers** — поддержка всех слоёв образов  
+✅ **Tags** — неограниченное количество тегов в репозитории
+
+---
+
+## Важно учитывать
+
+⚠️ Большое количество репозиториев и тегов может влиять на производительность:
+
+- Замедление операций list
+- Увеличение времени очистки (cleanup)
+- Повышенная нагрузка на метаданные
+
+---
+
+## Практические рекомендации
+
+- Используйте стратегию lifecycle management
+- Удаляйте старые и неиспользуемые теги
+- Автоматизируйте очистку через ACR Tasks или скрипты
+- Продумывайте структуру именования репозиториев
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Максимальный объём хранения — 2 TB
+- Premium — самая высокая пропускная способность
+- Количество репозиториев и тегов не ограничено
+- Производительность может снижаться при большом числе тегов
+
 
 ### Storage Management
 ```bash
@@ -222,19 +322,50 @@ az acr replication create --registry myregistry --location northeurope
 # Benefit: Automatic routing to nearest replica
 ```
 
-### Throughput Limits
+# Throughput Limits (Ограничения пропускной способности)
 
-| Tier | Concurrent Operations | ReadOps/sec | WriteOps/sec |
-|------|----------------------|-------------|--------------|
+| Tier | Параллельные операции | ReadOps/сек | WriteOps/сек |
+|------|------------------------|-------------|--------------|
 | **Basic** | 10 | 300 | 100 |
 | **Standard** | 20 | 600 | 200 |
-| **Premium** | 500 | 10,000 | 2,000 |
+| **Premium** | 500 | 10 000 | 2 000 |
 
-### Optimization Tips
-✅ **Layer caching** - Use multi-stage builds
-✅ **Parallel pulls** - Premium supports 500 concurrent ops
-✅ **Compression** - Docker automatically compresses layers
-✅ **Regional replicas** - Deploy close to compute resources
+---
+
+## Что это означает
+
+- **Concurrent operations** — максимальное количество одновременных push/pull операций
+- **ReadOps/sec** — количество операций чтения в секунду
+- **WriteOps/sec** — количество операций записи в секунду
+- Premium значительно превосходит Basic и Standard по производительности
+
+---
+
+# Optimization Tips (Рекомендации по оптимизации)
+
+✅ **Layer caching** — используйте multi-stage builds для уменьшения количества слоёв  
+✅ **Parallel pulls** — Premium поддерживает до 500 параллельных операций  
+✅ **Сжатие** — Docker автоматически сжимает слои  
+✅ **Региональные реплики** — размещайте registry ближе к вычислительным ресурсам
+
+---
+
+## Практические рекомендации
+
+- Для high-scale production выбирайте Premium
+- Минимизируйте размер образов
+- Используйте общие base images
+- Настраивайте geo-replication для глобальных систем
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Premium → высокая производительность и 500 concurrent operations
+- Basic → подходит для dev
+- Standard → большинство production-сценариев
+- Высокая нагрузка или глобальный деплой → Premium
+
 
 ## Cost Management
 
@@ -247,36 +378,105 @@ Premium:  $1.667/day (~$50/month) + $0.10/GB/month
 Geo-replication: Additional $0.10/GB/month per replica
 ```
 
-### Cost Optimization
-✅ **Delete unused images** - Reduce storage costs
-✅ **Use Basic for dev/test** - Lower daily cost
-✅ **Optimize image size** - Use multi-stage builds
-✅ **Monitor usage** - `az acr show-usage`
-✅ **Retention policies** - Auto-delete old images
+# Cost Optimization (Оптимизация затрат)
 
-## Critical Notes
-- 💡 **Encryption-at-rest** - Automatic for all images
-- ⚠️ **Regional outage** - Data may be unavailable, not auto-recovered
-- 🎯 **Geo-replication** - Premium only, multi-region high availability
-- ✅ **Zone redundancy** - Premium only, minimum 3 zones per region
-- 📊 **Storage limits** - 2 TB max per tier
-- 🔄 **Cleanup required** - Delete unused images for performance
-- ⚠️ **Deletion permanent** - Use soft delete (Preview) for recovery
-- 🔒 **CMK** - Customer-managed keys for extra encryption layer
+✅ **Удаляйте неиспользуемые образы** — снижает расходы на хранение  
+✅ **Используйте Basic для dev/test** — минимальная стоимость  
+✅ **Оптимизируйте размер образов** — применяйте multi-stage builds  
+✅ **Мониторинг использования** — команда `az acr show-usage`  
+✅ **Retention policies** — автоматическое удаление старых образов
 
-## Exam Tips
-- All tiers: Encryption-at-rest (automatic), Azure-managed keys
-- Regional storage: Data in registry region (+ paired region in most cases)
-- Brazil South & Southeast Asia: Data confined to single region
-- Geo-replication: Premium only, multi-region HA, faster pulls
-- Zone redundancy: Premium only, minimum 3 zones per region
-- Storage limits: Basic (10GB), Standard (100GB), Premium (500GB included)
-- Max storage: 2 TB per tier
-- Unlimited: Repositories, images, layers, tags (within storage limit)
-- Performance impact: High repository/tag count affects performance
-- Soft delete: Preview feature, Premium only, restore deleted artifacts
-- Cleanup: `az acr purge`, retention policies, scheduled tasks
-- Cost: Daily rate + $0.10/GB storage + geo-replication costs
-- Throughput: Premium (500 concurrent ops), Standard (20), Basic (10)
+---
+
+# Critical Notes (Критически важные моменты)
+
+- 💡 **Encryption-at-rest** — автоматическое шифрование всех образов
+- ⚠️ **Региональный сбой** — данные могут стать недоступными и не восстанавливаются автоматически
+- 🎯 **Geo-replication** — только Premium, высокая доступность между регионами
+- ✅ **Zone redundancy** — только Premium, минимум 3 зоны в регионе
+- 📊 **Лимит хранения** — максимум 2 TB на тариф
+- 🔄 **Очистка обязательна** — удаляйте старые образы для производительности
+- ⚠️ **Удаление необратимо** — используйте soft delete (Preview) для восстановления
+- 🔒 **CMK** — customer-managed keys для дополнительного уровня шифрования
+
+---
+
+# Exam Tips (AZ-204)
+
+## Общие моменты
+
+- Все тарифы → encryption-at-rest включено по умолчанию
+- Используются ключи, управляемые Azure
+- Данные хранятся в регионе registry
+- В большинстве регионов есть парный регион
+
+---
+
+## Особые регионы
+
+- Brazil South → данные только в одном регионе
+- Southeast Asia → данные только в одном регионе
+
+---
+
+## Premium-функции
+
+- Geo-replication → multi-region high availability
+- Zone redundancy → минимум 3 зоны
+- Soft delete → восстановление удалённых артефактов (Preview)
+
+---
+
+## Лимиты хранения
+
+- Basic → 10 GB включено
+- Standard → 100 GB включено
+- Premium → 500 GB включено
+- Максимум → 2 TB на тариф
+
+---
+
+## Неограниченные ресурсы (в пределах хранилища)
+
+- Репозитории
+- Образы
+- Слои
+- Теги
+
+⚠️ Большое количество репозиториев и тегов может влиять на производительность.
+
+---
+
+## Очистка и управление
+
+- `az acr purge`
+- Retention policies
+- Плановые задачи (scheduled tasks)
+
+---
+
+## Стоимость
+
+- Ежедневная ставка тарифа
+- ~$0.10 за GB хранения
+- Дополнительная стоимость за geo-replication
+
+---
+
+## Throughput
+
+- Premium → 500 параллельных операций
+- Standard → 20
+- Basic → 10
+
+---
+
+## Частые экзаменационные ловушки
+
+- «Нужна multi-region HA» → Premium
+- «Минимальная стоимость dev» → Basic
+- «Защита от отказа зоны» → Zone Redundancy
+- «Восстановление удалённых образов» → Soft delete (Premium, Preview)
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/publish-container-image-to-azure-container-registry/3-azure-container-registry-storage)

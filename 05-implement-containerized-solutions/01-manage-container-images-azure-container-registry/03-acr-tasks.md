@@ -1,27 +1,52 @@
 # Azure Container Registry Tasks (ACR Tasks)
 
-## Key Concepts
-- **ACR Tasks** - Build container images in Azure cloud
-- **Quick task** - On-demand single image build (`az acr build`)
-- **Automated triggers** - Build on Git commit, base image update, schedule
-- **Multi-step tasks** - Complex workflows with multiple steps
+## Ключевые понятия (Key Concepts)
 
-## What Are ACR Tasks?
+- **ACR Tasks** — сборка контейнерных образов в облаке Azure
+- **Quick task** — разовая сборка образа по требованию (`az acr build`)
+- **Automated triggers** — автоматический запуск по Git-коммиту, обновлению base image или расписанию
+- **Multi-step tasks** — сложные workflow из нескольких шагов
 
-**Cloud-based container image building** without local Docker:
+---
 
-- Build images directly in Azure
-- No local Docker Engine needed
-- Automated build pipelines
-- Multi-platform support (Linux, Windows, ARM)
-- Integration with CI/CD
+# Что такое ACR Tasks?
 
-### Benefits
-✅ **No local Docker** - Build in cloud
-✅ **Automation** - Trigger builds automatically
-✅ **CI/CD integration** - Part of development lifecycle
-✅ **Platform support** - Linux, Windows, ARM architectures
-✅ **Multi-step workflows** - Build, test, push in sequence
+**Облачная сборка контейнерных образов** без использования локального Docker.
+
+- Сборка образов напрямую в Azure
+- Не требуется локальный Docker Engine
+- Поддержка автоматизированных build-пайплайнов
+- Поддержка разных платформ (Linux, Windows, ARM)
+- Интеграция с CI/CD процессами
+
+---
+
+## Преимущества
+
+✅ **Без локального Docker** — сборка полностью в облаке  
+✅ **Автоматизация** — автоматический запуск сборки  
+✅ **CI/CD интеграция** — часть DevOps-процесса  
+✅ **Поддержка платформ** — Linux, Windows, ARM  
+✅ **Многошаговые сценарии** — build → test → push
+
+---
+
+## Когда использовать ACR Tasks
+
+- Нужна облачная сборка без локальной инфраструктуры
+- Требуется автоматическая пересборка при изменении base image
+- Необходимо встроить сборку в Azure-native workflow
+- Нужна поддержка multi-platform build
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- ACR Tasks позволяют собирать образы без локального Docker
+- Поддерживают автоматические триггеры
+- Интегрируются с CI/CD
+- Поддерживают multi-step workflow
+- Используются вместе с Azure Container Registry
 
 ## Task Scenarios
 
@@ -39,11 +64,33 @@ az acr build \
 # Think: "docker build + docker push" in the cloud
 ```
 
-**Use cases**:
-- Quick builds without local Docker
-- CI/CD pipeline builds
-- Validate Dockerfile before commit
-- Inner-loop development
+## Use Cases (Сценарии использования ACR Tasks)
+
+- Быстрая сборка образов без локального Docker
+- Сборка образов в рамках CI/CD pipeline
+- Проверка Dockerfile перед коммитом
+- Inner-loop разработка (быстрая итерация и тестирование изменений)
+
+---
+
+## Когда это особенно полезно
+
+- Разработчики работают без установленного Docker
+- Нужно быстро протестировать изменения в Dockerfile
+- Требуется централизованная сборка в облаке
+- Необходимо автоматизировать процесс build → test → push
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе говорится:
+- «собрать образ без локального Docker»
+- «автоматическая сборка по Git-коммиту»
+- «пересборка при обновлении base image»
+
+→ правильный ответ: **ACR Tasks**.
+
 
 ### 2. Trigger on Source Code Update
 **Automatic builds on Git commit**:
@@ -61,14 +108,44 @@ az acr task create \
 
 # Now: Every commit triggers a build
 ```
+## Triggers (Триггеры ACR Tasks)
 
-**Triggers**:
-- Code commit to branch
-- Pull request created/updated
-- Specific branch or tag pattern
+### Поддерживаемые события запуска
 
-### 3. Trigger on Base Image Update
-**Rebuild app when base image changes**:
+- Коммит кода в ветку
+- Создание или обновление Pull Request
+- Совпадение с конкретной веткой или шаблоном тега
+
+---
+
+## Trigger on Base Image Update
+
+**Автоматическая пересборка приложения при обновлении базового образа**
+
+- Отслеживание изменений в base image
+- Автоматический запуск сборки при появлении новой версии
+- Обновление зависимых образов без ручного вмешательства
+- Повышение безопасности (получение последних патчей)
+
+---
+
+## Зачем это нужно
+
+- Автоматическое применение security-патчей
+- Минимизация уязвимостей
+- Поддержание актуальности зависимостей
+- Упрощение DevSecOps-процессов
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если требуется:
+- «пересобрать образ при обновлении базового образа»
+- «автоматически применять security-обновления»
+
+→ правильный ответ: **ACR Task с триггером на base image update**.
+
 
 ```bash
 # Create task that watches base image
@@ -116,14 +193,43 @@ az acr task create \
 # "0 2 1 * *"      - Monthly on 1st at 2 AM
 ```
 
-**Use cases**:
-- Nightly builds
-- Regular maintenance tasks
-- Scheduled image scanning
-- Periodic test runs
+## Use Cases (Сценарии использования по расписанию)
 
-### 5. Multi-Step Tasks
-**Complex workflows** with build, test, deploy:
+- Ночные сборки (nightly builds)
+- Регулярные задачи обслуживания
+- Плановое сканирование образов
+- Периодические тестовые прогоны
+
+---
+
+## Multi-Step Tasks
+
+### Сложные workflow с несколькими этапами
+
+Поддержка последовательных шагов:
+
+- Сборка образа
+- Запуск тестов
+- Проверка безопасности
+- Публикация (push)
+- Развёртывание
+
+---
+
+## Что это даёт
+
+- Полноценный CI/CD процесс внутри ACR
+- Автоматизация цепочки build → test → push → deploy
+- Уменьшение зависимости от внешних pipeline-систем
+- Возможность реализовать сложные DevOps-сценарии
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Multi-step tasks используются для сложных workflow
+- Поддерживают несколько последовательных действий
+- Подходят для автоматизации end-to-end процесса сборки и доставки
 
 ```yaml
 # acr-task.yaml
@@ -299,14 +405,44 @@ az acr task delete \
   --name build-task
 ```
 
-## Platform Support
+## Use Cases (Сценарии использования по расписанию)
 
-### Supported Platforms
+- Ночные сборки (nightly builds)
+- Регулярные задачи обслуживания
+- Плановое сканирование образов
+- Периодические тестовые прогоны
 
-| OS | Architectures |
-|-----|---------------|
-| **Linux** | amd64, arm, arm64, 386 |
-| **Windows** | amd64 |
+---
+
+## Multi-Step Tasks
+
+### Сложные workflow с несколькими этапами
+
+Поддержка последовательных шагов:
+
+- Сборка образа
+- Запуск тестов
+- Проверка безопасности
+- Публикация (push)
+- Развёртывание
+
+---
+
+## Что это даёт
+
+- Полноценный CI/CD процесс внутри ACR
+- Автоматизация цепочки build → test → push → deploy
+- Уменьшение зависимости от внешних pipeline-систем
+- Возможность реализовать сложные DevOps-сценарии
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Multi-step tasks используются для сложных workflow
+- Поддерживают несколько последовательных действий
+- Подходят для автоматизации end-to-end процесса сборки и доставки
+
 
 ### Platform Specification
 ```bash
@@ -323,17 +459,45 @@ az acr task delete \
 --platform Windows/amd64
 ```
 
-## Task Variables
+# Task Variables (Переменные задач ACR)
 
-### Built-in Variables
+## Встроенные переменные (Built-in Variables)
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `{{.Run.ID}}` | Unique run ID | `ca1` |
-| `{{.Run.Date}}` | Run date (YYYYMMDD) | `20260103` |
-| `{{.Run.Registry}}` | Registry name | `myregistry.azurecr.io` |
-| `{{.Run.Commit}}` | Git commit SHA | `abc123...` |
-| `{{.Run.Branch}}` | Git branch | `main` |
+| Переменная | Описание | Пример |
+|------------|----------|--------|
+| `{{.Run.ID}}` | Уникальный идентификатор запуска | `ca1` |
+| `{{.Run.Date}}` | Дата запуска (YYYYMMDD) | `20260103` |
+| `{{.Run.Registry}}` | Имя реестра | `myregistry.azurecr.io` |
+| `{{.Run.Commit}}` | SHA коммита Git | `abc123...` |
+| `{{.Run.Branch}}` | Ветка Git | `main` |
+
+---
+
+## Для чего используются переменные
+
+- Динамическое формирование тегов образов
+- Версионирование сборок
+- Автоматическое добавление метаданных
+- Связь образа с конкретным коммитом или веткой
+
+---
+
+## Практическое применение
+
+- Генерация уникальных тегов
+- Трассировка сборок
+- Поддержка CI/CD-процессов
+- Улучшение audit и debugging
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Переменные используются в шаблонах задач
+- Позволяют автоматически формировать теги
+- Связывают сборку с Git-коммитом или веткой
+- Упрощают автоматизацию версионирования
+
 
 ### Usage in Tasks
 ```bash
@@ -396,29 +560,102 @@ jobs:
             .
 ```
 
-## Critical Notes
-- 💡 **No Docker needed** - Build images entirely in Azure cloud
-- ⚠️ **Quick task** - `az acr build` = docker build + push in cloud
-- 🎯 **Automated triggers** - Git commit, base image update, schedule
-- ✅ **Multi-step tasks** - Build, test, push in YAML workflow
-- 📊 **Platform support** - Linux (amd64, arm, arm64), Windows (amd64)
-- 🔄 **CI/CD integration** - Works with Azure Pipelines, GitHub Actions, Jenkins
-- 🔒 **Base image tracking** - Auto-rebuild when base image updates
-- ⏱️ **Scheduled tasks** - Cron syntax for recurring builds
+# Critical Notes — ACR Tasks
 
-## Exam Tips
-- ACR Tasks: Build container images in Azure without local Docker
-- Quick task: `az acr build` - single image build and push
-- Task scenarios: Quick, Git commit, base image update, scheduled, multi-step
-- Triggers: Source code commit, base image update, schedule (cron)
-- Multi-step tasks: YAML file with build, test, push steps
-- Platform support: Linux (amd64, arm, arm64, 386), Windows (amd64)
-- Platform syntax: `--platform OS/architecture` or `OS/architecture/variant`
-- Task variables: {{.Run.ID}}, {{.Run.Date}}, {{.Run.Registry}}, etc.
-- Base image tracking: Auto-rebuild when base image in ACR or Docker Hub updates
-- Schedule format: Cron syntax (e.g., "0 2 * * *" for 2 AM daily)
-- Git triggers: Commit, pull request, specific branch/tag
-- Quick build from Git: `az acr build --registry <name> --image <image> <git-url>`
-- Task management: create, list, run, show, update, delete, logs
+- 💡 **Docker не требуется** — сборка полностью выполняется в Azure
+- ⚠️ **Quick task** — `az acr build` = cloud-версия docker build + push
+- 🎯 **Автоматические триггеры** — Git-коммит, обновление base image, расписание
+- ✅ **Multi-step tasks** — YAML workflow (build → test → push)
+- 📊 **Поддержка платформ** — Linux (amd64, arm, arm64), Windows (amd64)
+- 🔄 **CI/CD интеграция** — Azure Pipelines, GitHub Actions, Jenkins
+- 🔒 **Отслеживание base image** — автоматическая пересборка при обновлении
+- ⏱️ **Scheduled tasks** — запуск по cron-расписанию
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- ACR Tasks — сборка контейнерных образов в Azure без локального Docker
+- Quick task — `az acr build` (одиночная сборка и публикация)
+
+---
+
+## Сценарии задач
+
+- Quick build
+- Сборка по Git-коммиту
+- Пересборка при обновлении base image
+- Запуск по расписанию
+- Multi-step workflow
+
+---
+
+## Триггеры
+
+- Коммит исходного кода
+- Обновление base image
+- Расписание (cron-формат)
+
+---
+
+## Multi-step tasks
+
+- Описываются в YAML
+- Поддерживают последовательность шагов: build → test → push
+
+---
+
+## Поддержка платформ
+
+- Linux: amd64, arm, arm64, 386
+- Windows: amd64
+- Синтаксис: `OS/architecture` или `OS/architecture/variant`
+
+---
+
+## Переменные задач
+
+- `{{.Run.ID}}`
+- `{{.Run.Date}}`
+- `{{.Run.Registry}}`
+- и другие встроенные переменные
+
+---
+
+## Base image tracking
+
+- Автоматическая пересборка при обновлении образа в ACR или Docker Hub
+- Улучшение безопасности за счёт актуальных патчей
+
+---
+
+## Расписание
+
+- Используется cron-синтаксис
+- Пример: `0 2 * * *` — ежедневно в 02:00
+
+---
+
+## Управление задачами
+
+- create
+- list
+- run
+- show
+- update
+- delete
+- logs
+
+---
+
+## Частые экзаменационные ловушки
+
+- «Сборка без локального Docker» → ACR Tasks
+- «Автоматическая пересборка при обновлении base image» → Base image trigger
+- «Ночные сборки» → Scheduled task
+- «Сложный workflow» → Multi-step task
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/publish-container-image-to-azure-container-registry/4-azure-container-registry-tasks)

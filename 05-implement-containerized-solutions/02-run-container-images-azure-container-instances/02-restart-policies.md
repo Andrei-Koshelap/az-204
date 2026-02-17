@@ -1,27 +1,50 @@
-# Container Restart Policies
+# Container Restart Policies в Azure Container Instances
 
-## Key Concepts
-- **Restart policy** - Controls container restart behavior
-- **Always** - Restart on any exit (default)
-- **Never** - Never restart (run once)
-- **OnFailure** - Restart only on failure (non-zero exit)
+## Ключевые понятия (Key Concepts)
 
-## Restart Policy Overview
+- **Restart policy** — определяет поведение контейнера после завершения работы
+- **Always** — перезапуск при любом завершении (по умолчанию)
+- **Never** — не перезапускать (однократный запуск)
+- **OnFailure** — перезапуск только при ошибке (код выхода ≠ 0)
 
-**Controls what happens when container exits**:
+---
 
-- Determines if container should restart
-- Affects billing (stopped containers don't incur charges)
-- Perfect for batch jobs and tasks
-- Per-second billing means you pay only while running
+# Обзор Restart Policy
 
-## Restart Policy Options
+Определяет, что произойдёт после завершения контейнера:
 
-| Policy | Behavior | Use Case | Status After Exit |
-|--------|----------|----------|-------------------|
-| **Always** | Always restart on exit | Long-running services, web apps | Running |
-| **Never** | Never restart, run once | One-time tasks, batch jobs | Terminated |
-| **OnFailure** | Restart on non-zero exit | Tasks that may fail and retry | Running or Terminated |
+- Нужно ли автоматически перезапускать контейнер
+- Влияет на стоимость (остановленные контейнеры не тарифицируются)
+- Подходит для batch-задач и одноразовых процессов
+- Оплата посекундная — платите только во время выполнения
+
+---
+
+# Доступные политики перезапуска
+
+| Политика | Поведение | Сценарий | Статус после завершения |
+|-----------|------------|-----------|--------------------------|
+| **Always** | Всегда перезапускать | Долгоживущие сервисы, веб-приложения | Running |
+| **Never** | Никогда не перезапускать | Одноразовые задачи, batch | Terminated |
+| **OnFailure** | Перезапуск при ошибке | Задачи с возможностью повторной попытки | Running или Terminated |
+
+---
+
+## Когда какую использовать
+
+- **Always** → API, web-сервис, постоянная служба
+- **Never** → миграции БД, одноразовые скрипты
+- **OnFailure** → retry-логика для batch-процессов
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- По умолчанию используется **Always**
+- Для одноразовой задачи → **Never**
+- Для retry при ошибке → **OnFailure**
+- Остановленный контейнер не тарифицируется
+
 
 ### Always (Default)
 ```bash
@@ -39,10 +62,27 @@ az container create \
 # - Continuous monitoring
 ```
 
-**Behavior**:
-- Exit code 0 (success) → Restart
-- Exit code != 0 (failure) → Restart
-- Default policy if not specified
+## Behavior (Политика Always — по умолчанию)
+
+- Код выхода 0 (успешное завершение) → контейнер перезапускается
+- Код выхода ≠ 0 (ошибка) → контейнер перезапускается
+- Используется по умолчанию, если политика не указана
+
+---
+
+## Что это означает
+
+- Контейнер будет постоянно поддерживаться в состоянии Running
+- Подходит для долгоживущих сервисов
+- Не подходит для одноразовых задач (они будут перезапускаться снова и снова)
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Если restart policy не указана → используется **Always**
+- Always → перезапуск при любом коде выхода
+- Для batch-задач нужно явно указывать `Never` или `OnFailure`
 
 ### Never
 ```bash
@@ -61,10 +101,27 @@ az container create \
 # - Database migrations
 ```
 
-**Behavior**:
-- Exit code 0 (success) → Terminated
-- Exit code != 0 (failure) → Terminated
-- Status set to **Terminated** after exit
+## Behavior (Политика Always — по умолчанию)
+
+- Код выхода 0 (успешное завершение) → контейнер перезапускается
+- Код выхода ≠ 0 (ошибка) → контейнер перезапускается
+- Используется по умолчанию, если политика не указана
+
+---
+
+## Что это означает
+
+- Контейнер будет постоянно поддерживаться в состоянии Running
+- Подходит для долгоживущих сервисов
+- Не подходит для одноразовых задач (они будут перезапускаться снова и снова)
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Если restart policy не указана → используется **Always**
+- Always → перезапуск при любом коде выхода
+- Для batch-задач нужно явно указывать `Never` или `OnFailure`
 
 ### OnFailure
 ```bash
@@ -82,20 +139,52 @@ az container create \
 # - Data sync tasks
 ```
 
-**Behavior**:
-- Exit code 0 (success) → Terminated
-- Exit code != 0 (failure) → Restart and try again
-- Runs at least once
+## Behavior (Политика OnFailure)
 
-## Run-to-Completion Tasks
+- Код выхода 0 (успешное завершение) → контейнер переходит в состояние Terminated
+- Код выхода ≠ 0 (ошибка) → контейнер перезапускается и выполняет повторную попытку
+- Контейнер гарантированно запускается минимум один раз
 
-### Perfect for Batch Jobs
+---
 
-**Benefits**:
-- Start quickly (seconds)
-- Run task to completion
-- Pay only for compute time used
-- Automatically terminated when done
+# Run-to-Completion Tasks
+
+## Идеально для batch-задач
+
+Подходит для сценариев, где контейнер:
+
+- Выполняет работу
+- Завершается
+- Не должен работать постоянно
+
+---
+
+## Преимущества
+
+- Быстрый старт (секунды)
+- Выполнение задачи до завершения
+- Оплата только за фактическое время работы
+- Автоматическое завершение после выполнения
+
+---
+
+## Типичные сценарии
+
+- Обработка файлов
+- Миграции базы данных
+- Генерация отчётов
+- Data processing jobs
+- CI/CD вспомогательные задачи
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Run-once задача → `Never`
+- Retry при ошибке → `OnFailure`
+- Долгоживущий сервис → `Always`
+- Batch + оплата только за выполнение → ACI + `OnFailure` или `Never`
+
 
 ### Example: Data Processing
 ```bash
@@ -301,18 +390,38 @@ properties:
   restartPolicy: OnFailure
 ```
 
-## Exit Codes
+# Exit Codes (Коды завершения контейнера)
 
-### Standard Exit Codes
-| Exit Code | Meaning | Restart with OnFailure? |
-|-----------|---------|-------------------------|
-| **0** | Success | No (Terminated) |
-| **1** | General error | Yes |
-| **2** | Misuse | Yes |
-| **126** | Cannot execute | Yes |
-| **127** | Command not found | Yes |
-| **137** | SIGKILL (OOM) | Yes |
-| **139** | Segmentation fault | Yes |
+## Стандартные коды выхода
+
+| Exit Code | Значение | Перезапуск при OnFailure? |
+|------------|-----------|----------------------------|
+| **0** | Успешное завершение | Нет (Terminated) |
+| **1** | Общая ошибка | Да |
+| **2** | Неверное использование команды | Да |
+| **126** | Невозможно выполнить | Да |
+| **127** | Команда не найдена | Да |
+| **137** | SIGKILL (обычно OOM — нехватка памяти) | Да |
+| **139** | Segmentation fault | Да |
+
+---
+
+## Что важно понимать
+
+- Код выхода **0** означает успешное завершение задачи.
+- Любой код ≠ 0 считается ошибкой.
+- При политике `OnFailure` контейнер будет перезапущен при ошибке.
+- Код 137 часто указывает на нехватку памяти (Out Of Memory).
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Exit code 0 → успех, без перезапуска при `OnFailure`
+- Exit code ≠ 0 → перезапуск при `OnFailure`
+- OOM (137) → признак нехватки памяти
+- Для batch-задач важно правильно выбрать restart policy
+
 
 ### Setting Exit Codes in Your App
 ```bash
@@ -340,15 +449,42 @@ except Exception as e:
     sys.exit(1)  # Failure - will trigger restart with OnFailure
 ```
 
-## Cost Implications
+# Cost Implications (Влияние политики перезапуска на стоимость)
 
-### Billing by Restart Policy
+## Тарификация в зависимости от Restart Policy
 
-| Policy | Running Time | Cost Pattern |
-|--------|--------------|--------------|
-| **Always** | Continuous | Constant (until deleted) |
-| **Never** | Once | Single execution cost |
-| **OnFailure** | Until success | Variable (depends on failures) |
+| Политика | Время работы | Модель затрат |
+|-----------|--------------|---------------|
+| **Always** | Непрерывно | Постоянные расходы (пока не удалён ресурс) |
+| **Never** | Один запуск | Разовая стоимость выполнения |
+| **OnFailure** | До успешного завершения | Переменные расходы (зависят от числа ошибок) |
+
+---
+
+## Что это означает
+
+- **Always** — контейнер постоянно работает → постоянная тарификация
+- **Never** — контейнер завершился → оплата прекращается
+- **OnFailure** — каждый перезапуск увеличивает общее время работы и стоимость
+
+---
+
+## Практические рекомендации
+
+- Для batch-задач → `Never` или `OnFailure`
+- Для долгоживущих сервисов → `Always`
+- Контролируйте exit codes, чтобы избежать бесконечных перезапусков
+- Мониторьте использование CPU и памяти
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Оплата в ACI идёт только за время работы контейнера
+- Неправильный restart policy может увеличить расходы
+- Batch-задачи + минимальная стоимость → `Never`
+- Retry-логика → `OnFailure`
+- Web/API сервис → `Always`
 
 ### Example Cost Calculation
 ```
@@ -417,29 +553,72 @@ az container logs \
 # Implement timeout logic in your application
 ```
 
-## Critical Notes
-- 💡 **Default policy** - Always (restarts on any exit)
-- ⚠️ **Never** - Run once, then terminate (perfect for batch jobs)
-- 🎯 **OnFailure** - Restart on failure (exit code != 0)
-- ✅ **Per-second billing** - Stopped containers don't incur charges
-- 📊 **Exit code 0** - Success (no restart with OnFailure)
-- 🔄 **Exit code != 0** - Failure (restart with OnFailure)
-- 🔒 **Terminated state** - Container stopped, logs still available
-- ⏱️ **Run-to-completion** - Perfect for batch jobs, data processing
+# Critical Notes — Container Restart Policies
 
-## Exam Tips
-- Restart policies: Always, Never, OnFailure
-- Always: Default, restarts on any exit (long-running services)
-- Never: Run once, never restart (batch jobs, migrations)
-- OnFailure: Restart only on failure (exit code != 0)
-- Exit code 0: Success (OnFailure won't restart)
-- Exit code != 0: Failure (OnFailure will restart)
-- Run-to-completion: Perfect for batch jobs, billed per second
-- Status after exit with Never/OnFailure (success): Terminated
-- Logs available even after termination
-- CLI: `--restart-policy Always|Never|OnFailure`
-- YAML: `restartPolicy: Always|Never|OnFailure`
-- Billing: Pay only while container is running
-- OnFailure runs at least once (even if succeeds first time)
+- 💡 **Политика по умолчанию** — Always (перезапуск при любом завершении)
+- ⚠️ **Never** — однократный запуск, затем завершение (идеально для batch-задач)
+- 🎯 **OnFailure** — перезапуск только при ошибке (exit code ≠ 0)
+- ✅ **Оплата посекундно** — остановленные контейнеры не тарифицируются
+- 📊 **Exit code 0** — успешное завершение (без перезапуска при OnFailure)
+- 🔄 **Exit code ≠ 0** — ошибка (перезапуск при OnFailure)
+- 🔒 **Состояние Terminated** — контейнер остановлен, логи доступны
+- ⏱️ **Run-to-completion** — идеально для batch-задач и обработки данных
+
+---
+
+# Exam Tips (AZ-204)
+
+## Политики перезапуска
+
+- **Always** — по умолчанию, перезапуск при любом завершении  
+  (подходит для долгоживущих сервисов)
+
+- **Never** — запуск один раз, без перезапуска  
+  (batch-задачи, миграции, одноразовые скрипты)
+
+- **OnFailure** — перезапуск только при ошибке  
+  (exit code ≠ 0)
+
+---
+
+## Коды завершения
+
+- Exit code 0 → успех → OnFailure не перезапускает
+- Exit code ≠ 0 → ошибка → OnFailure перезапускает
+
+---
+
+## Поведение после завершения
+
+- При `Never` или успешном `OnFailure` → статус **Terminated**
+- Логи доступны даже после завершения контейнера
+
+---
+
+## Настройка
+
+- CLI:  
+  `--restart-policy Always|Never|OnFailure`
+
+- YAML:  
+  `restartPolicy: Always|Never|OnFailure`
+
+---
+
+## Биллинг
+
+- Оплата только во время работы контейнера
+- Run-to-completion — оптимально для batch-задач
+- OnFailure гарантирует минимум один запуск
+
+---
+
+## Частые экзаменационные ловушки
+
+- Если политика не указана → Always
+- Batch-задача без перезапуска → Never
+- Retry при ошибке → OnFailure
+- Логи доступны после завершения
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/create-run-container-images-azure-container-instances/4-run-containerized-tasks-restart-policies)

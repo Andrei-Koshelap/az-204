@@ -1,75 +1,107 @@
-# Azure Container Registry Overview
+# Azure Container Registry (ACR) — Обзор
 
-## Key Concepts
-- **ACR** - Managed Docker Registry 2.0 service in Azure
-- **Private registry** - Store and manage container images securely
-- **Integration** - Works with existing CI/CD pipelines
-- **ACR Tasks** - Build images in Azure without local Docker
+## Ключевые понятия (Key Concepts)
 
-## What Is Azure Container Registry?
+- **ACR** — управляемый сервис Docker Registry 2.0 в Azure
+- **Private registry** — приватное хранилище контейнерных образов
+- **Интеграция** — работает с существующими CI/CD-пайплайнами
+- **ACR Tasks** — сборка образов в Azure без локального Docker
 
-**Managed container registry service** for storing and managing container images:
+---
 
-- Based on open-source **Docker Registry 2.0**
-- Private registry hosted in Azure
-- Stores container images and related artifacts
-- Integrates with Azure services and orchestrators
-- No local Docker Engine required (with ACR Tasks)
+# Что такое Azure Container Registry?
 
-## Use Cases
+**Управляемый сервис реестра контейнеров** для хранения и управления образами.
 
-### Deployment Targets
-**Pull images** to various Azure services:
+- Основан на open-source **Docker Registry 2.0**
+- Приватный registry, размещённый в Azure
+- Хранит контейнерные образы и связанные артефакты
+- Интегрируется с Azure-сервисами и оркестраторами
+- Не требует локального Docker Engine (при использовании ACR Tasks)
 
-| Target | Description |
-|--------|-------------|
+---
+
+# Сценарии использования
+
+## Цели развертывания (Pull образов)
+
+| Цель | Описание |
+|------|----------|
 | **Kubernetes** | AKS, DC/OS, Docker Swarm |
-| **Azure App Service** | Deploy containerized web apps |
-| **Azure Batch** | Run batch workloads |
-| **Service Fabric** | Microservices platform |
+| **Azure App Service** | Развёртывание контейнеризированных веб-приложений |
+| **Azure Batch** | Запуск batch-нагрузок |
+| **Service Fabric** | Платформа для микросервисов |
 
-### Development Workflow
-**Push images** from CI/CD pipelines:
+---
+
+## Процесс разработки (Push образов)
+
+Интеграция с CI/CD:
 
 - Azure Pipelines
 - Jenkins
 - GitHub Actions
 - GitLab CI/CD
 
-### Automation
-- Rebuild images on base image updates
-- Build images on Git commit
-- Multi-step build, test, patch workflows
+---
 
-## Service Tiers
+## Автоматизация
 
-| Tier | Storage | Throughput | Use Case |
-|------|---------|------------|----------|
-| **Basic** | 10 GB | Low | Learning, dev environments |
-| **Standard** | 100 GB | Medium | Most production scenarios |
-| **Premium** | 500 GB | High | High-volume, geo-replication |
+- Пересборка образов при обновлении base image
+- Сборка образов при Git-коммите
+- Многошаговые процессы: build → test → patch
 
-### Tier Capabilities
+---
 
-#### All Tiers (Basic, Standard, Premium)
-✅ Microsoft Entra ID authentication
-✅ Image deletion
-✅ Webhooks
-✅ Same programmatic capabilities
+# Тарифные планы (Service Tiers)
 
-#### Premium-Only Features
-🎯 **Geo-replication** - Single registry across multiple regions
-🎯 **Content trust** - Image tag signing
-🎯 **Private Link** - Private endpoints for restricted access
-🎯 **Zone redundancy** - Availability zones support
+| Tier | Хранилище | Пропускная способность | Сценарий |
+|------|------------|------------------------|----------|
+| **Basic** | 10 GB | Низкая | Обучение, dev-среда |
+| **Standard** | 100 GB | Средняя | Большинство production-сценариев |
+| **Premium** | 500 GB | Высокая | Высокая нагрузка, geo-replication |
 
-## Supported Content
+---
 
-### Image Types
-- **Docker containers** - Windows and Linux
-- **Helm charts** - Kubernetes package manager
-- **OCI images** - Open Container Initiative format
-- **Related artifacts** - Configuration, templates
+# Возможности по уровням
+
+## Доступно во всех планах
+
+✅ Аутентификация через Microsoft Entra ID  
+✅ Удаление образов  
+✅ Webhooks  
+✅ Полный программный API
+
+---
+
+## Только в Premium
+
+🎯 **Geo-replication** — один registry в нескольких регионах  
+🎯 **Content trust** — подпись тегов образов  
+🎯 **Private Link** — приватные endpoint’ы  
+🎯 **Zone redundancy** — поддержка availability zones
+
+---
+
+# Поддерживаемый контент
+
+## Типы образов
+
+- **Docker-контейнеры** (Windows и Linux)
+- **Helm charts**
+- **OCI-образы** (Open Container Initiative)
+- **Связанные артефакты** (конфигурации, шаблоны и т.д.)
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- ACR — приватный registry в Azure
+- Основан на Docker Registry 2.0
+- Интеграция с AKS и CI/CD
+- ACR Tasks — сборка без локального Docker
+- Geo-replication и Private Link — только Premium
+- Используется для хранения и распространения контейнерных образов
 
 ### Repository Organization
 ```
@@ -195,16 +227,48 @@ az acr update --name myregistry --admin-enabled true
 az acr credential show --name myregistry
 ```
 
-⚠️ **Production**: Use service principal or managed identity, not admin account
+⚠️ **Production**: Используйте service principal или managed identity, а не admin-аккаунт
 
-## RBAC Roles
+---
 
-| Role | Description | Permissions |
-|------|-------------|-------------|
-| **AcrPull** | Pull images | Read-only |
-| **AcrPush** | Pull and push images | Read/write images |
-| **AcrDelete** | Delete images | Delete images/repositories |
-| **Owner** | Full access | All operations |
+# RBAC-роли в Azure Container Registry
+
+| Роль | Описание | Разрешения |
+|------|-----------|------------|
+| **AcrPull** | Получение (pull) образов | Только чтение |
+| **AcrPush** | Получение и публикация (pull + push) | Чтение и запись образов |
+| **AcrDelete** | Удаление образов | Удаление образов и репозиториев |
+| **Owner** | Полный доступ | Все операции |
+
+---
+
+## Практические рекомендации
+
+- Для продакшена:
+    - Используйте **Managed Identity** (для Azure сервисов)
+    - Или **Service Principal** (для CI/CD)
+- Не используйте admin account в production.
+- Применяйте принцип **минимально необходимых прав (least privilege)**.
+
+---
+
+## Типовые сценарии
+
+- AKS или App Service → **AcrPull**
+- CI/CD pipeline → **AcrPush**
+- Очистка старых образов → **AcrDelete**
+- Полный контроль → **Owner**
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Для production → Managed Identity или Service Principal
+- AcrPull → только загрузка образов
+- AcrPush → загрузка и публикация
+- AcrDelete → удаление
+- Admin account → не рекомендуется для production
+
 
 ## Integration with Azure Services
 
@@ -251,25 +315,91 @@ az container create \
   --registry-password <password>
 ```
 
-## Critical Notes
-- 💡 **Private registry** - Secure alternative to Docker Hub
-- ⚠️ **Admin account** - Not recommended for production
-- 🎯 **Service tiers** - Choose based on storage, throughput, features
-- ✅ **Premium** - Required for geo-replication, content trust, private link
-- 🔒 **Authentication** - Use service principal or managed identity
-- 📊 **Integration** - Works seamlessly with AKS, App Service, ACI
-- 🔄 **ACR Tasks** - Build images without local Docker Engine
+# Critical Notes — Azure Container Registry
 
-## Exam Tips
-- ACR = Managed Docker Registry 2.0 service
-- Three tiers: Basic (dev), Standard (production), Premium (advanced)
-- Premium features: geo-replication, content trust, private link, zone redundancy
-- All tiers: Entra ID auth, image deletion, webhooks
-- Authentication: CLI (3h token), service principal, managed identity, admin (not prod)
-- RBAC roles: AcrPull (read), AcrPush (read/write), AcrDelete (delete), Owner (full)
-- Integration: AKS, App Service, ACI, Batch, Service Fabric
-- ACR Tasks: Build images in cloud without local Docker
-- Repository naming: `registry.azurecr.io/repository:tag`
-- Admin account: Not recommended for production (use service principal/managed identity)
+- 💡 **Private registry** — безопасная альтернатива Docker Hub
+- ⚠️ **Admin account** — не рекомендуется для production
+- 🎯 **Service tiers** — выбираются исходя из объёма хранения, пропускной способности и нужных функций
+- ✅ **Premium** — обязателен для geo-replication, content trust и private link
+- 🔒 **Аутентификация** — используйте service principal или managed identity
+- 📊 **Интеграция** — работает с AKS, App Service, ACI
+- 🔄 **ACR Tasks** — сборка образов в облаке без локального Docker Engine
+
+---
+
+# Exam Tips (AZ-204)
+
+- ACR — управляемый Docker Registry 2.0 сервис
+- Три уровня:
+    - **Basic** — dev
+    - **Standard** — production
+    - **Premium** — расширенные возможности
+
+---
+
+## Premium-функции
+
+- Geo-replication
+- Content trust
+- Private Link
+- Zone redundancy
+
+---
+
+## Доступно во всех планах
+
+- Аутентификация через Microsoft Entra ID
+- Удаление образов
+- Webhooks
+
+---
+
+## Аутентификация
+
+- Azure CLI (временный токен ~3 часа)
+- Service Principal
+- Managed Identity
+- Admin account (не использовать в production)
+
+---
+
+## RBAC-роли
+
+- **AcrPull** — чтение
+- **AcrPush** — чтение и запись
+- **AcrDelete** — удаление
+- **Owner** — полный доступ
+
+---
+
+## Интеграция
+
+- AKS
+- App Service
+- Azure Container Instances (ACI)
+- Azure Batch
+- Service Fabric
+
+---
+
+## ACR Tasks
+
+- Сборка образов в облаке
+- Не требуется локальный Docker
+- Поддержка автоматических триггеров
+
+---
+
+## Формат имени репозитория
+    registry.azurecr.io/repository:tag
+---
+
+## Частые экзаменационные ловушки
+
+- «Нужна geo-replication» → Premium
+- «Production authentication» → Managed Identity или Service Principal
+- «Private registry в Azure» → ACR
+- «Сборка без локального Docker» → ACR Tasks
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/publish-container-image-to-azure-container-registry/2-azure-container-registry-overview)

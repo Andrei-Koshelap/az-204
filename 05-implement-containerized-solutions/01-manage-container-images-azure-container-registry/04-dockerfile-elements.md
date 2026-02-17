@@ -1,40 +1,66 @@
-# Dockerfile Elements
+# Dockerfile — Основные элементы
 
-## Key Concepts
-- **Dockerfile** - Script with instructions to build Docker image
-- **Layered architecture** - Each instruction creates a layer
-- **Base image** - Starting point (FROM instruction)
-- **Build context** - Files sent to Docker daemon for build
+## Ключевые понятия (Key Concepts)
 
-## What Is a Dockerfile?
+- **Dockerfile** — файл с инструкциями для сборки Docker-образа
+- **Слоистая архитектура** — каждая инструкция создаёт новый слой
+- **Base image** — базовый образ (инструкция FROM)
+- **Build context** — файлы, передаваемые Docker-демону для сборки
 
-**Text file with instructions** to build a container image:
+---
 
-- Series of commands to assemble image
-- Defines base image, dependencies, app code
-- Each instruction creates a new layer
-- Layers are cached for faster builds
+# Что такое Dockerfile?
 
-## Common Dockerfile Instructions
+**Текстовый файл с инструкциями** для сборки контейнерного образа.
 
-### Essential Instructions
+- Содержит последовательность команд для создания образа
+- Определяет базовый образ, зависимости и код приложения
+- Каждая инструкция создаёт новый слой
+- Слои кэшируются для ускорения повторной сборки
 
-| Instruction | Purpose | Example |
-|-------------|---------|---------|
-| `FROM` | Set base image | `FROM node:18` |
-| `WORKDIR` | Set working directory | `WORKDIR /app` |
-| `COPY` | Copy files to image | `COPY . /app` |
-| `ADD` | Copy + extract archives | `ADD app.tar.gz /app` |
-| `RUN` | Execute command during build | `RUN npm install` |
-| `CMD` | Default command to run | `CMD ["node", "app.js"]` |
-| `ENTRYPOINT` | Main executable | `ENTRYPOINT ["python"]` |
-| `EXPOSE` | Document port | `EXPOSE 8080` |
-| `ENV` | Set environment variable | `ENV NODE_ENV=production` |
-| `ARG` | Build-time variable | `ARG VERSION=1.0` |
-| `LABEL` | Add metadata | `LABEL version="1.0"` |
-| `USER` | Set user for RUN/CMD | `USER appuser` |
-| `VOLUME` | Create mount point | `VOLUME /data` |
-| `HEALTHCHECK` | Container health check | `HEALTHCHECK CMD curl` |
+---
+
+# Основные инструкции Dockerfile
+
+## Базовые инструкции
+
+| Инструкция | Назначение | Пример |
+|------------|------------|--------|
+| `FROM` | Указать базовый образ | `FROM node:18` |
+| `WORKDIR` | Установить рабочую директорию | `WORKDIR /app` |
+| `COPY` | Копировать файлы в образ | `COPY . /app` |
+| `ADD` | Копировать файлы + распаковывать архивы | `ADD app.tar.gz /app` |
+| `RUN` | Выполнить команду при сборке | `RUN npm install` |
+| `CMD` | Команда по умолчанию при запуске | `CMD ["node", "app.js"]` |
+| `ENTRYPOINT` | Основной исполняемый файл | `ENTRYPOINT ["python"]` |
+| `EXPOSE` | Задокументировать порт | `EXPOSE 8080` |
+| `ENV` | Задать переменную окружения | `ENV NODE_ENV=production` |
+| `ARG` | Переменная на этапе сборки | `ARG VERSION=1.0` |
+| `LABEL` | Добавить метаданные | `LABEL version="1.0"` |
+| `USER` | Указать пользователя для RUN/CMD | `USER appuser` |
+| `VOLUME` | Создать точку монтирования | `VOLUME /data` |
+| `HEALTHCHECK` | Проверка состояния контейнера | `HEALTHCHECK CMD curl` |
+
+---
+
+## Важно понимать
+
+- `FROM` — всегда первая инструкция (за исключением ARG перед FROM).
+- `RUN` создаёт новый слой при каждой инструкции.
+- `COPY` предпочтительнее `ADD`, если не требуется распаковка.
+- `CMD` можно переопределить при запуске контейнера.
+- `ENTRYPOINT` задаёт основной процесс контейнера.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Каждая инструкция = новый слой.
+- Слои кэшируются для ускорения сборки.
+- `COPY` и `RUN` влияют на кэш.
+- `CMD` и `ENTRYPOINT` определяют поведение контейнера при запуске.
+- `ARG` используется только во время сборки, `ENV` — во время выполнения.
+
 
 ## Example Dockerfile (.NET)
 
@@ -55,15 +81,28 @@ EXPOSE 80
 # Set the command to run when the container starts
 CMD ["dotnet", "MyApp.dll"]
 ```
+## Пояснение построчно (Line-by-line explanation)
 
-**Line-by-line explanation**:
-1. `FROM mcr.microsoft.com/dotnet/runtime:6.0` - Start with .NET 6 runtime base image
-2. `WORKDIR /app` - Create and set `/app` as working directory
-3. `COPY bin/Release/net6.0/publish/ .` - Copy published app files to `/app`
-4. `EXPOSE 80` - Document that app listens on port 80
-5. `CMD ["dotnet", "MyApp.dll"]` - Run app when container starts
+1. `FROM mcr.microsoft.com/dotnet/runtime:6.0`  
+   Используется базовый образ с .NET 6 Runtime в качестве основы для контейнера.
 
-⚠️ **EXPOSE** does not publish the port - use `docker run -p` to map ports
+2. `WORKDIR /app`  
+   Создаётся и устанавливается рабочая директория `/app`.
+
+3. `COPY bin/Release/net6.0/publish/ .`  
+   Скопированы опубликованные файлы приложения в директорию `/app`.
+
+4. `EXPOSE 80`  
+   Указывается, что приложение слушает порт 80 (документирование порта).
+
+5. `CMD ["dotnet", "MyApp.dll"]`  
+   Команда, которая запускается при старте контейнера.
+
+---
+
+⚠️ **Важно:**  
+`EXPOSE` не публикует порт наружу.  
+Для проброса порта используется параметр `-p` при запуске контейнера.
 
 ## Detailed Instruction Examples
 
@@ -180,9 +219,34 @@ RUN echo "Building version $VERSION"
 docker build --build-arg VERSION=2.0.0 .
 ```
 
-**Difference: ARG vs ENV**
-- `ARG` - Available during build only
-- `ENV` - Available during build AND runtime
+## Разница: ARG vs ENV
+
+- `ARG` — доступна только во время сборки образа
+- `ENV` — доступна во время сборки и при запуске контейнера
+
+---
+
+## Что это означает
+
+### ARG
+- Используется для параметризации сборки
+- Значение можно передать при build
+- Не сохраняется в финальном контейнере
+
+### ENV
+- Устанавливает переменную окружения
+- Доступна приложению во время выполнения
+- Сохраняется в образе
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Нужно значение только при сборке → **ARG**
+- Нужно значение во время выполнения → **ENV**
+- ARG не доступен после запуска контейнера
+- ENV остаётся в runtime-среде
+
 
 ### EXPOSE - Document Ports
 ```dockerfile
@@ -228,12 +292,38 @@ VOLUME ["/data", "/logs"]
 docker run -v /host/path:/data myimage
 ```
 
-## Multi-Stage Builds
+# Multi-Stage Builds
 
-### Why Multi-Stage?
-✅ **Smaller images** - Don't include build tools in final image
-✅ **Separate build/runtime** - Build in SDK, run in runtime
-✅ **Security** - Fewer tools = smaller attack surface
+## Зачем использовать Multi-Stage?
+
+✅ **Меньший размер образа** — инструменты сборки не попадают в финальный образ  
+✅ **Разделение сборки и запуска** — сборка в SDK-образе, запуск в runtime-образе  
+✅ **Безопасность** — меньше установленных инструментов → меньше поверхность атаки
+
+---
+
+## Что это даёт на практике
+
+- Финальный образ содержит только необходимые runtime-зависимости
+- Уменьшается размер скачивания и время запуска
+- Снижается количество уязвимостей
+- Улучшается производительность CI/CD
+
+---
+
+## Типичный подход
+
+1. Первый этап — build (SDK, компиляция, тесты)
+2. Второй этап — runtime (только скомпилированное приложение)
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Multi-stage → уменьшение размера образа
+- Инструменты сборки не входят в финальный контейнер
+- Улучшение безопасности и производительности
+
 
 ### Example: .NET Multi-Stage Build
 ```dockerfile
@@ -273,12 +363,39 @@ EXPOSE 3000
 CMD ["node", "dist/server.js"]
 ```
 
-## Layer Caching
+# Layer Caching
 
-### How Caching Works
-1. Docker caches each layer
-2. If instruction unchanged, reuse cached layer
-3. First changed instruction invalidates cache for all subsequent layers
+## Как работает кэширование слоёв
+
+1. Docker кэширует каждый слой образа
+2. Если инструкция не изменилась — используется кэшированный слой
+3. Первая изменённая инструкция инвалидирует кэш для всех последующих слоёв
+
+---
+
+## Что это означает на практике
+
+- Порядок инструкций влияет на скорость сборки
+- Часто изменяемые шаги лучше размещать ниже
+- Зависимости (например, установка пакетов) — выше, если они редко меняются
+- Изменение одного файла может пересобрать половину образа
+
+---
+
+## Практические рекомендации
+
+- Копируйте сначала файлы зависимостей, затем остальной код
+- Объединяйте команды RUN, чтобы уменьшить количество слоёв
+- Используйте `.dockerignore`, чтобы не отправлять лишние файлы
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Каждая инструкция = отдельный слой
+- Изменение инструкции → сброс кэша ниже по Dockerfile
+- Правильный порядок инструкций ускоряет сборку
+
 
 ### Optimization: Order Instructions by Change Frequency
 ```dockerfile
@@ -423,33 +540,73 @@ az acr build \
   .
 ```
 
-## Critical Notes
-- 💡 **Dockerfile** - Text script with build instructions
-- ⚠️ **Layers** - Each instruction creates a layer (cached for speed)
-- 🎯 **FROM** - Required first instruction (base image)
-- ✅ **Multi-stage** - Build in SDK, run in runtime (smaller images)
-- 📊 **Order matters** - Instructions ordered by change frequency
-- 🔄 **COPY preferred** - Use COPY instead of ADD (unless extracting)
-- 🔒 **Non-root user** - Run as non-root for security
-- ⚠️ **EXPOSE** - Documentation only, doesn't publish ports
+# Critical Notes — Dockerfile
 
-## Exam Tips
-- Dockerfile: Script to build container image
-- FROM: First instruction, sets base image
-- WORKDIR: Sets working directory (creates if doesn't exist)
-- COPY: Copy files to image (preferred over ADD)
-- ADD: Copy + extract tar files (use COPY for simple copies)
-- RUN: Execute command during build (each creates layer)
-- CMD: Default command (can be overridden at runtime)
-- ENTRYPOINT: Main executable (args can be overridden)
-- EXPOSE: Document port (doesn't publish - use `docker run -p`)
-- ENV: Environment variable (available during build and runtime)
-- ARG: Build argument (only during build)
-- USER: Set user for subsequent RUN/CMD commands
-- Multi-stage builds: Separate build and runtime stages (smaller images)
-- Layer caching: Instructions ordered by change frequency
-- Best practices: Specific tags, minimize layers, .dockerignore, non-root user, alpine images
-- Build command: `docker build -t <name>:<tag> .`
-- ACR build: `az acr build --registry <name> --image <image> .`
+- 💡 **Dockerfile** — текстовый скрипт с инструкциями для сборки образа
+- ⚠️ **Layers** — каждая инструкция создаёт слой (кэшируется для ускорения сборки)
+- 🎯 **FROM** — обязательная первая инструкция (задаёт базовый образ)
+- ✅ **Multi-stage** — сборка в SDK, запуск в runtime (меньший размер образа)
+- 📊 **Порядок важен** — инструкции размещаются с учётом частоты изменений
+- 🔄 **COPY предпочтительнее** — используйте COPY вместо ADD (если не нужна распаковка)
+- 🔒 **Non-root user** — запуск от непривилегированного пользователя повышает безопасность
+- ⚠️ **EXPOSE** — только документирует порт, не публикует его
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основные инструкции
+
+- Dockerfile — скрипт для сборки контейнерного образа
+- FROM — первая инструкция, задаёт базовый образ
+- WORKDIR — устанавливает рабочую директорию (создаёт её при отсутствии)
+- COPY — копирование файлов (предпочтительнее ADD)
+- ADD — копирование + автоматическая распаковка tar-архивов
+- RUN — выполнение команды во время сборки (каждый RUN создаёт слой)
+- CMD — команда по умолчанию (можно переопределить при запуске)
+- ENTRYPOINT — основной исполняемый файл (аргументы можно переопределить)
+- EXPOSE — документирует порт (публикация через `docker run -p`)
+- ENV — переменная окружения (доступна при сборке и runtime)
+- ARG — переменная только для этапа сборки
+- USER — задаёт пользователя для последующих RUN/CMD
+
+---
+
+## Архитектура сборки
+
+- Multi-stage builds — разделение этапов сборки и запуска
+- Уменьшение размера и повышение безопасности
+- Layer caching — порядок инструкций влияет на скорость сборки
+
+---
+
+## Best Practices
+
+- Использовать конкретные теги образов (не `latest`)
+- Минимизировать количество слоёв
+- Использовать `.dockerignore`
+- Запускать контейнер не от root
+- Использовать lightweight-образы (например, alpine)
+
+---
+
+## Команды сборки
+
+- Локальная сборка:  
+  `docker build -t <name>:<tag> .`
+
+- Сборка через ACR:  
+  `az acr build --registry <name> --image <image> .`
+
+---
+
+## Частые экзаменационные ловушки
+
+- EXPOSE не публикует порт
+- ARG недоступен во время выполнения
+- Изменение инструкции сбрасывает кэш ниже
+- Multi-stage уменьшает размер образа
+- COPY предпочтительнее ADD для обычного копирования
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/publish-container-image-to-azure-container-registry/5-dockerfile-components)

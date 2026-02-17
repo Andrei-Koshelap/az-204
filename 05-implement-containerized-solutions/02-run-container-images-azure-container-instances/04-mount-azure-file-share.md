@@ -1,20 +1,50 @@
-# Mount Azure File Share in Container Instances
+# Mount Azure File Share в Azure Container Instances
 
-## Key Concepts
-- **Persistent storage** - Data survives container restarts
-- **Azure Files** - Fully managed SMB file shares
-- **Volume mount** - Attach storage to container paths
-- **Linux only** - File share mounting (Linux containers)
+## Ключевые понятия (Key Concepts)
 
-## Why Mount Azure Files?
+- **Persistent storage** — данные сохраняются после перезапуска контейнера
+- **Azure Files** — полностью управляемые SMB-файловые шары
+- **Volume mount** — подключение хранилища к пути внутри контейнера
+- **Только Linux** — монтирование Azure Files поддерживается только для Linux-контейнеров
 
-**Persist data beyond container lifecycle**:
+---
 
-- Container storage is ephemeral (lost on restart)
-- Share data between containers
-- Store application data, logs, config
-- Backup and recovery
-- Share files across container instances
+# Зачем монтировать Azure Files?
+
+## Сохранение данных вне жизненного цикла контейнера
+
+- Локальное хранилище контейнера временное (теряется при перезапуске)
+- Возможность разделять данные между контейнерами
+- Хранение логов, конфигураций, пользовательских данных
+- Поддержка сценариев резервного копирования
+- Обмен файлами между несколькими Container Instances
+
+---
+
+## Что это даёт
+
+- Персистентность данных
+- Централизованное файловое хранилище
+- Совместный доступ к данным
+- Упрощение stateful-сценариев в ACI
+
+---
+
+## Когда использовать
+
+- Приложение должно сохранять данные
+- Нужно хранить логи
+- Требуется общий доступ к файлам
+- Необходима долговременная персистентность
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Контейнерное хранилище по умолчанию — временное
+- Для постоянных данных → Azure Files
+- Поддерживается только для Linux-контейнеров
+- Монтирование происходит через volume в Container Group
 
 ### Problem Without Persistent Storage
 ```
@@ -26,30 +56,56 @@ Container created → Data written → Container stops → Data LOST
 Container created → Data written to Azure Files → Container stops → Data PERSISTS
 ```
 
-## Azure Files Overview
+# Azure Files — Обзор
 
-**Fully managed file shares** in the cloud:
+## Что такое Azure Files?
 
-- **SMB protocol** - Industry standard (CIFS)
-- **Accessible** - From anywhere (VMs, containers, on-premises)
-- **Shared** - Multiple containers can mount same share
-- **Persistent** - Data survives container lifecycle
+**Полностью управляемые файловые шары** в облаке.
 
-## Limitations
+- **SMB-протокол** — стандарт CIFS
+- **Доступность** — можно подключать из VM, контейнеров и on-premises
+- **Совместный доступ** — несколько контейнеров могут монтировать одну шару
+- **Персистентность** — данные сохраняются после перезапуска контейнера
 
-### Important Constraints
-❌ **Linux only** - File share mounting not supported for Windows containers
-❌ **Root required** - Linux container must run as root
-❌ **CIFS only** - Limited to CIFS support (no NFS)
-❌ **Single share per container** - Can mount multiple shares to different containers in group
+---
 
-| Feature | Supported |
-|---------|-----------|
-| **Linux containers** | ✅ Yes |
-| **Windows containers** | ❌ No |
-| **Root user** | ✅ Required |
-| **CIFS/SMB** | ✅ Yes |
-| **NFS** | ❌ No |
+# Ограничения
+
+## Важные ограничения
+
+❌ **Только Linux** — монтирование не поддерживается для Windows-контейнеров  
+❌ **Требуется root** — Linux-контейнер должен запускаться от root  
+❌ **Только CIFS (SMB)** — поддержка NFS отсутствует  
+❌ **Одна шара на контейнер** — но можно подключать разные шары к разным контейнерам в группе
+
+---
+
+## Поддержка функций
+
+| Возможность | Поддерживается |
+|-------------|----------------|
+| **Linux-контейнеры** | ✅ Да |
+| **Windows-контейнеры** | ❌ Нет |
+| **Root-пользователь** | ✅ Обязателен |
+| **CIFS/SMB** | ✅ Да |
+| **NFS** | ❌ Нет |
+
+---
+
+## Что важно учитывать
+
+- Контейнер должен работать от root для монтирования Azure Files.
+- Windows ACI не поддерживает подключение Azure Files.
+- Azure Files подходит для stateful-сценариев в Linux ACI.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Azure Files поддерживается только для Linux ACI
+- Требуется root-доступ
+- Используется SMB (CIFS)
+- NFS не поддерживается
 
 ## Prerequisites
 
@@ -417,20 +473,42 @@ az storage file download \
   --dest localfile.txt
 ```
 
-### Using Storage Explorer
-- Install Azure Storage Explorer
-- Connect to storage account
-- Browse file shares
-- Upload/download files
+## Using Storage Explorer
 
-## Volume Types Comparison
+- Установите **Azure Storage Explorer**
+- Подключитесь к нужному Storage Account
+- Откройте раздел File Shares
+- Просматривайте, загружайте и скачивайте файлы
 
-| Volume Type | Persistence | Use Case |
-|-------------|-------------|----------|
-| **Azure Files** | Persistent | App data, logs, uploads |
-| **emptyDir** | Temporary | Scratch space, caching |
-| **gitRepo** | Read-only | Source code, config |
-| **secret** | Sensitive data | Passwords, certificates |
+---
+
+# Сравнение типов томов (Volume Types Comparison)
+
+| Тип тома | Персистентность | Сценарий использования |
+|-----------|-----------------|------------------------|
+| **Azure Files** | Постоянное | Данные приложения, логи, загрузки |
+| **emptyDir** | Временное | Временные файлы, кэш |
+| **gitRepo** | Только чтение | Исходный код, конфигурация |
+| **secret** | Чувствительные данные | Пароли, сертификаты |
+
+---
+
+## Что важно понимать
+
+- **Azure Files** — сохраняет данные после перезапуска контейнера
+- **emptyDir** — существует только в рамках жизненного цикла Container Group
+- **gitRepo** — автоматически клонируется при старте, только для чтения
+- **secret** — хранится в памяти, не записывается на диск
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Для постоянных данных → Azure Files
+- Для временных данных → emptyDir
+- Для секретов → secret
+- Для автоматической загрузки исходников → gitRepo
+
 
 ### Azure Files Volume
 ```yaml
@@ -576,30 +654,89 @@ az storage share snapshot \
   --account-key $STORAGE_KEY
 ```
 
-## Critical Notes
-- 💡 **Persistent storage** - Azure Files survive container restarts
-- ⚠️ **Linux only** - File share mounting not supported for Windows containers
-- 🎯 **Root required** - Container must run as root user
-- ✅ **SMB/CIFS** - Standard protocol (not NFS)
-- 📊 **Multiple mounts** - Can mount different shares to different paths
-- 🔄 **Shared storage** - Multiple containers can mount same share
-- 🔒 **Storage key** - Required for mount (highly sensitive)
-- ⚠️ **Read-only** - Can mount as read-only with readOnly: true
+# Critical Notes — Azure Files в ACI
 
-## Exam Tips
-- Azure Files: Persistent storage for containers (SMB/CIFS)
-- Linux containers only (Windows not supported)
-- Container must run as root to mount file share
-- Mount with: `--azure-file-volume-*` flags (CLI)
-- YAML: `volumes` (define), `volumeMounts` (use in container)
-- Multiple volumes: Define multiple in `volumes` array
-- Storage account key required (sensitive - protect it)
-- Mount path: Where volume appears in container filesystem
-- Shared storage: Multiple containers can mount same share
-- Use cases: App data, logs, uploads, configuration, shared data
-- Alternative volumes: emptyDir (temp), gitRepo (read-only), secret (sensitive)
-- Read-only: Set `readOnly: true` in volumeMount
-- Troubleshooting: Verify key, share exists, Linux container, root user
-- Best practice: Separate shares for different data types
+- 💡 **Persistent storage** — данные в Azure Files сохраняются после перезапуска контейнера
+- ⚠️ **Только Linux** — монтирование не поддерживается для Windows-контейнеров
+- 🎯 **Требуется root** — контейнер должен запускаться от root
+- ✅ **SMB/CIFS** — используется стандартный протокол SMB (не NFS)
+- 📊 **Несколько монтирований** — можно подключать разные шары к разным путям
+- 🔄 **Общее хранилище** — несколько контейнеров могут монтировать одну и ту же шару
+- 🔒 **Storage key** — требуется ключ аккаунта хранения (чувствительные данные)
+- ⚠️ **Read-only режим** — можно подключить с `readOnly: true`
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- Azure Files — персистентное хранилище для контейнеров (SMB/CIFS)
+- Поддержка только для Linux-контейнеров
+- Контейнер должен работать от root
+
+---
+
+## Настройка
+
+- CLI → `--azure-file-volume-*` параметры
+- YAML:
+    - `volumes` — определение томов
+    - `volumeMounts` — подключение к контейнеру
+
+- Можно определить несколько томов в массиве `volumes`
+
+---
+
+## Безопасность
+
+- Требуется ключ storage account
+- Ключ является чувствительным — хранить безопасно
+- Лучше использовать отдельные шары для разных типов данных
+
+---
+
+## Использование
+
+- Путь монтирования определяет, где том доступен в файловой системе контейнера
+- Несколько контейнеров могут использовать одну шару
+- Можно подключить том в режиме только для чтения (`readOnly: true`)
+
+---
+
+## Сценарии
+
+- Данные приложения
+- Логи
+- Загрузки
+- Конфигурация
+- Совместное хранение данных
+
+---
+
+## Альтернативные тома
+
+- emptyDir — временное хранилище
+- gitRepo — read-only исходный код
+- secret — чувствительные данные
+
+---
+
+## Troubleshooting
+
+- Проверить корректность storage key
+- Убедиться, что file share существует
+- Контейнер должен быть Linux
+- Контейнер должен запускаться от root
+
+---
+
+## Частые экзаменационные ловушки
+
+- Windows ACI не поддерживает Azure Files
+- Требуется root для монтирования
+- Нужен storage account key
+- Для постоянных данных → Azure Files
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/create-run-container-images-azure-container-instances/6-mount-azure-file-share-azure-container-instances)
