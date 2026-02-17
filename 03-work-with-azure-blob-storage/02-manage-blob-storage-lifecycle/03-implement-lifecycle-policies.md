@@ -1,34 +1,42 @@
-# Implement Blob Storage Lifecycle Policies
+# Implement Blob Storage Lifecycle Policies (Внедрение политик жизненного цикла Blob Storage)
 
-## Implementation Methods
+## Implementation Methods (Способы внедрения)
 
-You can add, edit, or remove lifecycle management policies using:
+Политики Lifecycle Management можно добавлять, изменять и удалять через:
 
 | Method | Use Case | Complexity |
 |--------|----------|------------|
-| **Azure Portal** | Visual interface, quick setup | Low |
-| **Azure PowerShell** | Script automation, bulk operations | Medium |
-| **Azure CLI** | Command-line automation, CI/CD | Medium |
-| **REST APIs** | Programmatic integration, custom tools | High |
+| **Azure Portal** | Визуальная настройка, быстрый старт | Низкая |
+| **Azure PowerShell** | Скрипты, автоматизация, массовые операции | Средняя |
+| **Azure CLI** | Автоматизация из командной строки, CI/CD | Средняя |
+| **REST APIs** | Программная интеграция, кастомные инструменты | Высокая |
+
+> 💡 Практический комментарий:  
+> Для production и CI/CD чаще выбирают **Azure CLI** или **PowerShell**, чтобы хранить policy как код (IaC-подход).  
+> Portal удобен для прототипа и быстрой проверки гипотез.
 
 ---
 
-## Azure Portal Implementation
+## Azure Portal Implementation (Реализация через Azure Portal)
 
-### Two Approaches in Portal
+### Two Approaches in Portal (Два подхода в Portal)
 
-1. **List View**: Visual, wizard-style interface
-2. **Code View**: Direct JSON editing (more powerful)
+1. **List View**: визуальный мастер (wizard), удобно для простых сценариев
+2. **Code View**: прямое редактирование JSON (более гибко и мощно)
 
-### Code View (Recommended)
+### Code View (Recommended) (Рекомендуемый вариант)
 
-**Steps:**
+**Steps (Шаги):**
 
-1. Navigate to your storage account in Azure Portal
-2. Under **Data management** section, select **Lifecycle Management**
-3. Select the **Code View** tab
-4. Define or edit the lifecycle management policy in JSON
-5. Click **Save**
+1. Перейти в нужный Storage Account в Azure Portal
+2. В разделе **Data management** выбрать **Lifecycle Management**
+3. Открыть вкладку **Code View**
+4. Определить или отредактировать lifecycle management policy в JSON
+5. Нажать **Save**
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Политика lifecycle management задаётся **в виде JSON** и применяется на уровне **Storage Account**.
+
 
 ### Example: Move Logs to Cool Tier
 
@@ -59,18 +67,25 @@ You can add, edit, or remove lifecycle management policies using:
 }
 ```
 
-### Portal Advantages
+### Portal Advantages (Преимущества Azure Portal)
 
-✅ Visual feedback
-✅ Syntax validation
-✅ Easy for single policies
-✅ No scripting required
+✅ Наглядный визуальный интерфейс  
+✅ Проверка синтаксиса JSON (валидация)  
+✅ Удобно для настройки одной политики  
+✅ Не требует написания скриптов
 
-### Portal Limitations
+> 💡 Хороший вариант для обучения, тестирования и быстрой настройки.
 
-❌ Not ideal for automation
-❌ Manual process for multiple accounts
-❌ No version control integration
+---
+
+### Portal Limitations (Ограничения Azure Portal)
+
+❌ Не подходит для автоматизации  
+❌ Ручная настройка при работе с несколькими Storage Account  
+❌ Нет интеграции с системой контроля версий (Git)
+
+> ⚠️ Для production-окружений предпочтительнее использовать CLI, PowerShell или IaC (ARM/Bicep/Terraform), чтобы хранить политики как код.
+
 
 ---
 
@@ -147,12 +162,17 @@ az storage account management-policy delete \
     --resource-group <resource-group>
 ```
 
-### CLI Advantages
+### CLI Advantages (Преимущества Azure CLI)
 
-✅ Scriptable and automatable
-✅ CI/CD pipeline integration
-✅ Version control friendly
-✅ Batch operations across accounts
+✅ Поддержка скриптов и автоматизации  
+✅ Лёгкая интеграция в CI/CD pipeline  
+✅ Удобно хранить policy в системе контроля версий (Git)  
+✅ Возможность массовых операций для нескольких Storage Account
+
+> 💡 Практический подход:  
+> Хранить JSON-политику в репозитории и применять через `az storage account management-policy create/update` в рамках deployment pipeline.  
+> Это обеспечивает воспроизводимость и контроль изменений.
+
 
 ---
 
@@ -212,26 +232,36 @@ Remove-AzStorageAccountManagementPolicy `
     -ResourceGroupName $resourceGroup `
     -StorageAccountName $storageAccount
 ```
+### PowerShell Advantages (Преимущества Azure PowerShell)
 
-### PowerShell Advantages
+✅ Интеграция с существующими PowerShell-скриптами  
+✅ Удобно для автоматизации в Windows-среде  
+✅ Поддержка Azure Automation Runbooks  
+✅ Богатая работа с объектами (object-based модель вместо текстового CLI-вывода)
 
-✅ Integration with existing PowerShell scripts
-✅ Windows automation
-✅ Azure automation runbooks
-✅ Rich object manipulation
+> 💡 Практический сценарий:  
+> PowerShell часто используется в корпоративной среде для централизованного управления несколькими Storage Account через автоматизированные скрипты и runbooks.
+
 
 ---
 
-## Complete Policy Examples
+## Complete Policy Examples (Полные примеры политик)
 
-### Example 1: Comprehensive Log Management
+### Example 1: Comprehensive Log Management (Комплексное управление логами)
 
-**Requirement:**
-- Logs in `logs/` container
-- Move to Cool after 30 days
-- Move to Archive after 90 days
-- Delete after 2 years (730 days)
-- Delete snapshots after 90 days
+**Requirement (Требование):**
+- Логи находятся в контейнере `logs/`
+- Перевести в Cool через 30 дней
+- Перевести в Archive через 90 дней
+- Удалить через 2 года (730 дней)
+- Удалять snapshots через 90 дней
+
+---
+
+### Policy (JSON)
+
+> 💡 Примечание: ниже пример структуры policy для **одного правила**.  
+> В реальном Storage Account можно хранить несколько правил в массиве `rules`.
 
 **policy.json:**
 ```json
@@ -269,6 +299,14 @@ Remove-AzStorageAccountManagementPolicy `
   ]
 }
 ```
+Комментарии к примеру
+    prefixMatch: ["logs/"] — таргетинг на blob, путь которых начинается с logs/
+    baseBlob — дествия для текущих версий blob
+    snapshot — отдельные действия для snapshot
+    Переходы tier и delete завязаны на daysAfterModificationGreaterThan (последняя модификация)
+    ⚠️ Важно:
+    Archive требует rehydration перед чтением.
+    При удалении/перемещении раньше минимальных сроков tier возможны early deletion fees.
 
 **Deploy:**
 ```bash
@@ -404,22 +442,28 @@ az storage account management-policy create \
    ↓
 8. Adjust as needed
 ```
+### Testing Strategy (Стратегия тестирования)
 
-### Testing Strategy
+✅ **DO (Рекомендуется):**
 
-✅ **DO:**
-1. Start with `"enabled": false` for new rules
-2. Test on a clone or dev storage account
-3. Use short day values for testing (e.g., 1-2 days)
-4. Monitor Azure Monitor metrics
-5. Enable rules gradually in production
+1. Начинать с `"enabled": false` для новых правил
+2. Тестировать на клоне или dev Storage Account
+3. Использовать короткие значения дней для тестирования (например, 1–2 дня)
+4. Мониторить метрики через Azure Monitor
+5. Включать правила постепенно в production
 
-❌ **DON'T:**
-- Deploy directly to production without testing
-- Use aggressive deletion rules initially
-- Forget to monitor policy effects
+> 💡 Практический совет:  
+> При тестировании удобно создать отдельный контейнер с тестовыми blob и применить к нему ограниченное правило через `prefixMatch`.
 
 ---
+
+❌ **DON'T (Не рекомендуется):**
+
+- Разворачивать политику сразу в production без тестирования
+- Использовать агрессивные правила удаления на первом этапе
+- Игнорировать мониторинг последствий работы политики
+
+> ⚠️ Lifecycle policy выполняется автоматически и может удалить данные без возможности восстановления (если не включены дополнительные механизмы защиты, например, soft delete).
 
 ## Monitoring and Validation
 
@@ -460,12 +504,41 @@ az storage blob show \
     -Context $ctx).ICloudBlob.Properties.StandardBlobTier
 ```
 
-### Azure Monitor Integration
+### Azure Monitor Integration (Интеграция с Azure Monitor)
 
-Enable diagnostic settings to track:
-- Tier transition operations
-- Deletion operations
-- Policy execution logs
+Для контроля работы Lifecycle Management рекомендуется включить **Diagnostic Settings** на уровне Storage Account.
+
+Это позволит отслеживать:
+
+- Операции перехода между tier (tier transition operations)
+- Операции удаления (deletion operations)
+- Логи выполнения политики (policy execution logs)
+
+---
+
+### Как включить мониторинг
+
+1. Перейти в нужный **Storage Account**
+2. Открыть раздел **Monitoring → Diagnostic settings**
+3. Создать новую настройку диагностики
+4. Выбрать категории логов (например, StorageRead, StorageWrite, StorageDelete)
+5. Настроить отправку в:
+    - Log Analytics workspace
+    - Event Hub
+    - Storage Account
+
+---
+
+### Зачем это нужно
+
+- Проверка корректности работы lifecycle policy
+- Анализ неожиданных удалений
+- Аудит и соответствие требованиям комплаенса
+- Оптимизация затрат
+
+> 💡 Практический совет:  
+> В production рекомендуется отправлять логи в Log Analytics и настраивать алерты на массовые удаления или частые tier transitions.
+
 
 ---
 
@@ -549,102 +622,128 @@ Enable diagnostic settings to track:
 ```
 
 ---
-
-## Best Practices
-
-### JSON Policy Management
-
-✅ **DO:**
-- Store policy files in version control (Git)
-- Use meaningful file names (`logs-policy.json`, `compliance-policy.json`)
-- Add comments in separate documentation
-- Validate JSON syntax before deployment
-- Keep backup of previous policies
-
-❌ **DON'T:**
-- Edit policies directly in Portal for production
-- Lose track of policy versions
-- Deploy without validation
-
-### Deployment Strategy
-
-✅ **DO:**
-- Deploy to dev/test environment first
-- Use Infrastructure as Code (Terraform, ARM templates)
-- Automate policy deployment in CI/CD pipelines
-- Document policy intent and rationale
-- Set up alerts for policy execution failures
-
-❌ **DON'T:**
-- Deploy manually to multiple accounts
-- Skip testing phase
-- Forget to document changes
-
-### Maintenance
-
-✅ **DO:**
-- Review policies quarterly
-- Monitor storage costs and access patterns
-- Adjust policies based on actual usage
-- Enable/disable rules as needed
-- Keep policies simple and focused
-
-❌ **DON'T:**
-- Set and forget policies
-- Create overly complex rules
-- Ignore policy execution logs
+## Best Practices (Лучшие практики)
 
 ---
 
-## Troubleshooting
+### JSON Policy Management (Управление JSON-политиками)
 
-### Common Issues
+✅ **DO (Рекомендуется):**
+
+- Хранить файлы политик в системе контроля версий (Git)
+- Использовать понятные имена файлов (`logs-policy.json`, `compliance-policy.json`)
+- Добавлять пояснения в отдельной документации (README, Wiki)
+- Проверять JSON-синтаксис перед деплоем
+- Хранить резервные копии предыдущих версий политики
+
+> 💡 Практический подход:  
+> Рассматривать lifecycle policy как код (Policy as Code) и управлять через pull request.
+
+❌ **DON'T (Не рекомендуется):**
+
+- Редактировать production-политику напрямую в Portal
+- Терять историю изменений
+- Деплоить без предварительной валидации
+
+---
+
+### Deployment Strategy (Стратегия развертывания)
+
+✅ **DO:**
+
+- Сначала деплоить в dev/test среду
+- Использовать Infrastructure as Code (Terraform, ARM, Bicep)
+- Автоматизировать развертывание через CI/CD
+- Документировать назначение и логику политики
+- Настроить алерты на ошибки выполнения
+
+❌ **DON'T:**
+
+- Разворачивать вручную в нескольких Storage Account
+- Пропускать этап тестирования
+- Не документировать изменения
+
+---
+
+### Maintenance (Сопровождение)
+
+✅ **DO:**
+
+- Пересматривать политики ежеквартально
+- Анализировать стоимость хранения и паттерны доступа
+- Корректировать правила на основе фактического использования
+- Включать/отключать правила при необходимости
+- Делать правила простыми и понятными
+
+❌ **DON'T:**
+
+- Настраивать и забывать (set and forget)
+- Создавать чрезмерно сложные правила
+- Игнорировать логи выполнения политики
+
+---
+
+## Troubleshooting (Устранение неполадок)
+
+### Common Issues (Частые проблемы)
 
 | Issue | Cause | Solution |
-|-------|-------|----------|
-| Policy not applying | Rule disabled | Set `"enabled": true` |
-| Syntax error | Invalid JSON | Validate JSON syntax |
-| Blobs not transitioning | Incorrect prefix | Check `prefixMatch` values |
-| Permission denied | Insufficient RBAC | Assign Storage Account Contributor role |
-| Policy conflicts | Multiple overlapping rules | Review and consolidate rules |
-
-### Validation Checklist
-
-- ✅ JSON syntax is valid
-- ✅ Rule names are unique
-- ✅ `blobTypes` filter is specified
-- ✅ Day values are appropriate
-- ✅ Prefixes include container names
-- ✅ Enabled flag is set correctly
-- ✅ Actions make business sense
-- ✅ No more than 100 rules
-- ✅ No more than 10 prefixes per rule
+|--------|--------|----------|
+| Policy not applying | Правило отключено | Установить `"enabled": true` |
+| Syntax error | Некорректный JSON | Проверить синтаксис |
+| Blobs not transitioning | Неверный prefix | Проверить `prefixMatch` |
+| Permission denied | Недостаточно RBAC прав | Назначить роль Storage Account Contributor |
+| Policy conflicts | Перекрывающиеся правила | Пересмотреть и объединить правила |
 
 ---
 
-## Exam Tips
+### Validation Checklist (Чек-лист проверки)
 
-🎯 **Implementation methods**: Portal (Code View), Azure CLI, PowerShell, REST APIs
-
-🎯 **CLI command**: `az storage account management-policy create --policy @policy.json`
-
-🎯 **PowerShell cmdlet**: `Set-AzStorageAccountManagementPolicy -Policy $policy`
-
-🎯 **Full replacement**: Policies must be read/written in **full** (no partial updates)
-
-🎯 **Portal location**: Storage account → Data management → Lifecycle Management
-
-🎯 **Code View vs List View**: Code View provides more control, direct JSON editing
-
-🎯 **Policy file format**: JSON with `rules` array
-
-🎯 **Testing**: Always test on non-production before production deployment
-
-🎯 **Monitoring**: Use Azure Monitor for tracking policy execution
-
-🎯 **Version control**: Store policy JSON files in Git for tracking changes
+- ✅ JSON валиден
+- ✅ Имена правил уникальны
+- ✅ Указан обязательный фильтр `blobTypes`
+- ✅ Значения дней корректны
+- ✅ Префиксы содержат имя контейнера
+- ✅ Флаг `enabled` установлен правильно
+- ✅ Действия соответствуют бизнес-логике
+- ✅ Не более 100 правил
+- ✅ Не более 10 префиксов на правило
 
 ---
+
+## Exam Tips (Советы к экзамену AZ-204)
+
+🎯 **Способы внедрения:** Portal (Code View), Azure CLI, PowerShell, REST APIs
+
+🎯 **CLI команда:**  
+`az storage account management-policy create --policy @policy.json`
+
+🎯 **PowerShell cmdlet:**  
+`Set-AzStorageAccountManagementPolicy -Policy $policy`
+
+🎯 **Full replacement:**  
+Политика читается и записывается **полностью** (частичное обновление не поддерживается)
+
+🎯 **Расположение в Portal:**  
+Storage Account → Data management → Lifecycle Management
+
+🎯 **Code View vs List View:**  
+Code View даёт полный контроль и прямое редактирование JSON
+
+🎯 **Формат файла:**  
+JSON-документ с массивом `rules`
+
+🎯 **Тестирование:**  
+Всегда тестировать вне production
+
+🎯 **Мониторинг:**  
+Использовать Azure Monitor для отслеживания выполнения
+
+🎯 **Version control:**  
+Хранить JSON-политики в Git для отслеживания изменений
+
+---
+
 
 ## Quick Reference Commands
 

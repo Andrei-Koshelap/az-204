@@ -1,8 +1,64 @@
 # Azure Blob Storage Resource Types
+(Типы ресурсов в Azure Blob Storage)
 
-## Resource Hierarchy
+## Resource Hierarchy (Иерархия ресурсов)
 
-Blob storage offers **three types of resources** organized in a hierarchical structure:
+Blob Storage организован в **трёхуровневую иерархию ресурсов**:
+
+---
+
+## 1️⃣ Storage Account (Учётная запись хранения)
+
+- Верхний уровень
+- Глобально уникальное имя
+- Определяет:
+    - Регион
+    - SKU (Standard / Premium)
+    - Redundancy (LRS, GRS, ZRS и т.д.)
+- Содержит контейнеры
+
+Пример базового URL:
+        https://mystorageaccount.blob.core.windows.net
+
+
+---
+
+## 2️⃣ Container (Контейнер)
+
+- Аналог папки верхнего уровня
+- Группирует blob-объекты
+- Управляет:
+    - Уровнем публичного доступа
+    - Политиками доступа (SAS, RBAC)
+- Обязателен для хранения blob
+Пример:
+  https://mystorageaccount.blob.core.windows.net/images
+
+
+---
+
+## 3️⃣ Blob (Объект)
+
+- Фактические данные (файл)
+- Может быть:
+    - Block blob
+    - Append blob
+    - Page blob
+- Хранит неструктурированные данные
+
+Пример полного пути:
+        https://mystorageaccount.blob.core.windows.net/images/photo.jpg
+
+
+---
+
+## Важно для AZ-204
+
+- Storage Account → Container → Blob
+- Blob не может существовать без контейнера
+- Контейнер управляет уровнем публичного доступа
+- Полный URL всегда включает account + container + blob
+
 
 ```
 Storage Account (mystorageaccount)
@@ -32,51 +88,83 @@ http://<account-name>.blob.core.windows.net
 http://mystorageaccount.blob.core.windows.net
 ```
 
-### Key Characteristics
+## Key Characteristics (Storage Account)
 
 | Characteristic | Details |
 |----------------|---------|
-| **Uniqueness** | Account name must be globally unique across Azure |
-| **Namespace** | Provides unique namespace for all your data |
-| **Endpoint** | Forms the base address for all objects in the account |
-| **Capacity** | Can contain unlimited containers |
+| **Uniqueness** | Имя аккаунта должно быть глобально уникальным во всём Azure |
+| **Namespace** | Создаёт уникальное пространство имён для всех данных |
+| **Endpoint** | Формирует базовый URL для всех объектов |
+| **Capacity** | Может содержать неограниченное количество контейнеров |
+
+> 💡 Имя Storage Account становится частью публичного URL.
 
 ---
 
-## 2. Containers
+# 2️⃣ Containers (Контейнеры)
 
-### Overview
-A container organizes a set of blobs, **similar to a directory in a file system**. It provides a way to group related blobs together.
+## Overview (Обзор)
 
-### Container Characteristics
+Container — это логическая группировка blob-объектов,  
+аналог директории в файловой системе.
+
+Используется для:
+- Организации данных
+- Управления доступом
+- Разделения логических областей хранения
+
+---
+
+## Container Characteristics (Характеристики)
 
 | Characteristic | Details |
 |----------------|---------|
-| **Number per account** | Unlimited |
-| **Blobs per container** | Unlimited |
-| **Naming** | Must be a valid DNS name |
-| **URL part** | Forms part of the unique URI for blobs |
+| **Number per account** | Неограниченно |
+| **Blobs per container** | Неограниченно |
+| **Naming** | Должно быть валидным DNS-именем |
+| **URL part** | Является частью URI blob |
 
-### Container Naming Rules
+Пример URI:
+        https://<account>.blob.core.windows.net/<container>/<blob>  
 
-✅ **Must follow these rules:**
 
-1. **Length**: Between 3 and 63 characters long
-2. **Start character**: Must start with a letter or number
-3. **Allowed characters**: Only lowercase letters, numbers, and dash (-) character
-4. **Consecutive dashes**: Two or more consecutive dash characters are NOT permitted
+---
 
-### Container Naming Examples
+## Container Naming Rules (Правила именования)
+
+✅ Должны соблюдаться следующие требования:
+
+1. **Длина**: от 3 до 63 символов
+2. **Первый символ**: буква или цифра
+3. **Допустимые символы**:
+    - только строчные буквы (a-z)
+    - цифры (0-9)
+    - дефис (-)
+4. ❌ Нельзя использовать два и более дефиса подряд
+
+---
+
+## Container Naming Examples (Примеры)
 
 | Name | Valid? | Reason |
 |------|--------|--------|
-| `mycontainer` | ✅ Yes | All lowercase, valid characters |
-| `my-container` | ✅ Yes | Dash separator allowed |
-| `my-container-123` | ✅ Yes | Numbers and dashes allowed |
-| `MyContainer` | ❌ No | Uppercase letters not allowed |
-| `my--container` | ❌ No | Consecutive dashes not allowed |
-| `-mycontainer` | ❌ No | Cannot start with dash |
-| `my` | ❌ No | Too short (less than 3 characters) |
+| `mycontainer` | ✅ Yes | Только строчные буквы |
+| `my-container` | ✅ Yes | Дефис разрешён |
+| `my-container-123` | ✅ Yes | Цифры и дефисы допустимы |
+| `MyContainer` | ❌ No | Заглавные буквы запрещены |
+| `my--container` | ❌ No | Двойной дефис запрещён |
+| `-mycontainer` | ❌ No | Нельзя начинать с дефиса |
+| `my` | ❌ No | Меньше 3 символов |
+
+---
+
+## Важно для AZ-204
+
+- Container имя должно соответствовать DNS-формату
+- Только lowercase
+- 3–63 символа
+- Нет consecutive dashes
+- Container — обязательный уровень между account и blob
 
 ### Container URI Format
 
@@ -91,35 +179,65 @@ https://myaccount.blob.core.windows.net/mycontainer
 
 ---
 
-## 3. Blobs
+# 3️⃣ Blobs (Объекты)
 
-### Overview
-Blobs are the actual data objects stored in containers. Azure Storage supports **three types of blobs**, each optimized for different scenarios.
+## Overview (Обзор)
 
-### Blob Types Comparison
+Blob — это фактический объект данных, который хранится внутри контейнера.
+
+Azure Blob Storage поддерживает **три типа blob**,  
+каждый оптимизирован под разные сценарии.
+
+---
+
+## Blob Types Comparison (Сравнение типов)
 
 | Blob Type | Composition | Max Size | Primary Use Case |
-|-----------|-------------|----------|------------------|
-| **Block Blobs** | Individual blocks of data | ~190.7 TiB | Text and binary data, general-purpose storage |
-| **Append Blobs** | Blocks optimized for append operations | ~190.7 TiB | Logging data, continuous data streams |
-| **Page Blobs** | Random access files | 8 TB | Virtual hard drive (VHD) files, VM disks |
+|------------|------------|----------|------------------|
+| **Block Blobs** | Состоит из блоков | ~190.7 TiB | Общие данные, файлы |
+| **Append Blobs** | Блоки для append-операций | ~190.7 TiB | Логи, стриминг |
+| **Page Blobs** | Случайный доступ (random access) | 8 TB | VHD, диски VM |
 
-### Block Blobs
+---
 
-**Best for:** General-purpose storage of text and binary data
+# Block Blobs (Блочные объекты)
 
-#### Key Features
-- Composed of individual blocks that can be managed independently
-- Each block can be a different size
-- Blocks can be uploaded in parallel
-- Maximum size: approximately **190.7 TiB**
+## Best for:
+Хранение текстовых и бинарных данных общего назначения.
 
-#### Use Cases
-- Documents and files
-- Images, videos, audio
-- Backup and archive data
-- Application data
-- General binary/text data
+---
+
+## Key Features (Особенности)
+
+- Состоит из отдельных блоков
+- Каждый блок может быть разного размера
+- Поддерживает параллельную загрузку блоков
+- Максимальный размер: **~190.7 TiB**
+- Поддерживает access tiers (Hot, Cool, Cold, Archive)
+
+> 💡 Самый часто используемый тип blob.
+
+---
+
+## Use Cases (Сценарии использования)
+
+- Документы
+- Изображения
+- Видео и аудио
+- Бэкапы
+- Архивы
+- Данные приложений
+- Любые бинарные и текстовые файлы
+
+---
+
+## Важно для AZ-204
+
+- Block Blob — default и самый распространённый тип
+- Поддерживает Archive tier
+- Может загружаться по частям (block-by-block)
+- Подходит для почти всех обычных сценариев хранения
+
 
 #### CLI Example
 ```bash
@@ -142,26 +260,48 @@ Set-AzStorageBlobContent `
   -Context $ctx
 ```
 
-### Append Blobs
+# Append Blobs (Append-объекты)
 
-**Best for:** Append operations (logging scenarios)
+## Best for:
+Операции добавления данных в конец (logging-сценарии).
 
-#### Key Features
-- Made up of blocks like block blobs
-- **Optimized for append operations**
-- Blocks can only be added to the end
-- Cannot modify or delete existing blocks
-- Maximum size: approximately **190.7 TiB**
+---
 
-#### Use Cases
-- **Logging data** from virtual machines
-- Application logs
-- Audit logs
-- Continuous data streams
-- Time-series data
+## Key Features (Особенности)
 
-#### Key Characteristic
-⚠️ **Append-only**: Once a block is written, it cannot be updated or deleted—only new blocks can be appended.
+- Состоят из блоков (как Block Blob)
+- **Оптимизированы для append-операций**
+- Блоки можно добавлять только в конец
+- Нельзя изменять или удалять существующие блоки
+- Максимальный размер: **~190.7 TiB**
+
+---
+
+## Use Cases (Сценарии использования)
+
+- Логи виртуальных машин
+- Логи приложений
+- Audit-логи
+- Непрерывные потоки данных
+- Time-series данные
+
+---
+
+## Key Characteristic (Главная особенность)
+
+⚠️ **Append-only модель**  
+После записи блок нельзя изменить или удалить —  
+можно только добавить новый блок в конец.
+
+---
+
+## Важно для AZ-204
+
+- Используется в logging-сценариях
+- Подходит для сценариев "write-once, append-many"
+- Не подходит, если требуется обновление существующих данных
+- Структурно похож на Block Blob, но с ограничением append-only
+
 
 #### CLI Example
 ```bash
@@ -181,25 +321,47 @@ az storage blob append upload \
   --auth-mode login
 ```
 
-### Page Blobs
+# Page Blobs (Страничные объекты)
 
-**Best for:** Random access scenarios (VM disks)
+## Best for:
+Сценарии с произвольным доступом (random access), особенно для дисков виртуальных машин.
 
-#### Key Features
-- Store **random access files**
-- Maximum size: **8 TB**
-- Optimized for random read/write operations
-- Organized as a collection of 512-byte pages
-- Primary use: Virtual hard drive (VHD) files
+---
 
-#### Use Cases
-- **Virtual machine disks** (OS and data disks)
-- Azure virtual machines storage
-- Random access data
-- Database files
+## Key Features (Особенности)
 
-#### Key Characteristic
-💡 **Random Access**: Designed for scenarios requiring random read/write operations, not sequential access.
+- Хранят **файлы с произвольным доступом**
+- Максимальный размер: **8 TB**
+- Оптимизированы для случайных операций чтения/записи
+- Организованы как набор страниц по **512 байт**
+- Основное применение — файлы виртуальных дисков (VHD)
+
+---
+
+## Use Cases (Сценарии использования)
+
+- Диски виртуальных машин (OS и data disks)
+- Хранилище Azure VM
+- Файлы баз данных
+- Любые сценарии с random read/write
+
+---
+
+## Key Characteristic (Главная особенность)
+
+💡 **Random Access модель**  
+Предназначены для произвольного чтения/записи,  
+в отличие от Block и Append Blob, которые оптимизированы под последовательный доступ.
+
+---
+
+## Важно для AZ-204
+
+- Используются для VHD-дисков
+- Максимальный размер — 8 TB
+- Страницы фиксированного размера (512 байт)
+- Не предназначены для обычного файлового хранения (для этого Block Blob)
+
 
 #### CLI Example
 ```bash
@@ -401,16 +563,27 @@ Get-AzStorageBlob `
 ```
 
 ---
-
-## Comparison Summary
+# Comparison Summary (Сводное сравнение)
 
 | Aspect | Storage Account | Container | Blob |
-|--------|----------------|-----------|------|
-| **Purpose** | Top-level namespace | Logical grouping | Actual data object |
-| **Capacity** | Unlimited containers | Unlimited blobs | Up to 190.7 TiB (block/append) or 8 TB (page) |
-| **Naming Rules** | 3-24 chars, lowercase, numbers | 3-63 chars, lowercase, numbers, dash | No strict rules, use URL-safe characters |
-| **Uniqueness** | Globally unique | Unique within account | Unique within container |
+|--------|------------------|------------|------|
+| **Purpose** | Верхний уровень, namespace | Логическая группировка | Фактический объект данных |
+| **Capacity** | Неограниченное число контейнеров | Неограниченное число blob | До 190.7 TiB (block/append) или 8 TB (page) |
+| **Naming Rules** | 3–24 символа, lowercase, цифры | 3–63 символа, lowercase, цифры, дефис | Жёстких правил нет, использовать URL-safe символы |
+| **Uniqueness** | Глобально уникально | Уникально внутри аккаунта | Уникально внутри контейнера |
 | **URL Format** | `<account>.blob.core.windows.net` | `<account>.blob.core.windows.net/<container>` | `<account>.blob.core.windows.net/<container>/<blob>` |
+
+---
+
+## Важно для AZ-204
+
+- Storage Account — глобально уникальный
+- Container — уникален в рамках аккаунта
+- Blob — уникален в рамках контейнера
+- Иерархия всегда трёхуровневая
+- Block и Append поддерживают ~190.7 TiB
+- Page Blob ограничен 8 TB
+
 
 ---
 

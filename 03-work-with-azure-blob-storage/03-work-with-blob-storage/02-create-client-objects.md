@@ -1,14 +1,21 @@
-# Create Blob Client Objects
+# Create Blob Client Objects (Создание клиентских объектов Blob)
 
-## Overview
+## Overview (Обзор)
 
-Working with Azure Blob Storage using the SDK begins with **creating client objects**. This unit covers how to create and use the three main client types:
+Работа с Azure Blob Storage через SDK начинается с **создания клиентских объектов**.  
+В этом разделе рассматриваются три основных типа клиентов:
 
-1. **BlobServiceClient** - Storage account level
-2. **BlobContainerClient** - Container level
-3. **BlobClient** - Blob level
+1. **BlobServiceClient** — уровень Storage Account
+2. **BlobContainerClient** — уровень контейнера
+3. **BlobClient** — уровень конкретного blob
 
----
+Иерархия выглядит так:
+
+BlobServiceClient
+↓
+BlobContainerClient
+↓
+BlobClient
 
 ## Authentication Prerequisites
 
@@ -21,20 +28,31 @@ using Azure.Identity;
 using Azure.Storage.Blobs;
 ```
 
-**Authentication Process:**
-1. Obtains an access token for authorization
-2. Token passed as credential when client is instantiated
-3. Credential persists throughout the client lifetime
+### Authentication Process (Процесс аутентификации)
 
-### Required RBAC Roles
+1. Получается **access token** для авторизации
+2. Токен передаётся как credential при создании клиента
+3. Credential используется на протяжении всего жизненного цикла клиента
 
-The Microsoft Entra security principal requesting the token must be assigned an appropriate **Azure RBAC role** that grants access to blob data:
+> 💡 Токен автоматически обновляется SDK при использовании `DefaultAzureCredential`.
+
+---
+
+### Required RBAC Roles (Необходимые RBAC-роли)
+
+Security principal (пользователь, приложение или Managed Identity), запрашивающий токен, должен иметь соответствующую **Azure RBAC роль**, предоставляющую доступ к данным blob.
 
 | Role | Permissions | Use Case |
-|------|-------------|----------|
-| **Storage Blob Data Owner** | Full access (read, write, delete, manage ACLs) | Administrative access |
-| **Storage Blob Data Contributor** | Read, write, delete blobs | Application write access |
-| **Storage Blob Data Reader** | Read and list blobs | Application read-only access |
+|-------|------------|----------|
+| **Storage Blob Data Owner** | Полный доступ (read, write, delete, управление ACL) | Администрирование |
+| **Storage Blob Data Contributor** | Чтение, запись, удаление blob | Доступ приложения на запись |
+| **Storage Blob Data Reader** | Чтение и просмотр списка blob | Read-only доступ |
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Для работы с blob через Azure AD необходимо назначить одну из ролей  
+> `Storage Blob Data *`, иначе запросы к данным будут отклонены.
 
 ### Assign RBAC Role
 
@@ -55,19 +73,27 @@ az role assignment create \
 ---
 
 ## 1. Create BlobServiceClient Object
+(Создание объекта BlobServiceClient)
 
-### Purpose
+### Purpose (Назначение)
 
-A `BlobServiceClient` allows your app to interact with resources at the **storage account level**.
+`BlobServiceClient` позволяет приложению работать с ресурсами на уровне **Storage Account**.
 
-**Capabilities:**
-- ✅ Retrieve and configure account properties
-- ✅ List containers in the account
-- ✅ Create containers
-- ✅ Delete containers
-- ✅ Get account statistics
+Это точка входа для всех операций с Blob Storage.
 
-### Basic Creation
+---
+
+### Capabilities (Возможности)
+
+- ✅ Получение и настройка свойств аккаунта
+- ✅ Получение списка контейнеров
+- ✅ Создание контейнеров
+- ✅ Удаление контейнеров
+- ✅ Получение статистики аккаунта
+
+---
+
+### Пример создания клиента
 
 ```csharp
 using Azure.Identity;
@@ -140,20 +166,28 @@ Console.WriteLine($"Account Kind: {accountInfo.Value.AccountKind}");
 ---
 
 ## 2. Create BlobContainerClient Object
+(Создание объекта BlobContainerClient)
 
-### Purpose
+### Purpose (Назначение)
 
-A `BlobContainerClient` allows you to interact with a **specific container resource**.
+`BlobContainerClient` используется для работы с **конкретным контейнером** в Storage Account.
 
-**Capabilities:**
-- ✅ Create container
-- ✅ Delete container
-- ✅ Configure container properties
-- ✅ List blobs in the container
-- ✅ Upload blobs
-- ✅ Delete blobs
+Через него выполняются операции на уровне контейнера и его blob.
 
-### Method 1: Create from BlobServiceClient (Recommended)
+---
+
+### Capabilities (Возможности)
+
+- ✅ Создание контейнера
+- ✅ Удаление контейнера
+- ✅ Настройка свойств контейнера
+- ✅ Получение списка blob в контейнере
+- ✅ Загрузка blob
+- ✅ Удаление blob
+
+---
+
+### Пример создания через BlobServiceClient
 
 ```csharp
 public BlobContainerClient GetBlobContainerClient(
@@ -228,21 +262,32 @@ Console.WriteLine($"Last Modified: {properties.Value.LastModified}");
 ---
 
 ## 3. Create BlobClient Object
+(Создание объекта BlobClient)
 
-### Purpose
+### Purpose (Назначение)
 
-A `BlobClient` allows you to interact with a **specific blob resource**.
+`BlobClient` используется для работы с **конкретным blob** внутри контейнера.
 
-**Capabilities:**
-- ✅ Upload blob
-- ✅ Download blob
-- ✅ Delete blob
-- ✅ Copy blob
-- ✅ Get/set blob properties
-- ✅ Get/set blob metadata
-- ✅ Set access tier
+Это уровень, на котором выполняются операции над самим файлом.
 
-### Method 1: Create from Service/Container Client (Recommended)
+---
+
+### Capabilities (Возможности)
+
+- ✅ Загрузка blob
+- ✅ Скачивание blob
+- ✅ Удаление blob
+- ✅ Копирование blob
+- ✅ Получение и изменение свойств
+- ✅ Получение и изменение метаданных
+- ✅ Управление access tier
+
+---
+
+### Создание через BlobContainerClient Create 
+
+### Method 1: from Service/Container Client (Recommended)
+
 
 ```csharp
 public BlobClient GetBlobClient(
@@ -341,11 +386,15 @@ var containerClient = serviceClient.GetBlobContainerClient("mycontainer");
 // Navigate to blob
 var blobClient = containerClient.GetBlobClient("myfile.txt");
 ```
+### Advantages (Преимущества иерархического подхода)
 
-**Advantages:**
-- ✅ Clearest hierarchy
-- ✅ Shares configuration across levels
-- ✅ Easy to navigate between levels
+- ✅ Самая понятная и логичная иерархия (Service → Container → Blob)
+- ✅ Общая конфигурация (credential, retry, diagnostics) используется на всех уровнях
+- ✅ Удобная навигация между уровнями клиентов
+
+> 💡 Рекомендуемый подход — создавать `BlobServiceClient` один раз  
+> и получать из него `BlobContainerClient`, а затем `BlobClient`.
+
 
 ### Pattern 2: Direct Client Creation
 
@@ -361,10 +410,15 @@ var blobClient = new BlobClient(
     new DefaultAzureCredential());
 ```
 
-**Use When:**
-- ✅ Work is scoped to specific container/blob
-- ✅ Don't need account-level operations
-- ✅ Working with specific URIs
+### Use When (Когда использовать прямое создание клиента)
+
+- ✅ Работа ограничена конкретным контейнером или blob
+- ✅ Не требуются операции на уровне Storage Account
+- ✅ Есть конкретный URI ресурса
+
+> 💡 Прямое создание `BlobContainerClient` или `BlobClient` удобно,
+> если приложение работает только с одним контейнером
+> или получает полный URI blob извне (например, из БД).
 
 ### Pattern 3: Using Connection String
 
@@ -471,77 +525,95 @@ var builder = new BlobUriBuilder(new Uri($"https://{accountName}.blob.core.windo
 Uri blobUri = builder.ToUri();
 var blobClient = new BlobClient(blobUri, new DefaultAzureCredential());
 ```
+### Advantages (Преимущества использования BlobUriBuilder)
 
-**Advantages:**
-- ✅ Type-safe URI construction
-- ✅ Easy to modify URI components
-- ✅ Handles URL encoding
-
----
-
-## Best Practices
-
-### Client Lifecycle
-
-✅ **DO:**
-- Create clients once and reuse them (singleton pattern)
-- Use `BlobServiceClient` for account-level operations
-- Navigate from service → container → blob when possible
-- Use appropriate client for the scope of work
-- Share credentials and options across clients
-
-❌ **DON'T:**
-- Create new clients for every operation
-- Create clients in loops
-- Mix connection strings and credential objects unnecessarily
-
-### Authentication
-
-✅ **DO:**
-- Use `DefaultAzureCredential` for production
-- Assign appropriate RBAC roles
-- Use Managed Identity in Azure-hosted applications
-- Store connection strings securely (Key Vault)
-
-❌ **DON'T:**
-- Hardcode connection strings in code
-- Use connection strings when Managed Identity is available
-- Grant excessive RBAC permissions
-
-### URI Construction
-
-✅ **DO:**
-- Use `BlobUriBuilder` for complex URIs
-- Validate URI format
-- Include proper error handling
-
-❌ **DON'T:**
-- Manually concatenate URI strings without encoding
-- Forget to encode special characters in blob names
+- ✅ Типобезопасное построение URI
+- ✅ Простое изменение компонентов URI (account, container, blob)
+- ✅ Корректная обработка URL-encoding
 
 ---
 
-## Exam Tips
+## Best Practices (Лучшие практики)
 
-🎯 **Three client types**: BlobServiceClient (account), BlobContainerClient (container), BlobClient (blob)
+### Client Lifecycle (Жизненный цикл клиентов)
 
-🎯 **DefaultAzureCredential**: Recommended authentication method, tries multiple credential types
+✅ **DO:**
 
-🎯 **RBAC roles**: Storage Blob Data Owner/Contributor/Reader required for Azure AD auth
+- Создавать клиентов один раз и переиспользовать (singleton)
+- Использовать `BlobServiceClient` для операций уровня аккаунта
+- Навигироваться Service → Container → Blob
+- Использовать клиент, соответствующий области задачи
+- Разделять credential и client options между клиентами
 
-🎯 **Client hierarchy**: Service → Container → Blob (navigational pattern)
+❌ **DON'T:**
 
-🎯 **URI format**: `https://{account}.blob.core.windows.net/{container}/{blob}`
+- Создавать новый клиент на каждую операцию
+- Создавать клиентов внутри циклов
+- Без необходимости смешивать connection string и credential-объекты
 
-🎯 **Client reuse**: Create once, reuse multiple times (singleton pattern)
+---
 
-🎯 **GetBlobContainerClient**: Method to navigate from service to container client
+### Authentication (Аутентификация)
 
-🎯 **GetBlobClient**: Method to navigate from container to blob client
+✅ **DO:**
 
-🎯 **BlobUriBuilder**: Convenient class for constructing and modifying blob URIs
+- Использовать `DefaultAzureCredential` в production
+- Назначать корректные RBAC роли
+- Использовать Managed Identity в Azure
+- Хранить connection strings в безопасном месте (например, Key Vault)
 
-🎯 **Direct creation**: Can create container/blob clients directly without service client
+❌ **DON'T:**
+
+- Хардкодить connection strings в коде
+- Использовать connection strings при доступной Managed Identity
+- Назначать избыточные RBAC-права
+
+---
+
+### URI Construction (Построение URI)
+
+✅ **DO:**
+
+- Использовать `BlobUriBuilder` для сложных URI
+- Проверять корректность URI
+- Добавлять обработку ошибок
+
+❌ **DON'T:**
+
+- Склеивать строки URI вручную без encoding
+- Забывать кодировать специальные символы в имени blob
+
+---
+
+## Exam Tips (Советы к экзамену AZ-204)
+
+🎯 **Три типа клиентов:**  
+`BlobServiceClient` (account),  
+`BlobContainerClient` (container),  
+`BlobClient` (blob)
+
+🎯 **DefaultAzureCredential** — рекомендуемый способ аутентификации
+
+🎯 **RBAC роли:**  
+`Storage Blob Data Owner / Contributor / Reader`
+
+🎯 **Иерархия клиентов:**  
+Service → Container → Blob
+
+🎯 **Формат URI:**  
+`https://{account}.blob.core.windows.net/{container}/{blob}`
+
+🎯 **Повторное использование клиентов:**  
+Создать один раз, использовать многократно
+
+🎯 **Навигационные методы:**  
+`GetBlobContainerClient()` — переход к контейнеру  
+`GetBlobClient()` — переход к blob
+
+🎯 **BlobUriBuilder** — удобное построение и модификация URI
+
+🎯 **Прямое создание:**  
+Можно создавать container/blob client напрямую без `BlobServiceClient`
 
 ---
 

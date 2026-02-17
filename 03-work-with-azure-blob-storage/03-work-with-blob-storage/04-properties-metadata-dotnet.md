@@ -1,23 +1,40 @@
 # Manage Container Properties and Metadata Using .NET
+(Управление свойствами и метаданными контейнера через .NET)
 
-## Overview
+## Overview (Обзор)
 
-Azure Blob Storage containers expose **system properties** and support **user-defined metadata**. This unit covers managing both using the .NET client library.
+Контейнеры Azure Blob Storage имеют:
+
+- **System properties** (системные свойства)
+- **User-defined metadata** (пользовательские метаданные)
+
+В этом разделе рассматривается управление обоими типами с помощью .NET SDK (Azure.Storage.Blobs 12.x).
 
 ---
 
 ## System Properties vs User-Defined Metadata
+(Системные свойства vs пользовательские метаданные)
 
 | Aspect | System Properties | User-Defined Metadata |
-|--------|-------------------|------------------------|
-| **Definition** | Read-only properties managed by Azure | Custom key-value pairs you define |
-| **Examples** | ETag, Last-Modified, Lease Status | Department, Project, Cost Center |
-| **Modification** | Azure-controlled (read-only for most) | Fully modifiable by you |
-| **Size Limit** | N/A | 8 KB total per resource |
-| **Name Format** | Fixed property names | Must be valid C# identifiers |
-| **Purpose** | Resource metadata and state | Custom organization/categorization |
+|---------|------------------|------------------------|
+| **Definition** | Свойства, управляемые Azure | Пользовательские пары ключ-значение |
+| **Examples** | ETag, Last-Modified, Lease Status | Department, Project, CostCenter |
+| **Modification** | В основном только для чтения | Полностью изменяемы |
+| **Size Limit** | Не применяется | До 8 KB на ресурс |
+| **Name Format** | Фиксированные имена | Должны быть допустимыми C#-идентификаторами |
+| **Purpose** | Состояние и техническая информация | Организация и категоризация данных |
 
 ---
+
+## Важно помнить
+
+- Системные свойства отражают текущее состояние ресурса (например, `ETag`, `LastModified`).
+- Метаданные используются для бизнес-логики (например, распределение по проектам).
+- При обновлении metadata предыдущие значения **перезаписываются полностью**.
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Метаданные — это key-value пары до 8 KB на ресурс,  
+> обновление metadata заменяет весь набор, а не добавляет частично.
 
 ## Container System Properties
 
@@ -36,30 +53,49 @@ bool hasImmutabilityPolicy = properties.HasImmutabilityPolicy;
 bool hasLegalHold = properties.HasLegalHold;
 ```
 
-### System Properties Reference
+### System Properties Reference (Справочник системных свойств)
 
 | Property | Type | Description |
-|----------|------|-------------|
-| **LastModified** | DateTimeOffset | Last modification time (UTC) |
-| **ETag** | ETag | Entity tag for concurrency control |
+|------------|----------------|-------------|
+| **LastModified** | DateTimeOffset | Время последнего изменения (UTC) |
+| **ETag** | ETag | Entity tag для контроля конкуренции |
 | **LeaseStatus** | LeaseStatus | Locked, Unlocked |
 | **LeaseState** | LeaseState | Available, Leased, Expired, Breaking, Broken |
 | **LeaseDuration** | LeaseDuration | Infinite, Fixed |
 | **PublicAccess** | PublicAccessType | None, Blob, Container |
-| **HasImmutabilityPolicy** | bool | Immutability policy present |
-| **HasLegalHold** | bool | Legal hold applied |
+| **HasImmutabilityPolicy** | bool | Наличие политики неизменяемости |
+| **HasLegalHold** | bool | Наличие юридической блокировки |
 
 ---
 
-## User-Defined Metadata
+## User-Defined Metadata (Пользовательские метаданные)
 
-### Metadata Naming Rules
+Метаданные — это пары **ключ-значение**, которые позволяют логически группировать и классифицировать контейнеры и blob.
 
-✅ **Valid metadata names:**
-- Must be valid C# identifiers
-- Case-insensitive (Azure stores as lowercase)
-- Only alphanumeric characters and underscores
-- Cannot start with a number
+### Metadata Naming Rules (Правила именования)
+
+✅ **Допустимые имена метаданных:**
+
+- Должны быть корректными C#-идентификаторами
+- Не чувствительны к регистру (Azure хранит в lowercase)
+- Только буквы, цифры и символ `_`
+- Не могут начинаться с цифры
+
+---
+
+### Дополнительные ограничения
+
+- Общий размер metadata на ресурс — до **8 KB**
+- При обновлении metadata предыдущий набор полностью заменяется
+- Метаданные не индексируются автоматически (в отличие от blob index tags)
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Metadata — это key-value пары до 8 KB,  
+> регистр не имеет значения,  
+> при обновлении происходит полная перезапись.
+
 
 ❌ **Invalid metadata names:**
 ```
@@ -474,26 +510,43 @@ namespace BlobMetadataExample
 
 ---
 
-## Key Methods Summary
+## Key Methods Summary (Ключевые методы)
 
-### Container Methods
-
-| Method | Purpose | Returns |
-|--------|---------|---------|
-| **GetPropertiesAsync()** | Retrieve properties and metadata | BlobContainerProperties |
-| **SetMetadataAsync()** | Set/replace all metadata | Response |
-| **CreateIfNotExistsAsync()** | Create container if missing | BlobContainerClient |
-
-### Blob Methods
+### Container Methods (Методы контейнера)
 
 | Method | Purpose | Returns |
-|--------|---------|---------|
-| **GetPropertiesAsync()** | Retrieve properties, headers, metadata | BlobProperties |
-| **SetMetadataAsync()** | Set/replace all metadata | Response |
-| **SetHttpHeadersAsync()** | Update HTTP headers | Response |
-| **UploadAsync()** | Upload blob with optional metadata | Response |
+|----------|----------|----------|
+| **GetPropertiesAsync()** | Получить свойства и metadata контейнера | BlobContainerProperties |
+| **SetMetadataAsync()** | Установить / полностью заменить metadata | Response |
+| **CreateIfNotExistsAsync()** | Создать контейнер, если отсутствует | BlobContainerClient |
+
+> 💡 Важно: `SetMetadataAsync()` заменяет весь набор metadata, а не добавляет частично.
 
 ---
+
+### Blob Methods (Методы blob)
+
+| Method | Purpose | Returns |
+|----------|----------|----------|
+| **GetPropertiesAsync()** | Получить свойства, HTTP-заголовки и metadata | BlobProperties |
+| **SetMetadataAsync()** | Установить / заменить metadata | Response |
+| **SetHttpHeadersAsync()** | Обновить HTTP-заголовки | Response |
+| **UploadAsync()** | Загрузить blob (можно указать metadata) | Response |
+
+---
+
+### Практические замечания
+
+- `GetPropertiesAsync()` возвращает объект со всеми системными свойствами
+- `SetHttpHeadersAsync()` используется для изменения `ContentType`, `ContentEncoding` и других HTTP-заголовков
+- `UploadAsync()` позволяет задать metadata при загрузке
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Обновление metadata полностью заменяет предыдущий набор.  
+> Для получения ETag и LastModified используется `GetPropertiesAsync()`.
+
 
 ## Best Practices
 
@@ -596,27 +649,41 @@ catch (Azure.RequestFailedException ex) when (ex.Status == 403)
 
 ---
 
-## Exam Tips
+## Exam Tips (Советы к экзамену AZ-204)
 
-🎯 **GetPropertiesAsync**: Retrieves system properties AND metadata in one call
+🎯 **GetPropertiesAsync**  
+Получает системные свойства И metadata за один вызов
 
-🎯 **SetMetadataAsync**: REPLACES all metadata (not a merge operation)
+🎯 **SetMetadataAsync**  
+ПОЛНОСТЬЮ заменяет metadata (это не merge-операция)
 
-🎯 **Metadata naming**: Must be valid C# identifiers (no hyphens, spaces, or special characters)
+🎯 **Правила именования metadata**  
+Должны быть допустимыми C#-идентификаторами  
+(без дефисов, пробелов и специальных символов)
 
-🎯 **Case-insensitive**: Azure stores metadata keys as lowercase
+🎯 **Case-insensitive**  
+Azure хранит ключи metadata в lowercase
 
-🎯 **8 KB limit**: Maximum size for all metadata (names + values combined)
+🎯 **Лимит 8 KB**  
+Максимальный размер metadata (имена + значения вместе)
 
-🎯 **IDictionary<string, string>**: Metadata collection type in .NET SDK
+🎯 **IDictionary<string, string>**  
+Тип коллекции metadata в .NET SDK
 
-🎯 **System properties**: Read-only (ETag, LastModified, LeaseStatus, etc.)
+🎯 **System properties**  
+Read-only (ETag, LastModified, LeaseStatus и др.)
 
-🎯 **BlobHttpHeaders**: Use SetHttpHeadersAsync to update Content-Type, Cache-Control, etc.
+🎯 **BlobHttpHeaders**  
+Используется с `SetHttpHeadersAsync()` для изменения  
+Content-Type, Cache-Control и других HTTP-заголовков
 
-🎯 **Preserve metadata**: Always retrieve current metadata before updating to avoid losing data
+🎯 **Сохранение metadata**  
+Перед обновлением получите текущие metadata,  
+чтобы не потерять существующие значения
 
-🎯 **Authentication**: Requires Storage Blob Data Contributor role for write operations
+🎯 **Аутентификация**  
+Для операций записи требуется роль  
+`Storage Blob Data Contributor`
 
 ---
 

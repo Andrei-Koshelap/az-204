@@ -1,99 +1,129 @@
 # Azure Storage Security Features
 
-## Security Overview
+## Security Overview (Обзор безопасности)
 
-Azure Storage provides comprehensive security features to protect your data:
-1. **Encryption at rest** (server-side)
-2. **Encryption in transit** (HTTPS)
-3. **Client-side encryption**
-4. **Authentication and authorization**
-5. **Network security**
+Azure Storage предоставляет комплексные механизмы защиты данных:
+
+1️⃣ **Шифрование данных при хранении (at rest)**  
+2️⃣ **Шифрование при передаче (in transit, HTTPS)**  
+3️⃣ **Client-side encryption**  
+4️⃣ **Аутентификация и авторизация**  
+5️⃣ **Сетевая безопасность**
 
 ---
 
-## Azure Storage Encryption for Data at Rest
+# Azure Storage Encryption for Data at Rest
 
-### Automatic Encryption
+## Automatic Encryption (Автоматическое шифрование)
 
-Azure Storage uses **service-side encryption (SSE)** to automatically encrypt your data when persisting it to the cloud.
+Azure Storage использует **Service-Side Encryption (SSE)**  
+для автоматического шифрования данных при сохранении.
 
-#### Key Features
+---
+
+## Key Features (Основные характеристики)
 
 | Feature | Details |
-|---------|---------|
-| **Algorithm** | 256-bit Advanced Encryption Standard (AES) encryption |
-| **Compliance** | FIPS 140-2 compliant |
-| **Status** | **Always enabled** (cannot be disabled) |
-| **Scope** | All storage accounts (new and existing) |
-| **Performance tiers** | All tiers (Standard and Premium) |
-| **Access tiers** | All access tiers (Hot, Cool, Cold, Archive) |
-| **Blob types** | All blob types (block, append, page) |
-| **Redundancy** | All redundancy options supported |
-| **Metadata** | Object metadata also encrypted |
-| **Cost** | **No extra cost** for encryption |
+|----------|----------|
+| **Algorithm** | AES-256 (256-bit Advanced Encryption Standard) |
+| **Compliance** | FIPS 140-2 |
+| **Status** | **Всегда включено** |
+| **Scope** | Все storage accounts |
+| **Performance tiers** | Standard и Premium |
+| **Access tiers** | Hot, Cool, Cold, Archive |
+| **Blob types** | Block, Append, Page |
+| **Redundancy** | Все варианты репликации |
+| **Metadata** | Метаданные также шифруются |
+| **Cost** | Без дополнительной платы |
 
-#### Transparent Encryption
+---
 
-💡 **Automatic Process**: Data is encrypted and decrypted **transparently** using AES encryption.
+## Transparent Encryption (Прозрачное шифрование)
 
-✅ **No Code Changes**: You don't need to modify your code or applications to take advantage of Azure Storage encryption.
+💡 Данные шифруются и расшифровываются автоматически.
 
-⚠️ **Cannot Be Disabled**: Because data is secured by default, encryption cannot be turned off.
+✅ Изменения в коде не требуются  
+⚠️ Шифрование нельзя отключить
 
-#### Encryption Scope
+---
 
-All Azure Storage resources are encrypted:
-- ✅ Blobs (block, append, page)
+## Encryption Scope (Что шифруется)
+
+- ✅ Blobs
 - ✅ Disks
 - ✅ Files
 - ✅ Queues
 - ✅ Tables
 
-#### Geo-Replication Encryption
+---
 
-When geo-replication is enabled:
-- Primary region data is encrypted
-- Secondary region data is encrypted
-- Encryption remains active across all replicas
+## Geo-Replication Encryption
+
+При включённой георепликации:
+
+- Данные в primary регионе зашифрованы
+- Данные в secondary регионе также зашифрованы
+- Шифрование сохраняется на всех репликах
 
 ---
 
-## Encryption Key Management
+# Encryption Key Management (Управление ключами)
 
-Azure Storage provides **three options** for managing encryption keys:
+Azure Storage предлагает **3 варианта управления ключами**.
 
-### 1. Microsoft-Managed Keys (Default)
+---
 
-**Overview**: Microsoft manages all aspects of key management.
+## 1️⃣ Microsoft-Managed Keys (По умолчанию)
 
-#### Characteristics
+Microsoft полностью управляет ключами.
+
+### Characteristics
 
 | Aspect | Details |
-|--------|---------|
-| **Key Storage** | Microsoft key store |
-| **Key Rotation** | Managed by Microsoft |
+|--------|----------|
+| **Key Storage** | Хранилище ключей Microsoft |
+| **Key Rotation** | Автоматически Microsoft |
 | **Key Control** | Microsoft |
-| **Scope** | Account (default), container, or blob |
-| **Supported Services** | All Azure Storage services |
-| **Complexity** | Lowest (fully automated) |
-| **Cost** | Included in storage cost |
+| **Scope** | Account (по умолчанию), container или blob |
+| **Supported Services** | Все сервисы Storage |
+| **Complexity** | Минимальная |
+| **Cost** | Включено |
 
-✅ **Best for**: Most scenarios where you don't need direct key control
+✅ Подходит для большинства сценариев.
 
-### 2. Customer-Managed Keys (CMK)
+---
 
-**Overview**: You manage encryption keys using Azure Key Vault or Azure Key Vault Managed HSM.
+## 2️⃣ Customer-Managed Keys (CMK)
 
-#### Characteristics
+Клиент управляет ключами через:
+
+- Azure Key Vault
+- Azure Key Vault Managed HSM
+
+### Characteristics
 
 | Aspect | Details |
-|--------|---------|
-| **Key Storage** | Azure Key Vault or Key Vault HSM |
-| **Key Rotation** | Customer responsibility |
-| **Key Control** | Customer |
-| **Scope** | Account (default), container, or blob |
+|--------|----------|
+| **Key Storage** | Key Vault или Managed HSM |
+| **Key Rotation** | Ответственность клиента |
+| **Key Control** | Клиент |
+| **Scope** | Account (по умолчанию), container или blob |
 | **Supported Services** | Blob Storage, Azure Files |
-| **Complexity** | Medium (requires Key Vault setup) |
+| **Complexity** | Средняя |
+
+> 💡 Используется при требованиях compliance или контроле над ключами.
+
+---
+
+## Важно для AZ-204
+
+- SSE всегда включено
+- Используется AES-256
+- Нет дополнительной стоимости
+- Microsoft-managed — по умолчанию
+- CMK требует Key Vault
+- Шифрование распространяется на geo-replication
+
 
 #### Key Vault Integration
 
@@ -137,27 +167,48 @@ Set-AzStorageAccount `
   -KeyVaultUri <keyvault-uri>
 ```
 
-✅ **Best for**: Scenarios requiring direct control over encryption keys
+✅ **Best for**  
+Сценарии, где требуется прямой контроль над ключами шифрования  
+(например, строгие требования compliance или внутренние политики безопасности).
 
-⚠️ **Requirements**:
-- Azure Key Vault or Key Vault Managed HSM
-- Appropriate permissions to Key Vault
-- Key rotation management
+⚠️ **Requirements (Требования)**
 
-### 3. Customer-Provided Keys (CPK)
+- Azure Key Vault или Key Vault Managed HSM
+- Назначенные разрешения (RBAC / access policies) к Key Vault
+- Управление ротацией ключей на стороне клиента
 
-**Overview**: You provide an encryption key on each read/write request for granular control.
+---
 
-#### Characteristics
+# 3️⃣ Customer-Provided Keys (CPK)
+
+## Overview (Обзор)
+
+Вы предоставляете ключ шифрования **в каждом запросе** на чтение/запись.
+
+Это самый детальный уровень контроля.
+
+---
+
+## Characteristics (Характеристики)
 
 | Aspect | Details |
-|--------|---------|
-| **Key Storage** | Customer's own key store |
-| **Key Rotation** | Customer responsibility |
-| **Key Control** | Customer (full control) |
-| **Scope** | Per-request (most granular) |
-| **Supported Services** | Blob Storage only |
-| **Complexity** | Highest (must provide key on every request) |
+|--------|----------|
+| **Key Storage** | Собственное хранилище ключей клиента |
+| **Key Rotation** | Ответственность клиента |
+| **Key Control** | Полный контроль клиента |
+| **Scope** | На уровне каждого запроса |
+| **Supported Services** | Только Blob Storage |
+| **Complexity** | Самая высокая |
+
+---
+
+## Важно для AZ-204
+
+- Microsoft-managed keys — по умолчанию
+- CMK — через Key Vault
+- CPK — ключ передаётся в каждом запросе
+- CPK поддерживается только для Blob Storage
+- Чем выше контроль — тем выше сложность управления
 
 #### Usage Pattern
 
@@ -182,48 +233,71 @@ BlobDownloadOptions downloadOptions = new BlobDownloadOptions
 await blobClient.DownloadToAsync(stream, downloadOptions);
 ```
 
-✅ **Best for**: Maximum granular control, different keys for different blobs
+✅ **Best for**  
+Максимально детальный контроль — возможность использовать разные ключи для разных blob.
 
-⚠️ **Requirement**: Must provide key on **every read/write operation**
+⚠️ **Requirement**  
+Ключ должен передаваться **в каждом read/write запросе**.
 
 ---
 
-## Key Management Comparison
+# Key Management Comparison (Сравнение управления ключами)
 
 | Feature | Microsoft-Managed | Customer-Managed (CMK) | Customer-Provided (CPK) |
-|---------|-------------------|------------------------|-------------------------|
-| **Key Storage** | Microsoft store | Azure Key Vault/HSM | Your own store |
-| **Rotation Responsibility** | Microsoft | Customer | Customer |
-| **Control Level** | Microsoft | Customer | Customer |
-| **Granularity** | Account/container/blob | Account/container/blob | Per-request |
-| **Services** | All | Blob Storage, Azure Files | Blob Storage only |
-| **Complexity** | Low | Medium | High |
-| **Setup Required** | None | Key Vault | Custom key management |
-| **Request Overhead** | None | None | Every request |
+|----------|------------------|------------------------|--------------------------|
+| **Key Storage** | Хранилище Microsoft | Azure Key Vault / HSM | Собственное хранилище |
+| **Rotation Responsibility** | Microsoft | Клиент | Клиент |
+| **Control Level** | Microsoft | Клиент | Клиент |
+| **Granularity** | Account / container / blob | Account / container / blob | Per-request |
+| **Services** | Все сервисы | Blob Storage, Azure Files | Только Blob Storage |
+| **Complexity** | Низкая | Средняя | Высокая |
+| **Setup Required** | Нет | Настройка Key Vault | Собственная система ключей |
+| **Request Overhead** | Нет | Нет | Каждый запрос |
 
 ---
 
-## Client-Side Encryption
+# Client-Side Encryption (Шифрование на стороне клиента)
 
-### Overview
+## Overview (Обзор)
 
-Client-side encryption allows you to **encrypt data in your client application** before uploading to Azure Storage and **decrypt data after downloading**.
+Client-side encryption позволяет:
 
-### Supported SDKs
+- 🔐 Шифровать данные в клиентском приложении **до отправки в Azure**
+- 🔓 Расшифровывать данные после скачивания
 
-Azure Blob Storage and Queue Storage client libraries support client-side encryption:
+В этом случае Azure никогда не видит данные в открытом виде.
+
+---
+
+## Supported SDKs (Поддерживаемые SDK)
+
+Client-side encryption поддерживается для:
+
 - ✅ .NET
 - ✅ Java
 - ✅ Python
 
-### Encryption Versions
+---
+
+## Encryption Versions (Версии шифрования)
 
 | Version | Algorithm | Mode | Supported Services |
-|---------|-----------|------|-------------------|
-| **Version 2** (Recommended) | AES | **Galois/Counter Mode (GCM)** | Blob Storage, Queue Storage |
-| **Version 1** (Legacy) | AES | **Cipher Block Chaining (CBC)** | Blob Storage, Queue Storage, Table Storage |
+|----------|-----------|------|-------------------|
+| **Version 2** (Recommended) | AES | **GCM (Galois/Counter Mode)** | Blob Storage, Queue Storage |
+| **Version 1** (Legacy) | AES | **CBC (Cipher Block Chaining)** | Blob, Queue, Table |
 
-💡 **Recommendation**: Use **Version 2** (GCM mode) for new implementations—it's more secure and efficient.
+💡 **Recommendation**  
+Используйте **Version 2 (GCM)** — более безопасный и эффективный режим.
+
+---
+
+## Важно для AZ-204
+
+- SSE (server-side encryption) всегда включено
+- CMK требует Key Vault
+- CPK передаётся в каждом запросе
+- Client-side encryption шифрует данные до отправки
+- Version 2 (GCM) — предпочтительный вариант
 
 ### How It Works
 
@@ -262,21 +336,35 @@ await blobClient.UploadAsync(stream);
 await blobClient.DownloadToAsync(stream);
 ```
 
-### Layered Encryption
+# Layered Encryption (Многоуровневое шифрование)
 
-When using client-side encryption:
-1. **Client encrypts** data before upload (AES-GCM)
-2. **Azure encrypts** data at rest (AES-256)
-3. Result: **Double encryption** (defense in depth)
+При использовании **Client-Side Encryption** применяется защита в несколько слоёв:
+
+1️⃣ Клиент шифрует данные перед загрузкой (AES-GCM)  
+2️⃣ Azure дополнительно шифрует данные при хранении (AES-256, SSE)  
+3️⃣ В итоге получается **двойное шифрование**
+
+> 💡 Это принцип *defense in depth* — защита на нескольких уровнях.
 
 ---
 
-## Encryption at Rest vs. In Transit
+# Encryption at Rest vs. In Transit
 
 | Type | When | How | Configuration |
 |------|------|-----|---------------|
-| **At Rest** | Data stored on disk | AES-256 encryption | Always enabled, automatic |
-| **In Transit** | Data moving over network | HTTPS/TLS | Use HTTPS endpoints |
+| **At Rest** | Когда данные хранятся на диске | AES-256 | Всегда включено автоматически |
+| **In Transit** | При передаче по сети | HTTPS / TLS | Использовать HTTPS endpoints |
+
+---
+
+## Важно для AZ-204
+
+- At Rest шифрование всегда включено и не настраивается
+- In Transit шифрование требует HTTPS
+- Client-side encryption даёт дополнительный уровень защиты
+- Double encryption возможно при сочетании client-side + SSE
+- Azure Storage поддерживает TLS для передачи данных
+
 
 ### Secure Transfer Required
 
@@ -296,76 +384,96 @@ Set-AzStorageAccount `
   -EnableHttpsTrafficOnly $true
 ```
 
-⚠️ **Best Practice**: Always enable "Secure transfer required" to enforce HTTPS.
+⚠⚠️ **Best Practice**  
+Всегда включайте **"Secure transfer required"**, чтобы принудительно использовать HTTPS.
 
 ---
 
-## Security Best Practices
+# Security Best Practices (Лучшие практики безопасности)
 
-### Encryption
+## 🔐 Encryption
 
-✅ **DO:**
-- Trust default encryption (always enabled)
-- Use HTTPS for all connections
-- Enable "Secure transfer required" setting
-- Use customer-managed keys if you need key control
-- Implement client-side encryption for sensitive data
-- Use AES-GCM (Version 2) for client-side encryption
+### ✅ DO
 
-❌ **DON'T:**
-- Assume encryption is optional (it's always on)
-- Use HTTP endpoints for sensitive data
-- Use deprecated CBC mode (Version 1) for new applications
+- Доверяйте встроенному шифрованию (всегда включено)
+- Используйте **HTTPS** для всех подключений
+- Включайте **Secure transfer required**
+- Используйте **Customer-Managed Keys (CMK)** при требованиях compliance
+- Применяйте **client-side encryption** для чувствительных данных
+- Используйте **AES-GCM (Version 2)** для client-side encryption
 
-### Key Management
+### ❌ DON'T
 
-✅ **DO:**
-- Use Microsoft-managed keys for most scenarios
-- Use customer-managed keys when compliance requires it
-- Store customer-managed keys in Azure Key Vault
-- Rotate customer-managed keys regularly
-- Document key rotation procedures
-
-❌ **DON'T:**
-- Manage keys manually without proper procedures
-- Store keys in code or configuration files
-- Forget to rotate customer-managed keys
-
-### Access Control
-
-✅ **DO:**
-- Use Azure AD authentication when possible
-- Apply principle of least privilege
-- Use SAS tokens with minimal permissions and short expiration
-- Monitor access logs
+- Не считайте шифрование опциональным (оно всегда включено)
+- Не используйте HTTP для чувствительных данных
+- Не применяйте устаревший CBC (Version 1) в новых приложениях
 
 ---
 
-## Exam Tips
+## 🔑 Key Management
 
-🎯 **Encryption always enabled**: Azure Storage encryption is **always on** and **cannot be disabled**
+### ✅ DO
 
-🎯 **AES-256**: Azure uses 256-bit AES encryption, FIPS 140-2 compliant
+- Используйте **Microsoft-managed keys** в большинстве сценариев
+- Используйте **CMK**, если требуется контроль над ключами
+- Храните CMK в **Azure Key Vault**
+- Регулярно ротируйте customer-managed ключи
+- Документируйте процедуры ротации
 
-🎯 **No extra cost**: Encryption at rest is included, no additional charge
+### ❌ DON'T
 
-🎯 **Three key options**: Microsoft-managed (default), Customer-managed (Key Vault), Customer-provided (per-request)
+- Не управляйте ключами без процессов и контроля
+- Не храните ключи в коде или конфигурационных файлах
+- Не забывайте про ротацию ключей
 
-🎯 **Client-side encryption**: Available in .NET, Java, Python SDKs
+---
 
-🎯 **Two client-side versions**: V2 (GCM - recommended), V1 (CBC - legacy)
+## 🔐 Access Control
 
-🎯 **CMK requires Key Vault**: Customer-managed keys must be stored in Azure Key Vault or Key Vault HSM
+### ✅ DO
 
-🎯 **CPK is per-request**: Customer-provided keys must be supplied on every read/write operation
+- Используйте **Azure AD authentication**
+- Следуйте принципу **least privilege**
+- Используйте **SAS-токены** с минимальными правами и коротким сроком действия
+- Мониторьте логи доступа
 
-🎯 **Supported services for CMK**: Blob Storage and Azure Files (not Queue/Table)
+---
 
-🎯 **Supported services for CPK**: Blob Storage only
+# Exam Tips (Советы для экзамена)
 
-🎯 **Transparent encryption**: No code changes needed for at-rest encryption
+🎯 **Encryption always enabled**  
+Шифрование Azure Storage всегда включено и не может быть отключено
 
-🎯 **Secure transfer**: Enable HTTPS-only to enforce encryption in transit
+🎯 **AES-256**  
+Используется 256-bit AES, соответствие FIPS 140-2
+
+🎯 **No extra cost**  
+Шифрование at rest бесплатно
+
+🎯 **Three key options**
+- Microsoft-managed (по умолчанию)
+- Customer-managed (через Key Vault)
+- Customer-provided (per-request)
+
+🎯 **Client-side encryption**
+- Поддержка: .NET, Java, Python
+- V2 (GCM) — рекомендовано
+- V1 (CBC) — legacy
+
+🎯 **CMK**
+- Требует Azure Key Vault или Managed HSM
+- Поддерживается для Blob Storage и Azure Files
+
+🎯 **CPK**
+- Поддерживается только для Blob Storage
+- Ключ передаётся в каждом запросе
+
+🎯 **Transparent encryption**
+- Для SSE изменения в коде не требуются
+
+🎯 **Secure transfer**
+- Включайте HTTPS-only для шифрования in transit
+
 
 ---
 
@@ -442,7 +550,43 @@ Do you need control over encryption keys?
                     ⚠️  Blob Storage only
                     ⚠️  Must provide on every request
 ```
+# Encryption Key Decision Tree (Выбор типа управления ключами)
 
+Нужен ли вам контроль над ключами шифрования?
+│
+├── ❌ Нет
+│ → Используйте Microsoft-managed keys (по умолчанию)
+│ ✅ Самый простой вариант
+│ ✅ Не требует дополнительной настройки
+│ ✅ Microsoft управляет ротацией ключей
+│
+└── ✅ Да
+│
+├── Нужна ли детализация на уровне каждого запроса?
+│
+├── ❌ Нет
+│ → Используйте Customer-Managed Keys (CMK)
+│ ✅ Хранятся в Azure Key Vault / HSM
+│ ✅ Контроль ротации у клиента
+│ ✅ Поддержка Blob Storage и Azure Files
+│
+└── ✅ Да
+→ Используйте Customer-Provided Keys (CPK)
+✅ Максимальный уровень контроля
+✅ Можно использовать разные ключи для разных blob
+⚠️ Поддерживается только для Blob Storage
+⚠️ Ключ должен передаваться в каждом запросе
+
+
+---
+
+## Важно для AZ-204
+
+- По умолчанию используется Microsoft-managed keys
+- CMK требует Azure Key Vault
+- CPK работает только с Blob Storage
+- Чем выше контроль — тем выше сложность управления
+- CPK = per-request гранулярность
 ---
 
 ## Additional Resources

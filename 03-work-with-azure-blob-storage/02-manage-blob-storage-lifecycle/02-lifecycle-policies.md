@@ -1,11 +1,49 @@
-# Blob Storage Lifecycle Policies
+# Blob Storage Lifecycle Policies (Политики жизненного цикла Blob Storage)
 
-## What is a Lifecycle Policy?
+## What is a Lifecycle Policy? (Что такое Lifecycle Policy?)
 
-A **lifecycle management policy** is a collection of **rules in a JSON document** that automatically:
-- Transition blobs to cooler access tiers based on age
-- Delete blobs at the end of their lifecycle
-- Apply actions based on filters (containers, prefixes, tags)
+**Lifecycle management policy** — это набор **правил в формате JSON**, которые автоматически:
+
+- Переводят blob в более «холодные» уровни доступа на основе возраста
+- Удаляют blob по завершении их жизненного цикла
+- Применяют действия на основе фильтров (container, prefix, blob index tags)
+
+---
+
+### Ключевая идея
+
+Политика работает **на уровне Storage Account** и позволяет автоматизировать управление данными без ручного вмешательства.
+
+Она помогает:
+
+- Оптимизировать стоимость хранения
+- Управлять ретенцией данных (retention policy)
+- Соблюдать требования комплаенса
+- Минимизировать человеческий фактор
+
+---
+
+### Как это работает
+
+Lifecycle policy:
+
+- Описывается в виде **JSON-документа**
+- Содержит одну или несколько **rules**
+- Каждое правило включает:
+    - `filters` (какие blob затрагиваются)
+    - `actions` (что с ними делать)
+
+---
+
+### Пример логики правила
+
+- Если blob старше 30 дней → перевести в Cool
+- Если старше 90 дней → перевести в Cold
+- Если старше 180 дней → удалить
+
+> 💡 На экзамене AZ-204 важно помнить:  
+> Lifecycle Management — это **rule-based automation**, а не ручное управление tier.
+
 
 ---
 
@@ -34,66 +72,88 @@ A **lifecycle management policy** is a collection of **rules in a JSON document*
 }
 ```
 
-### Policy Components
+### Policy Components (Компоненты политики)
 
 | Component | Description | Required |
-|-----------|-------------|----------|
-| **rules** | Array of rule objects | Yes (at least 1, max 100) |
+|-----------|------------|----------|
+| **rules** | Массив объектов правил | Да (минимум 1, максимум 100) |
+
+> 💡 Политика может содержать до 100 правил в одном JSON-документе.
 
 ---
 
-## Rule Parameters
+## Rule Parameters (Параметры правила)
 
-Each rule has the following parameters:
+Каждое правило содержит следующие параметры:
 
 | Parameter | Type | Description | Required | Details |
-|-----------|------|-------------|----------|---------|
-| **name** | String | Rule identifier | Yes | Up to 256 alphanumeric characters, case-sensitive, must be unique |
-| **enabled** | Boolean | Enable/disable rule | No | Default is `true`, allows temporary disabling |
-| **type** | Enum | Rule type | Yes | Currently only `"Lifecycle"` is valid |
-| **definition** | Object | Rule definition | Yes | Contains `filters` and `actions` |
-
-### Rule Name Best Practices
-
-✅ **DO:**
-- Use descriptive names (e.g., `move-logs-to-cool`)
-- Follow naming convention (kebab-case or camelCase)
-- Make names unique and meaningful
-
-❌ **DON'T:**
-- Use generic names (e.g., `rule1`, `rule2`)
-- Exceed 256 characters
-- Use duplicate names
+|------------|------|------------|----------|----------|
+| **name** | String | Идентификатор правила | Да | До 256 символов, регистрозависимое, уникальное |
+| **enabled** | Boolean | Включено/выключено | Нет | По умолчанию `true`, позволяет временно отключить правило |
+| **type** | Enum | Тип правила | Да | В настоящее время допустимо только `"Lifecycle"` |
+| **definition** | Object | Определение правила | Да | Содержит `filters` и `actions` |
 
 ---
 
-## Rule Definition
+### Rule Name Best Practices (Лучшие практики именования правил)
 
-Each rule **definition** contains two sets:
+✅ **DO (Рекомендуется):**
 
-### 1. Filter Set
-Limits rule actions to a **specific subset of blobs**.
+- Использовать понятные имена (например, `move-logs-to-cool`)
+- Следовать единому стилю (kebab-case или camelCase)
+- Делать имена уникальными и отражающими смысл правила
 
-### 2. Action Set
-Applies **tier transitions or deletions** to filtered blobs.
+❌ **DON'T (Не рекомендуется):**
+
+- Использовать абстрактные имена (`rule1`, `rule2`)
+- Превышать 256 символов
+- Использовать повторяющиеся имена
+
+> 💡 Хорошее имя упрощает поддержку политики в больших Storage Account с множеством правил.
 
 ---
 
-## Filter Set
+## Rule Definition (Определение правила)
 
-Filters define **which blobs** the rule applies to.
+Каждое правило содержит два основных набора:
 
-### Available Filters
+### 1️⃣ Filter Set (Набор фильтров)
+
+Ограничивает применение правила к **конкретному подмножеству blob**.
+
+### 2️⃣ Action Set (Набор действий)
+
+Определяет, какие действия выполнять над отфильтрованными blob:
+- Перевод в другой tier
+- Удаление
+
+---
+
+## Filter Set (Набор фильтров)
+
+Фильтры определяют, **к каким blob применяется правило**.
+
+### Available Filters (Доступные фильтры)
 
 | Filter | Type | Description | Required |
-|--------|------|-------------|----------|
-| **blobTypes** | Array of enum | Type of blobs (e.g., `blockBlob`, `appendBlob`) | **Yes** |
-| **prefixMatch** | Array of strings | Container/blob name prefixes | No |
-| **blobIndexMatch** | Array of dictionary | Blob index tag key-value conditions | No |
+|---------|------|------------|----------|
+| **blobTypes** | Array of enum | Тип blob (например, `blockBlob`, `appendBlob`) | **Да** |
+| **prefixMatch** | Array of strings | Префиксы контейнера или имени blob | Нет |
+| **blobIndexMatch** | Array of dictionary | Условия по blob index tags (key-value) | Нет |
 
-### Filter Logic
+---
 
-💡 **Multiple Filters**: When multiple filters are defined, they are combined with **logical AND**.
+### Filter Logic (Логика фильтрации)
+
+💡 Если указано несколько фильтров, они объединяются через **логическое AND**.
+
+Это означает:
+- Blob должен удовлетворять **всем условиям**, чтобы правило было применено.
+
+> 🎯 Вопрос AZ-204:  
+> Если заданы `prefixMatch` и `blobIndexMatch`, применится ли правило к blob, удовлетворяющему только одному условию?  
+> Ответ: Нет, требуется выполнение всех условий (AND).
+
 
 ```
 (blobTypes = blockBlob) AND (prefix = logs/) AND (tag = status:archived)
@@ -113,16 +173,55 @@ Filters define **which blobs** the rule applies to.
 }
 ```
 
-⚠️ **Note**: Page blobs are not supported in lifecycle management policies.
+⚠️ **Note:** Page blobs не поддерживаются в lifecycle management policies.
 
-### 2. prefixMatch Filter
+---
 
-**Purpose**: Target blobs with specific name prefixes.
+### 2. `prefixMatch` Filter
 
-**Characteristics:**
-- Array of strings
-- Each rule can define **up to 10 prefixes**
-- Prefix string must **start with a container name**
+**Purpose (Назначение):**  
+Позволяет применять правило к blob с определёнными префиксами имени.
+
+---
+
+### Characteristics (Характеристики)
+
+- Представляет собой массив строк (`array of strings`)
+- В одном правиле можно указать **до 10 префиксов**
+- Префикс **обязательно должен начинаться с имени контейнера**
+
+---
+
+### Как работает `prefixMatch`
+
+Фильтр сравнивает начало полного пути blob:
+container-name/path/to/blob.txt
+
+
+Пример:
+
+```json
+"prefixMatch": [
+"logs/",
+"archive/2024/"
+]
+```
+⚠️ В реальной конфигурации корректнее указывать с контейнером:
+```json
+"prefixMatch": [
+"logs-container/app-logs/",
+"archive-container/2024/"
+]
+```
+Когда использовать
+- Для разделения логов по директориям
+- Для обработки данных конкретного приложения
+- Для применения разных retention-политик к разным папкам
+- Для сегментации по годам (например, reports/2023/, reports/2024/)
+
+💡 Экзаменационный момент AZ-204:
+prefixMatch — это строковое сравнение по началу имени blob, а не полноценная поддержка «папок».
+В Blob Storage нет настоящих директорий — только имя blob с разделителями /.
 
 **Examples:**
 
@@ -143,21 +242,61 @@ Filters define **which blobs** the rule applies to.
 ]
 ```
 
-#### Prefix Matching Examples
+#### Prefix Matching Examples (Примеры работы prefixMatch)
 
 | Prefix | Matches | Doesn't Match |
-|--------|---------|---------------|
+|----------|----------|----------------|
 | `logs/` | `logs/app.log`, `logs/2024/error.log` | `oldlogs/app.log` |
 | `container1/data/` | `container1/data/file.txt` | `container1/file.txt` |
 | `images/photos/` | `images/photos/pic1.jpg` | `images/pic1.jpg` |
 
-### 3. blobIndexMatch Filter
+> 💡 Важно:  
+> Сравнение выполняется по **началу строки имени blob**.  
+> Если префикс не совпадает строго с началом пути — правило не применяется.
 
-**Purpose**: Target blobs with specific index tags.
+---
 
-**Characteristics:**
-- Array of dictionary values (key-value pairs)
-- Each rule can define **up to 10 tag conditions**
+### 3. `blobIndexMatch` Filter
+
+**Purpose (Назначение):**  
+Позволяет применять правило к blob на основе **index tags (ключ-значение)**.
+
+---
+
+### Characteristics (Характеристики)
+
+- Представляет собой массив словарей (key-value пары)
+- В одном правиле можно указать **до 10 условий по тегам**
+- Все условия объединяются через **логическое AND**
+
+---
+
+### Как работает `blobIndexMatch`
+
+Blob index tags — это пользовательские метаданные, которые можно назначить blob:
+
+```json
+{
+  "Project": "Finance",
+  "Environment": "Production",
+  "Retention": "LongTerm"
+}
+```
+Пример фильтра:
+```json
+"blobIndexMatch": [
+{
+"name": "Project",
+"op": "==",
+"value": "Finance"
+}
+]
+```
+
+Правило применится только к blob, у которых:
+
+Project = Finance
+
 
 **Examples:**
 
@@ -188,50 +327,107 @@ Filters define **which blobs** the rule applies to.
 
 ---
 
-## Action Set
+## Action Set (Набор действий)
 
-Actions define **what happens** to filtered blobs.
+Actions определяют, **что происходит** с blob, прошедшими фильтрацию.
 
-### Available Actions
+---
+
+### Available Actions (Доступные действия)
 
 | Action | Supported Blob Types | Current Version | Previous Versions | Snapshots |
-|--------|----------------------|-----------------|-------------------|-----------|
+|----------|----------------------|-----------------|-------------------|-----------|
 | **tierToCool** | Block blobs | ✅ Supported | ✅ Supported | ✅ Supported |
 | **tierToCold** | Block blobs | ✅ Supported | ✅ Supported | ✅ Supported |
 | **enableAutoTierToHotFromCool** | Block blobs | ✅ Supported | ❌ Not supported | ❌ Not supported |
 | **tierToArchive** | Block blobs | ✅ Supported | ✅ Supported | ✅ Supported |
 | **delete** | Block blobs, Append blobs | ✅ Supported | ✅ Supported | ✅ Supported |
 
-### Action Priority
+---
 
-⚠️ **Multiple Actions on Same Blob**: Lifecycle management applies the **least expensive action**.
+### Разбор действий
+
+#### `tierToCool`
+Переводит blob в Cool tier.  
+Используется для данных с нечастым доступом (30+ дней).
+
+#### `tierToCold`
+Переводит blob в Cold tier.  
+Подходит для редко используемых данных (90+ дней).
+
+#### `tierToArchive`
+Переводит blob в Archive tier.  
+Используется для долгосрочного хранения (180+ дней).
+
+#### `enableAutoTierToHotFromCool`
+Автоматически переводит blob из Cool в Hot при обращении.  
+⚠️ Работает только для **текущей версии** blob.
+
+#### `delete`
+Удаляет blob (включая текущие версии, предыдущие версии и snapshot).  
+Поддерживается для Block и Append blob.
+
+---
+
+### Action Priority (Приоритет действий)
+
+⚠️ **Если к одному blob применяются несколько действий**,  
+Lifecycle Management выполняет **наименее затратное действие**.
+
+Это означает:
+- Система выбирает действие, которое минимизирует расходы.
+- Например, если blob должен быть переведён в Cool и одновременно удалён — будет применено более экономичное действие.
+
+> 💡 Экзаменационный момент AZ-204:  
+> Lifecycle policy не выполняет все действия подряд — применяется только одно, наиболее экономически выгодное.
+
 
 **Cost Order (cheapest to most expensive):**
 ```
 delete < tierToArchive < tierToCold < tierToCool < no action
 ```
-
-**Example:**
-If a blob matches rules for both `tierToCool` and `delete`, the **delete action** is applied.
+**Example (Пример):**  
+Если blob одновременно соответствует правилам `tierToCool` и `delete`, будет применено действие **delete**.
 
 ---
 
-## Run Conditions
+## Run Conditions (Условия выполнения)
 
-Actions are triggered based on **age conditions**.
+Действия запускаются на основе **условий по возрасту (age conditions)**.
 
-### Condition Types
+---
+
+### Condition Types (Типы условий)
 
 | Condition | Description | Used For |
-|-----------|-------------|----------|
-| **daysAfterModificationGreaterThan** | Days since last modification | Base blob actions |
-| **daysAfterCreationGreaterThan** | Days since creation | Blob snapshot actions |
-| **daysAfterLastAccessTimeGreaterThan** | Days since last access | Current version (requires access tracking) |
-| **daysAfterLastTierChangeGreaterThan** | Days since last tier change | Minimum duration in tier before Archive |
+|------------|------------|----------|
+| **daysAfterModificationGreaterThan** | Количество дней с момента последней модификации | Действия для базового blob |
+| **daysAfterCreationGreaterThan** | Количество дней с момента создания | Действия для snapshot |
+| **daysAfterLastAccessTimeGreaterThan** | Количество дней с момента последнего доступа | Текущая версия (требуется access tracking) |
+| **daysAfterLastTierChangeGreaterThan** | Дней с момента последнего изменения tier | Контроль минимального срока перед Archive |
 
-### 1. daysAfterModificationGreaterThan
+---
 
-**Use Case**: Base blob tier transitions and deletions.
+### 1️⃣ `daysAfterModificationGreaterThan`
+
+**Use Case (Сценарий использования):**  
+Применяется для:
+
+- Перевода base blob в другой tier
+- Удаления base blob
+
+Условие проверяет, сколько дней прошло с момента **последнего изменения blob**.
+
+Пример логики:
+
+- > 30 дней после изменения → перевести в Cool
+- > 90 дней → перевести в Cold
+- > 180 дней → удалить
+
+---
+
+> 💡 Важно для AZ-204:  
+> Это наиболее часто используемое условие для tier transition и delete операций над текущей версией blob.
 
 **Based On**: Blob's **last modified time**.
 
@@ -296,15 +492,59 @@ Day 366: Deleted
 }
 ```
 
-💡 **Access Tracking**: Requires enabling last access time tracking on the storage account (additional costs may apply).
+💡 **Access Tracking (Отслеживание доступа):**  
+Для использования `daysAfterLastAccessTimeGreaterThan` необходимо включить **last access time tracking** на уровне Storage Account.
 
-### 4. daysAfterLastTierChangeGreaterThan
+⚠️ Важно:
+- Эта функция не включена по умолчанию.
+- Может повлечь дополнительные расходы.
+- Без включённого access tracking условие работать не будет.
 
-**Use Case**: Prevent immediate re-archival after rehydration.
+---
 
-**Applies To**: `tierToArchive` actions only.
+### 4️⃣ `daysAfterLastTierChangeGreaterThan`
 
-**Purpose**: Ensures a blob stays in Hot/Cool/Cold tier for a minimum duration after being rehydrated from Archive.
+**Use Case (Сценарий использования):**  
+Предотвращает немедленный повторный перевод в Archive после rehydration.
+
+**Applies To:**  
+Только для действия `tierToArchive`.
+
+---
+
+### Purpose (Назначение)
+
+Гарантирует, что blob останется в Hot / Cool / Cold tier определённое минимальное время после восстановления (rehydation) из Archive.
+
+---
+
+### Почему это важно
+
+Когда blob восстанавливается из Archive:
+
+1. Он переводится в Hot / Cool / Cold
+2. Без дополнительного условия policy может снова отправить его в Archive почти сразу
+3. Это создаёт:
+    - лишние расходы
+    - ненужные операции
+    - нестабильное поведение хранения
+
+`daysAfterLastTierChangeGreaterThan` решает эту проблему.
+
+---
+
+### Пример логики
+
+- Blob восстановлен из Archive
+- Политика настроена:  
+  `daysAfterLastTierChangeGreaterThan = 30`
+- Blob не может быть повторно переведён в Archive, пока не пройдёт 30 дней после смены tier
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Это условие применяется **только** к `tierToArchive` и используется для контроля минимального времени пребывания blob вне Archive.
+
 
 ```json
 "actions": {
@@ -504,77 +744,107 @@ Target blobs with specific tags:
 
 ---
 
-## Best Practices
-
-### Policy Design
-
-✅ **DO:**
-- Use descriptive rule names
-- Start with small pilot rules
-- Use prefixes for precise targeting
-- Enable rules gradually
-- Monitor policy execution
-- Document policy intent
-
-❌ **DON'T:**
-- Create overly complex policies
-- Use more than 100 rules (limit)
-- Forget about minimum tier durations
-- Overlap rules unnecessarily
-
-### Filter Strategy
-
-✅ **DO:**
-- Use specific prefixes when possible
-- Combine filters for precision
-- Test filters before applying actions
-- Use blob index tags for flexible categorization
-
-❌ **DON'T:**
-- Use overly broad filters
-- Forget container name in prefixMatch
-- Exceed 10 prefixes or 10 tags per rule
-
-### Action Strategy
-
-✅ **DO:**
-- Consider minimum storage durations
-- Use `daysAfterLastTierChangeGreaterThan` for Archive actions
-- Plan deletion carefully (irreversible)
-- Understand action precedence (cost-based)
-
-❌ **DON'T:**
-- Archive data that needs frequent access
-- Delete without adequate retention period
-- Ignore early deletion fees
+## Best Practices (Лучшие практики)
 
 ---
 
-## Exam Tips
+### Policy Design (Проектирование политики)
 
-🎯 **Policy structure**: JSON document with `rules` array (max 100 rules)
+✅ **DO (Рекомендуется):**
 
-🎯 **Rule components**: name, enabled, type, definition (filters + actions)
+- Использовать понятные и описательные имена правил
+- Начинать с небольших пилотных правил
+- Использовать `prefixMatch` для точного таргетинга
+- Включать правила постепенно
+- Мониторить выполнение политики
+- Документировать назначение каждого правила
 
-🎯 **Three filter types**: blobTypes (required), prefixMatch (optional), blobIndexMatch (optional)
+> 💡 Практический совет:  
+> Сначала протестируйте политику на отдельном контейнере, прежде чем применять ко всему Storage Account.
 
-🎯 **Filter logic**: Multiple filters use logical AND
+❌ **DON'T (Не рекомендуется):**
 
-🎯 **Supported blob types**: blockBlob and appendBlob only (no page blobs)
+- Создавать чрезмерно сложные политики
+- Превышать лимит в 100 правил
+- Игнорировать минимальные сроки хранения tier
+- Создавать перекрывающиеся правила без необходимости
 
-🎯 **Action precedence**: Least expensive action applied (delete > tierToArchive > tierToCold > tierToCool)
+---
 
-🎯 **Four age conditions**: daysAfterModification (base blobs), daysAfterCreation (snapshots), daysAfterLastAccessTime (requires tracking), daysAfterLastTierChange (Archive actions)
+### Filter Strategy (Стратегия фильтрации)
 
-🎯 **Prefix limit**: Up to 10 prefixes per rule
+✅ **DO:**
 
-🎯 **Tag limit**: Up to 10 blob index tag conditions per rule
+- Использовать конкретные префиксы вместо общих
+- Комбинировать фильтры для точности (логическое AND)
+- Тестировать фильтры перед применением действий
+- Использовать blob index tags для гибкой категоризации
 
-🎯 **Rule limit**: Maximum 100 rules per policy
+❌ **DON'T:**
 
-🎯 **Rule name**: Up to 256 characters, case-sensitive, must be unique
+- Использовать слишком широкие фильтры
+- Забывать указывать имя контейнера в `prefixMatch`
+- Превышать лимит: 10 префиксов или 10 тегов на правило
 
-🎯 **tierToArchive special condition**: Use daysAfterLastTierChangeGreaterThan to prevent immediate re-archival
+---
+
+### Action Strategy (Стратегия действий)
+
+✅ **DO:**
+
+- Учитывать минимальные сроки хранения tier
+- Использовать `daysAfterLastTierChangeGreaterThan` для Archive
+- Планировать удаление внимательно (действие необратимо)
+- Понимать приоритет действий (на основе стоимости)
+
+❌ **DON'T:**
+
+- Архивировать данные, которым нужен частый доступ
+- Удалять данные без достаточного retention-периода
+- Игнорировать early deletion fees
+
+---
+
+## Exam Tips (Советы к экзамену AZ-204)
+
+🎯 **Структура политики:**  
+JSON-документ с массивом `rules` (максимум 100 правил)
+
+🎯 **Компоненты правила:**  
+`name`, `enabled`, `type`, `definition` (filters + actions)
+
+🎯 **Три типа фильтров:**
+- `blobTypes` (обязательный)
+- `prefixMatch` (опциональный)
+- `blobIndexMatch` (опциональный)
+
+🎯 **Логика фильтрации:**  
+Несколько фильтров объединяются через **логическое AND**
+
+🎯 **Поддерживаемые типы blob:**  
+Только `blockBlob` и `appendBlob` (pageBlob не поддерживаются)
+
+🎯 **Приоритет действий (cost-based):**  
+Применяется наименее затратное действие:  
+`delete` > `tierToArchive` > `tierToCold` > `tierToCool`
+
+🎯 **Четыре age-условия:**
+
+- `daysAfterModificationGreaterThan` — для base blob
+- `daysAfterCreationGreaterThan` — для snapshot
+- `daysAfterLastAccessTimeGreaterThan` — требует access tracking
+- `daysAfterLastTierChangeGreaterThan` — для Archive
+
+🎯 **Лимиты:**
+
+- До 10 префиксов на правило
+- До 10 tag-условий на правило
+- До 100 правил в одной политике
+- Имя правила — до 256 символов, регистрозависимое, уникальное
+
+🎯 **Особенность tierToArchive:**  
+Используйте `daysAfterLastTierChangeGreaterThan`, чтобы избежать немедленного повторного архивирования после rehydration.
+
 
 ---
 
@@ -609,16 +879,37 @@ Target blobs with specific tags:
 }
 ```
 
-### Common Day Values
+### Common Day Values (Типовые значения сроков хранения)
 
-| Retention Period | Days | Tier |
-|------------------|------|------|
-| 1 week | 7 | Delete temp files |
-| 1 month | 30 | Cool tier |
-| 3 months | 90 | Cold tier or Archive |
+| Retention Period | Days | Recommended Tier / Action |
+|------------------|------|----------------------------|
+| 1 week | 7 | Удаление временных файлов |
+| 1 month | 30 | Перевод в Cool tier |
+| 3 months | 90 | Cold tier или Archive |
 | 6 months | 180 | Archive |
-| 1 year | 365 | Delete or Archive |
-| 7 years | 2,555 | Compliance retention |
+| 1 year | 365 | Удаление или Archive |
+| 7 years | 2,555 | Долговременное хранение (Compliance) |
+
+---
+
+### Практические рекомендации
+
+- **7 дней (временные файлы)** — подходит для temp-данных, staging-файлов и промежуточных результатов обработки.
+- **30 дней** — минимальный срок для Cool tier (частый экзаменационный вопрос).
+- **90 дней** — минимальный срок для Cold tier.
+- **180 дней** — минимальный срок для Archive tier.
+- **365 дней** — часто используется для годовой отчётности.
+- **2 555 дней (~7 лет)** — типичный срок для регуляторных требований (финансы, медицина, юридические данные).
+
+> 💡 Экзаменационный фокус AZ-204:  
+> Помнить соответствие:  
+> Cool = 30 дней  
+> Cold = 90 дней  
+> Archive = 180 дней
+
+> ⚠️ Важно:  
+> Если срок хранения меньше минимального для выбранного tier — будет начислен early deletion fee.
+
 
 ---
 

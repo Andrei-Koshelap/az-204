@@ -1,157 +1,151 @@
-# Azure Blob Storage Lifecycle
+# Azure Blob Storage Lifecycle (Жизненный цикл Blob в Azure)
 
-## Data Lifecycle Patterns
+## Data Lifecycle Patterns (Паттерны жизненного цикла данных)
 
-Data sets have **unique lifecycles**. Understanding these patterns is key to optimizing storage costs:
+Наборы данных имеют **уникальные жизненные циклы**. Понимание этих паттернов критически важно для оптимизации затрат на хранение.
 
 | Lifecycle Stage | Access Pattern | Optimal Tier | Example |
-|----------------|----------------|--------------|---------|
-| **Early** | Frequently accessed | **Hot** | Recent user uploads, active logs |
-| **Middle** | Infrequently accessed | **Cool/Cold** | Weekly reports, compliance data |
-| **Late** | Rarely accessed | **Archive** | Long-term backups, historical records |
+|-----------------|---------------|--------------|----------|
+| **Early (Начальный)** | Частый доступ | **Hot** | Недавние загрузки пользователей, активные логи |
+| **Middle (Средний)** | Нечастый доступ | **Cool / Cold** | Еженедельные отчёты, данные комплаенса |
+| **Late (Поздний)** | Редкий доступ | **Archive** | Долгосрочные бэкапы, исторические данные |
 
-### Common Data Lifecycle Scenarios
+### Common Data Lifecycle Scenario
 
-```
-Day 0-14:   [Hot Tier]      → Frequent access (analytics, reports)
-Day 15-30:  [Cool Tier]     → Occasional access (weekly review)
-Day 31-90:  [Cold Tier]     → Rare access (monthly compliance)
-Day 91+:    [Archive Tier]  → Archival (long-term retention)
-```
+Day 0-14: [Hot Tier] → Частый доступ (аналитика, отчёты)
+Day 15-30: [Cool Tier] → Периодический доступ (еженедельный анализ)
+Day 31-90: [Cold Tier] → Редкий доступ (ежемесячный комплаенс)
+Day 91+: [Archive Tier] → Архив (долговременное хранение)
+
+> 💡 Экзаменационный фокус AZ-204: запомнить минимальные сроки хранения и штрафы за раннее удаление.
 
 ---
 
-## Access Tiers Overview
+## Access Tiers Overview (Обзор уровней доступа)
 
-Azure Storage provides **four access tiers** optimized for different usage patterns.
+Azure Storage предоставляет **четыре уровня доступа**, оптимизированные под разные сценарии использования.
 
 ### Tier Comparison Table
 
 | Tier | Type | Minimum Duration | Storage Cost | Access Cost | Latency | Use Case |
-|------|------|------------------|--------------|-------------|---------|----------|
-| **Hot** | Online | None | Highest | Lowest | Milliseconds | Frequently accessed data |
-| **Cool** | Online | 30 days | Lower | Higher | Milliseconds | Infrequently accessed (>30 days) |
-| **Cold** | Online | 90 days | Even Lower | Even Higher | Milliseconds | Rarely accessed (>90 days) |
-| **Archive** | Offline | 180 days | Lowest | Highest | Hours | Long-term archival (>180 days) |
+|------|------|------------------|--------------|-------------|----------|----------|
+| **Hot** | Online | None | Самая высокая | Самая низкая | Миллисекунды | Часто используемые данные |
+| **Cool** | Online | 30 days | Ниже | Выше | Миллисекунды | Нечастый доступ (>30 дней) |
+| **Cold** | Online | 90 days | Ещё ниже | Ещё выше | Миллисекунды | Редкий доступ (>90 дней) |
+| **Archive** | Offline | 180 days | Самая низкая | Самая высокая | Часы | Долговременный архив (>180 дней) |
 
-### Hot Tier
+---
 
-**Optimization**: Frequently accessed data
+## Hot Tier
 
-#### Characteristics
-- **Online tier** (immediate access)
-- **No minimum storage duration**
-- **Highest storage costs**
-- **Lowest access costs**
-- Millisecond latency for read/write
+**Оптимизация:** часто используемые данные
 
-#### Best For
-- Data accessed or modified frequently
-- Data staged for processing
-- Active datasets
-- Application data in active use
+### Characteristics
 
-#### Example Scenarios
-```
-✅ User-uploaded images (social media)
-✅ Active application logs
-✅ Real-time analytics data
-✅ Content delivery (CDN origin)
-```
+- Online-tier (мгновенный доступ)
+- Нет минимального срока хранения
+- Самая высокая стоимость хранения
+- Самая низкая стоимость операций чтения
+- Задержка: миллисекунды
 
-### Cool Tier
+### Best For
 
-**Optimization**: Infrequently accessed data
+- Активные данные приложения
+- Часто изменяемые данные
+- Данные в процессе обработки
+- Real-time аналитика
 
-#### Characteristics
-- **Online tier** (immediate access)
-- **Minimum 30 days** storage duration
-- **Lower storage costs** than Hot
-- **Higher access costs** than Hot
-- Millisecond latency for read/write
+### Example Scenarios
 
-#### Best For
-- Short-term backup and disaster recovery
-- Older data sets accessed infrequently
-- Data held while gathering more data
-- Compliance data (monthly review)
+- Пользовательские изображения
+- Активные логи приложения
+- Данные для CDN
+- Временные данные обработки
 
-#### Example Scenarios
-```
-✅ 30-day backup retention
-✅ Monthly reports
-✅ Completed project files
-✅ Media archives (occasionally accessed)
-```
+---
 
-⚠️ **Early Deletion Fee**: Deleting or moving blobs before 30 days incurs early deletion charges.
+## Cool Tier
 
-### Cold Tier
+**Оптимизация:** нечасто используемые данные
 
-**Optimization**: Rarely accessed data
+### Characteristics
 
-#### Characteristics
-- **Online tier** (immediate access)
-- **Minimum 90 days** storage duration
-- **Lower storage costs** than Cool
-- **Higher access costs** than Cool
-- Millisecond latency for read/write
+- Online-tier
+- Минимальный срок хранения: **30 дней**
+- Хранение дешевле, чем Hot
+- Доступ дороже, чем Hot
+- Миллисекундная задержка
 
-#### Best For
-- Long-term backup (3+ months)
-- Quarterly compliance data
-- Historical datasets
-- Legal hold data
+### Best For
 
-#### Example Scenarios
-```
-✅ Quarterly compliance data
-✅ Long-term backups (90+ days)
-✅ Historical records
-✅ Archived project data
-```
+- Краткосрочные бэкапы
+- Ежемесячные отчёты
+- Завершённые проекты
+- Данные для периодического аудита
 
-⚠️ **Early Deletion Fee**: Deleting or moving blobs before 90 days incurs early deletion charges.
+⚠️ **Early Deletion Fee:** удаление или перемещение до 30 дней приводит к дополнительным расходам.
 
-### Archive Tier
+---
 
-**Optimization**: Long-term archival
+## Cold Tier
 
-#### Characteristics
-- **Offline tier** (requires rehydration)
-- **Minimum 180 days** storage duration
-- **Lowest storage costs**
-- **Highest access costs**
-- **Hours of latency** (rehydration required)
+**Оптимизация:** очень редко используемые данные
 
-#### Best For
-- Long-term archival storage
-- Regulatory compliance data (7+ years)
-- Disaster recovery (rarely accessed)
-- Historical data preservation
+### Characteristics
 
-#### Example Scenarios
-```
-✅ 7-year tax records
-✅ Legal compliance archives
-✅ Disaster recovery backups
-✅ Historical medical records
-```
+- Online-tier
+- Минимальный срок хранения: **90 дней**
+- Хранение дешевле, чем Cool
+- Доступ дороже, чем Cool
+- Миллисекундная задержка
 
-⚠️ **Rehydration Required**: Must be rehydrated to Hot/Cool/Cold tier before accessing (takes hours).
+### Best For
 
-⚠️ **Early Deletion Fee**: Deleting or moving blobs before 180 days incurs early deletion charges.
+- Бэкапы 3+ месяцев
+- Квартальные отчёты
+- Исторические данные
+- Legal hold данные
+
+⚠️ **Early Deletion Fee:** удаление или перемещение до 90 дней приводит к дополнительным расходам.
+
+---
+
+## Archive Tier
+
+**Оптимизация:** долговременное архивирование
+
+### Characteristics
+
+- Offline-tier (требуется rehydration)
+- Минимальный срок хранения: **180 дней**
+- Самая низкая стоимость хранения
+- Самая высокая стоимость доступа
+- Задержка: часы (требуется восстановление)
+
+### Best For
+
+- Архивы 7+ лет
+- Данные регуляторного соответствия
+- Disaster Recovery
+- Историческое хранение
+
+⚠️ **Rehydration Required:** перед доступом blob необходимо перевести в Hot/Cool/Cold.
+
+⚠️ **Early Deletion Fee:** удаление до 180 дней приводит к дополнительным расходам.
+
+> ❗ Вопрос AZ-204: можно ли читать данные напрямую из Archive?  
+> Ответ: Нет, требуется rehydration.
 
 ---
 
 ## Data Storage Limits
 
-💡 **Account-Level Limits**: Data storage limits are set at the **account level**, not per access tier.
+> 💡 Лимиты хранения устанавливаются на уровне Storage Account, а не на уровне tier.
 
-You can:
-- Use all your limit in one tier
-- Distribute across multiple tiers
-- Move data between tiers as needed
+Можно:
+- Использовать весь лимит в одном tier
+- Распределять данные между tier
+- Перемещать данные между tier при необходимости
 
 ---
 
@@ -159,35 +153,40 @@ You can:
 
 ### What is Lifecycle Management?
 
-Azure Blob Storage **lifecycle management** offers a **rule-based policy** to:
-- ✅ Transition blobs to appropriate access tiers automatically
-- ✅ Expire/delete data at end of lifecycle
-- ✅ Optimize costs based on access patterns
+Azure Blob Storage поддерживает **управление жизненным циклом на основе правил (rule-based policy)**, которое позволяет:
+
+- Автоматически переводить данные в более холодные tier
+- Удалять данные по завершении жизненного цикла
+- Оптимизировать затраты без ручного вмешательства
+
+Это особенно важно для логов, бэкапов и больших объёмов исторических данных.
+
+---
 
 ### Lifecycle Management Capabilities
 
 | Capability | Description |
-|------------|-------------|
-| **Tier Transitions** | Automatically move blobs to cooler tiers based on age |
-| **Auto-Tier to Hot** | Move blobs from Cool to Hot when accessed (optimize performance) |
-| **Delete Blobs** | Delete current versions, previous versions, or snapshots |
-| **Scope Flexibility** | Apply to entire account, specific containers, or filtered blobs |
-| **Filters** | Use name prefixes or blob index tags to target specific blobs |
+|------------|------------|
+| Tier Transitions | Автоматический перевод blob по возрасту |
+| Auto-Tier to Hot | Перевод Cool → Hot при обращении |
+| Delete Blobs | Удаление текущих версий, предыдущих версий и snapshot |
+| Scope Flexibility | Применение ко всему аккаунту или отдельным контейнерам |
+| Filters | Фильтрация по prefix или blob index tags |
+
+---
 
 ### What You Can Do with Lifecycle Policies
 
-```
-✅ Transition Cool → Hot immediately when accessed (performance optimization)
-✅ Transition current versions to cooler tiers when not accessed
-✅ Transition previous versions to cooler tiers  
-✅ Transition blob snapshots to cooler tiers
-✅ Delete current versions at end of lifecycle
-✅ Delete previous versions at end of lifecycle
-✅ Delete blob snapshots at end of lifecycle
-✅ Apply rules to entire account
-✅ Apply rules to specific containers
-✅ Apply rules to filtered blobs (prefix/tags)
-```
+- Переводить Cool → Hot при доступе
+- Переводить текущие версии в более холодные tier
+- Переводить предыдущие версии
+- Переводить snapshot
+- Удалять текущие версии
+- Удалять предыдущие версии
+- Удалять snapshot
+- Применять правила ко всему аккаунту
+- Применять к конкретным контейнерам
+- Применять фильтры (prefix / tags)
 
 ---
 
@@ -195,12 +194,16 @@ Azure Blob Storage **lifecycle management** offers a **rule-based policy** to:
 
 ### Business Requirement
 
-A company needs to optimize storage costs for application logs:
+Компания хочет оптимизировать хранение application-логов.
 
 **Access Pattern:**
-- **First 2 weeks**: Logs accessed frequently for debugging → **Hot tier**
-- **Week 3-4**: Logs accessed occasionally for review → **Cool tier**
-- **After 1 month**: Logs rarely accessed, kept for compliance → **Archive tier**
+
+- Первые 2 недели → Частый доступ → **Hot**
+- 3–4 неделя → Периодический аудит → **Cool**
+- После 1 месяца → Хранение для комплаенса → **Archive**
+
+> 💡 Практический совет: в production такие сценарии реализуются через JSON Lifecycle Policy на уровне Storage Account, чтобы автоматизировать процесс и исключить ручное управление.
+
 
 ### Lifecycle Policy Solution
 
@@ -234,13 +237,13 @@ A company needs to optimize storage costs for application logs:
 
 ### Cost Optimization Result
 
-```
+
 Days 0-14:   Hot tier (frequent access, high storage cost)
 Days 15-30:  Cool tier (occasional access, lower storage cost)
 Days 31+:    Archive tier (rare access, lowest storage cost)
 
 💰 Result: Significant cost savings while maintaining compliance
-```
+
 
 ---
 
@@ -266,76 +269,100 @@ High Access Frequency → Hot Tier
 └─ Rare Access (>180 days) → Archive Tier
 ```
 
-### Best Practices
+### Best Practices (Лучшие практики)
 
-✅ **DO:**
-- Use lifecycle policies to automate tier transitions
-- Choose tiers based on actual access patterns
-- Monitor access patterns and adjust policies
-- Account for minimum storage durations
-- Use Archive tier for long-term retention (7+ years)
-- Enable auto-tier to Hot for performance-critical data
+✅ **DO (Рекомендуется):**
 
-❌ **DON'T:**
-- Delete or move data before minimum duration (incurs fees)
-- Use Archive tier for data needing immediate access
-- Ignore access patterns when choosing tiers
-- Set unrealistic tier transition timelines
+- Использовать lifecycle policies для автоматического перевода данных между tier
+- Выбирать tier на основе **реальных паттернов доступа**, а не предположений
+- Регулярно мониторить access patterns и корректировать политики
+- Учитывать минимальные сроки хранения перед планированием миграции
+- Использовать Archive tier для долгосрочного хранения (7+ лет)
+- Включать auto-tier to Hot для критичных по производительности данных
+
+> 💡 Практический совет:  
+> Перед созданием политики полезно проанализировать метрики Azure Storage (Transactions, Access Frequency, Egress), чтобы избежать неправильного выбора tier и лишних затрат.
 
 ---
 
-## Key Concepts
+❌ **DON'T (Не рекомендуется):**
 
-### Online vs. Offline Tiers
+- Удалять или перемещать данные до окончания минимального срока хранения (штраф за раннее удаление)
+- Использовать Archive tier для данных, которым требуется мгновенный доступ
+- Игнорировать реальные паттерны доступа при выборе tier
+- Настраивать нереалистичные сроки перехода между tier
+- Часто переключать данные между tier без экономического обоснования (может увеличить расходы)
+
+> ⚠️ Экзаменационный момент AZ-204:  
+> Если данные требуются с миллисекундной задержкой — Archive tier не подходит.
+
+
+---
+
+## Key Concepts (Ключевые концепции)
+
+### Online vs. Offline Tiers (Онлайн и оффлайн уровни)
 
 | Category | Tiers | Access | Latency |
-|----------|-------|--------|---------|
-| **Online** | Hot, Cool, Cold | Immediate | Milliseconds |
-| **Offline** | Archive | Requires rehydration | Hours |
+|----------|-------|--------|----------|
+| **Online** | Hot, Cool, Cold | Мгновенный | Миллисекунды |
+| **Offline** | Archive | Требуется rehydration | Часы |
 
-### Minimum Storage Durations
+> 💡 Важно:  
+> Hot, Cool и Cold — это **online tiers**, данные доступны сразу.  
+> Archive — **offline tier**, перед чтением требуется восстановление (rehydration).
 
-⚠️ **Critical for Cost Optimization**:
+---
+
+### Minimum Storage Durations (Минимальные сроки хранения)
+
+⚠️ **Критично для оптимизации затрат:**
 
 | Tier | Minimum Duration | Early Deletion Impact |
 |------|------------------|----------------------|
-| Hot | None | No penalty |
-| Cool | 30 days | Early deletion fee charged |
-| Cold | 90 days | Early deletion fee charged |
-| Archive | 180 days | Early deletion fee charged |
+| Hot | Нет | Нет штрафа |
+| Cool | 30 дней | Начисляется штраф |
+| Cold | 90 дней | Начисляется штраф |
+| Archive | 180 дней | Начисляется штраф |
 
-💡 **Best Practice**: Plan data retention to match minimum durations to avoid early deletion fees.
+💡 **Best Practice:**  
+Планируйте retention-политику так, чтобы она совпадала с минимальными сроками хранения — это позволяет избежать лишних расходов.
 
-### Rule-Based Policies
-
-Lifecycle management uses **rules** to automate:
-- Tier transitions based on **age**
-- Deletion based on **age**
-- Filtering by **container**, **prefix**, or **tags**
+> 🎯 Частый вопрос AZ-204:  
+> Можно ли удалить Cool blob через 10 дней без последствий?  
+> Ответ: Нет, будет начислен early deletion fee.
 
 ---
 
-## Exam Tips
+### Rule-Based Policies (Политики на основе правил)
 
-🎯 **Four access tiers**: Hot, Cool, Cold, Archive (know the differences)
+Lifecycle Management использует **правила (rules)** для автоматизации:
 
-🎯 **Minimum durations**: Cool = 30 days, Cold = 90 days, Archive = 180 days
+- Перевода в другой tier на основе **возраста (age)**
+- Удаления на основе **возраста**
+- Фильтрации по **container**, **prefix** или **blob index tags**
 
-🎯 **Online vs Offline**: Hot/Cool/Cold are online (immediate access), Archive is offline (rehydration required)
+> 💡 Политики задаются в виде JSON-конфигурации на уровне Storage Account.
 
-🎯 **Archive latency**: Hours (not milliseconds like other tiers)
+---
 
-🎯 **Lifecycle management**: Rule-based policy for automatic tier transitions and deletions
+## Exam Tips (Советы к экзамену AZ-204)
 
-🎯 **Cost tradeoff**: Storage cost ↓ as tier cools, Access cost ↑ as tier cools
+🎯 **Четыре уровня доступа**: Hot, Cool, Cold, Archive — нужно знать различия
 
-🎯 **Early deletion fees**: Moving/deleting before minimum duration incurs charges
+🎯 **Минимальные сроки хранения**:
+- Cool = 30 дней
+- Cold = 90 дней
+- Archive = 180 дней
 
-🎯 **Account-level limits**: Storage limits are at account level, not per tier
+🎯 **Online vs Offline**:  
+Hot / Cool / Cold — онлайн (мгновенный доступ)  
+Archive — оффлайн (требуется rehydration)
 
-🎯 **Auto-tier to Hot**: Transition Cool → Hot when accessed (performance optimization)
+🎯 **Задержка Archive**: часы, а не миллисекунды
 
-🎯 **Filters**: Rules can target entire account, containers, or specific blobs (prefix/tags)
+🎯 **Lifecycle management** — это rule-based policy для автоматического
+
 
 ---
 

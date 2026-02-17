@@ -1,61 +1,83 @@
-# Rehydrate Blob Data from Archive Tier
+# Rehydrate Blob Data from Archive Tier (Восстановление данных из Archive tier)
 
-## What is Rehydration?
+## What is Rehydration? (Что такое Rehydration?)
 
-**Rehydration** is the process of moving a blob from the **offline Archive tier** to an **online tier** (Hot, Cool, or Cold) so it can be read or modified.
-
-### Archive Tier Characteristics
-
-| Characteristic | Detail |
-|----------------|--------|
-| **Status** | Offline (cannot be read or modified) |
-| **Access** | Requires rehydration first |
-| **Storage Cost** | Lowest |
-| **Access Cost** | Highest |
-| **Rehydration Time** | Several hours |
-
-⚠️ **Critical**: Blobs in Archive tier are **offline** and must be rehydrated before accessing data.
+**Rehydration** — это процесс перевода blob из **офлайн Archive tier** в **онлайн tier** (Hot, Cool или Cold), чтобы данные можно было читать или изменять.
 
 ---
 
-## Rehydration Methods
+### Archive Tier Characteristics (Характеристики Archive tier)
 
-There are **two options** for rehydrating archived blobs:
+| Characteristic | Detail |
+|----------------|--------|
+| **Status** | Offline (нельзя читать или изменять) |
+| **Access** | Требуется предварительное восстановление |
+| **Storage Cost** | Самая низкая |
+| **Access Cost** | Самая высокая |
+| **Rehydration Time** | Несколько часов |
 
-### Method Comparison
+⚠️ **Критично:**  
+Blob в Archive tier являются **офлайн** и должны быть восстановлены (rehydrated) перед доступом.
+
+---
+
+## Rehydration Methods (Способы восстановления)
+
+Существует **два варианта** восстановления архивных blob.
+
+### Method Comparison (Сравнение методов)
 
 | Method | Operation | Source Blob | Recommended For |
-|--------|-----------|-------------|-----------------|
-| **Copy to Online Tier** | Copy Blob / Copy Blob From URL | Remains in Archive | Most scenarios (Microsoft recommended) |
-| **Change Blob Tier** | Set Blob Tier | Moved to online tier | Simple tier change |
+|----------|------------|--------------|------------------|
+| **Copy to Online Tier** | Copy Blob / Copy Blob From URL | Остаётся в Archive | Рекомендуется в большинстве случаев |
+| **Change Blob Tier** | Set Blob Tier | Перемещается в онлайн tier | Простая смена tier |
 
 ---
 
 ## Method 1: Copy Archived Blob to Online Tier (Recommended)
 
-### Overview
+### Overview (Обзор)
 
-**Microsoft Recommends This Method** ✅
+**Microsoft рекомендует этот метод** ✅
 
-**Process:**
-1. Copy the archived blob to a **new destination blob** in Hot, Cool, or Cold tier
-2. Source blob **remains unmodified** in Archive tier
-3. Destination blob is immediately accessible
+### Process (Процесс)
 
-### Key Rules
+1. Скопировать архивный blob в **новый blob** в Hot, Cool или Cold tier
+2. Исходный blob **остаётся в Archive tier**
+3. Новый blob становится доступным после завершения rehydration
 
-⚠️ **Naming Requirements:**
-- Must copy to a **different blob name** OR **different container**
-- **Cannot overwrite** the source blob by copying to the same name
+---
 
-### Service Version Support
+### Key Rules (Ключевые правила)
+
+⚠️ **Требования к именованию:**
+
+- Копирование должно выполняться в **другое имя blob** ИЛИ в **другой контейнер**
+- Нельзя копировать blob поверх самого себя (то же имя в том же контейнере)
+
+---
+
+### Service Version Support (Поддержка версий сервиса)
 
 | Service Version | Scope | Support |
-|-----------------|-------|---------|
-| **< 2021-02-12** | Within same storage account only | Rehydrate within account |
-| **≥ 2021-02-12** | Different storage account (same region) | Rehydrate across accounts |
+|-----------------|--------|---------|
+| **< 2021-02-12** | Только внутри одного storage account | Восстановление в пределах аккаунта |
+| **≥ 2021-02-12** | Между storage account (в одном регионе) | Восстановление между аккаунтами |
 
-💡 **Version 2021-02-12+**: Can rehydrate by copying to a **different storage account** as long as both accounts are in the **same region**.
+💡 Начиная с версии сервиса **2021-02-12+**:  
+Можно выполнить rehydration, копируя blob в **другой Storage Account**, если оба аккаунта находятся в **одном регионе**.
+
+---
+
+### Почему этот метод предпочтителен?
+
+- Оригинальные архивные данные сохраняются
+- Можно протестировать восстановленные данные отдельно
+- Нет риска потерять исходный blob
+- Подходит для сценариев аудита и комплаенса
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Archive tier — офлайн. Для доступа требуется rehydration, а рекомендуемый способ — **Copy to Online Tier**.
 
 ### REST API: Copy Blob
 
@@ -140,30 +162,49 @@ var options = new BlobCopyFromUriOptions
 await destClient.StartCopyFromUriAsync(sourceClient.Uri, options);
 ```
 
-### Advantages of Copy Method
+### Advantages of Copy Method (Преимущества метода копирования)
 
-✅ **Source preserved**: Original archived blob remains intact
-✅ **Immediate use**: New blob available in online tier immediately after copy
-✅ **Safe**: No risk of data loss if something goes wrong
-✅ **Cross-account**: Can copy to different storage account (v2021-02-12+)
-✅ **Recommended**: Microsoft's recommended approach
+✅ **Сохранение источника**: Оригинальный blob остаётся в Archive  
+✅ **Безопасность**: Нет риска потери исходных данных  
+✅ **Изоляция**: Можно проверить восстановленные данные отдельно  
+✅ **Межаккаунтное копирование**: Поддерживается (v2021-02-12+) в пределах одного региона  
+✅ **Рекомендуемый метод**: Подход, рекомендованный Microsoft
 
-### Disadvantages
-
-❌ **Storage duplication**: Both source and destination blobs exist (2x storage cost temporarily)
-❌ **Manual cleanup**: Need to delete source blob after verification
+> 💡 Хороший выбор для сценариев аудита, восстановления после инцидентов и комплаенса.
 
 ---
 
-## Method 2: Change Blob's Access Tier
+### Disadvantages (Недостатки)
 
-### Overview
+❌ **Дублирование хранения**: Временно существуют две копии (повышенные расходы)  
+❌ **Ручная очистка**: Нужно удалить исходный blob после проверки
 
-**Process:**
-1. Use **Set Blob Tier** operation to change tier from Archive to Hot/Cool/Cold
-2. Blob tier changes **in place**
-3. Once initiated, **cannot be canceled**
-4. During rehydration, blob still shows as "archived"
+---
+
+## Method 2: Change Blob's Access Tier (Изменение Access Tier)
+
+### Overview (Обзор)
+
+### Process (Процесс)
+
+1. Использовать операцию **Set Blob Tier**
+2. Изменить tier с Archive на Hot / Cool / Cold
+3. Blob изменяет tier **в том же месте (in place)**
+4. После запуска процесс **нельзя отменить**
+5. Во время rehydration blob продолжает отображаться как `"archived"`
+
+---
+
+### Особенности метода
+
+- Нет создания новой копии
+- Нет временного удвоения объёма хранения
+- Процесс восстановления занимает несколько часов
+- После запуска отменить rehydration нельзя
+
+> ⚠️ Важно:  
+> Хотя tier изменяется in place, доступ к данным появится только после завершения rehydration.
+
 
 ### REST API: Set Blob Tier
 
@@ -233,55 +274,86 @@ Console.WriteLine($"Archive Status: {properties.Value.ArchiveStatus}");
 Console.WriteLine($"Rehydrate Priority: {properties.Value.RehydratePriority}");
 ```
 
-### Important Considerations
+### Important Considerations (Важные моменты)
 
-⚠️ **Cannot Cancel**: Once **Set Blob Tier** is initiated, it **cannot be canceled**.
+⚠️ **Нельзя отменить:**  
+После запуска операции **Set Blob Tier** её **нельзя отменить**.
 
-⚠️ **Last Modified Time**: Changing tier does **NOT** update the blob's last modified time.
+⚠️ **Last Modified Time:**  
+Изменение tier **не обновляет** поле *Last Modified*.
 
-⚠️ **Lifecycle Policy Risk**: If a lifecycle management policy exists, the blob may be moved back to Archive after rehydration if the last modified time exceeds the policy threshold.
-
-### Lifecycle Policy Scenario
-
-```
-Problem:
-1. Blob last modified: 120 days ago
-2. Lifecycle policy: Move to Archive after 90 days
-3. Rehydrate blob to Hot tier
-4. Last modified time still shows 120 days ago
-5. Lifecycle policy runs → Moves blob BACK to Archive
-
-Solution:
-- Update last modified time after rehydration
-- OR adjust lifecycle policy with daysAfterLastTierChangeGreaterThan
-- OR exclude specific blobs from lifecycle policy
-```
-
-### Advantages of Set Tier Method
-
-✅ **No duplication**: Blob remains in same location, no extra storage cost
-✅ **Simpler**: Single operation to change tier
-✅ **Direct**: Changes blob in place
-
-### Disadvantages
-
-❌ **Cannot cancel**: Once started, cannot be stopped
-❌ **Lifecycle risk**: May be re-archived by lifecycle policies
-❌ **Last modified unchanged**: Doesn't update last modified time
-❌ **No fallback**: Original archived version is lost
+⚠️ **Риск с Lifecycle Policy:**  
+Если настроена lifecycle policy, blob может быть автоматически отправлен обратно в Archive после восстановления.
 
 ---
 
-## Rehydration Priority
+## Lifecycle Policy Scenario (Типичный сценарий проблемы)
 
-When rehydrating a blob, you can set the **rehydration priority** via the `x-ms-rehydrate-priority` header.
+### Problem (Проблема)
 
-### Priority Options
+1. Blob был изменён 120 дней назад
+2. Lifecycle policy: отправлять в Archive после 90 дней
+3. Выполняется rehydration в Hot tier
+4. Last modified по-прежнему = 120 дней
+5. Lifecycle policy снова срабатывает → blob возвращается в Archive
+
+---
+
+### Solution (Решение)
+
+- Обновить blob (тем самым изменить last modified) после rehydration
+- Использовать `daysAfterLastTierChangeGreaterThan` в lifecycle policy
+- Исключить конкретные blob из действия политики (через prefix или tags)
+
+> 💡 Лучший практический вариант — использовать `daysAfterLastTierChangeGreaterThan`, чтобы избежать повторной архивации.
+
+---
+
+### Advantages of Set Tier Method (Преимущества метода Set Tier)
+
+✅ Нет дублирования хранения  
+✅ Проще — одна операция  
+✅ Blob остаётся на том же месте
+
+---
+
+### Disadvantages (Недостатки)
+
+❌ Нельзя отменить операцию  
+❌ Риск повторной архивации  
+❌ Last modified не изменяется  
+❌ Нет резервной копии исходного архивного состояния
+
+> ⚠️ Если данные критичны — безопаснее использовать метод копирования.
+
+---
+
+## Rehydration Priority (Приоритет восстановления)
+
+При восстановлении можно задать приоритет через заголовок:
+        x-ms-rehydrate-priority
+
+
+---
+
+### Priority Options (Варианты приоритета)
 
 | Priority | Processing | Completion Time | Use Case |
-|----------|-----------|-----------------|----------|
-| **Standard** | Order received | Up to **15 hours** | Non-urgent, cost-sensitive |
-| **High** | Prioritized over Standard | Under **1 hour** for objects < 10 GB | Urgent access needed |
+|------------|-------------|------------------|------------|
+| **Standard** | В порядке очереди | До **15 часов** | Не срочно, экономия средств |
+| **High** | Приоритетная обработка | Менее **1 часа** (для объектов < 10 GB) | Срочный доступ |
+
+---
+
+### Дополнительные замечания
+
+- High priority стоит дороже
+- Время зависит от размера blob
+- Приоритет можно задать только при начале rehydration
+
+> 🎯 Экзаменационный момент AZ-204:  
+> Standard — до 15 часов,  
+> High — менее 1 часа (для небольших объектов).
 
 ### How to Set Priority
 
@@ -345,36 +417,55 @@ Console.WriteLine($"Access Tier: {properties.Value.AccessTier}");
 // - rehydrate-pending-to-cold
 ```
 
-### Rehydration Status Values
+### Rehydration Status Values (Статусы восстановления)
 
 | Status | Meaning |
-|--------|---------|
-| `rehydrate-pending-to-hot` | Rehydration to Hot tier in progress |
-| `rehydrate-pending-to-cool` | Rehydration to Cool tier in progress |
-| `rehydrate-pending-to-cold` | Rehydration to Cold tier in progress |
-| `null` | Blob is not archived or rehydration complete |
+|--------|----------|
+| `rehydrate-pending-to-hot` | Идёт восстановление в Hot tier |
+| `rehydrate-pending-to-cool` | Идёт восстановление в Cool tier |
+| `rehydrate-pending-to-cold` | Идёт восстановление в Cold tier |
+| `null` | Blob не в Archive или восстановление завершено |
+
+> 💡 Когда rehydration завершён, статус становится `null`, и blob полностью доступен в выбранном online tier.
 
 ---
 
-## Rehydration Performance
+## Rehydration Performance (Производительность восстановления)
 
-### Timeline Comparison
+### Timeline Comparison (Сравнение по времени)
 
 | Priority | Size | Expected Time |
-|----------|------|---------------|
-| **High** | < 10 GB | < 1 hour |
-| **High** | > 10 GB | Variable, prioritized |
-| **Standard** | Any size | Up to 15 hours |
+|------------|--------|----------------|
+| **High** | < 10 GB | < 1 часа |
+| **High** | > 10 GB | Зависит от размера, приоритетная обработка |
+| **Standard** | Любой размер | До 15 часов |
 
-💡 **Recommendation**: Rehydrate **larger blobs** for optimal performance. Rehydrating many small blobs concurrently may require extra time.
+---
 
-### Cost Considerations
+### Практическая рекомендация
+
+💡 Для оптимальной производительности:
+
+- Лучше восстанавливать **крупные blob**, чем большое количество мелких
+- Массовое восстановление множества маленьких объектов может занять больше времени
+- Планируйте rehydration заранее для критичных данных
+
+---
+
+## Cost Considerations (Финансовые аспекты)
 
 | Aspect | Standard Priority | High Priority |
-|--------|-------------------|---------------|
-| **Rehydration Cost** | Lower | Higher |
-| **Processing Time** | Up to 15 hours | < 1 hour (< 10 GB) |
-| **Best For** | Non-urgent, cost-sensitive | Time-critical scenarios |
+|---------|-------------------|---------------|
+| **Rehydration Cost** | Ниже | Выше |
+| **Processing Time** | До 15 часов | < 1 часа (< 10 GB) |
+| **Best For** | Несрочные задачи, оптимизация затрат | Срочные сценарии |
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> - Standard — дешевле, но до 15 часов
+> - High — быстрее (< 1 часа для < 10 GB), но дороже
+> - Blob остаётся недоступным до завершения rehydration
 
 ---
 
@@ -414,24 +505,35 @@ Console.WriteLine($"Access Tier: {properties.Value.AccessTier}");
 
 ---
 
-## Best Practices
+## Best Practices (Лучшие практики)
 
-### Rehydration Strategy
+---
 
-✅ **DO:**
-- Use **Copy method** for most scenarios (Microsoft recommended)
-- Use **High priority** for time-critical rehydration (< 10 GB)
-- Use **Standard priority** for cost optimization
-- Monitor rehydration status
-- Verify data after rehydration
-- Plan rehydration in advance (allow time for Standard priority)
+### Rehydration Strategy (Стратегия восстановления)
 
-❌ **DON'T:**
-- Use Set Tier method if lifecycle policies might re-archive
-- Expect immediate access to archived blobs
-- Rehydrate many small blobs concurrently (use fewer, larger blobs)
-- Forget to account for rehydration costs
+✅ **DO (Рекомендуется):**
 
+- Использовать **Copy method** в большинстве сценариев (рекомендованный Microsoft подход)
+- Выбирать **High priority** для срочного восстановления (< 10 GB)
+- Использовать **Standard priority** для оптимизации затрат
+- Отслеживать статус rehydration
+- Проверять данные после завершения восстановления
+- Планировать восстановление заранее (особенно при Standard priority)
+
+> 💡 Практический совет:  
+> Если восстановление связано с инцидентом или аудитом — безопаснее использовать Copy method, чтобы сохранить исходный архивный blob.
+
+---
+
+❌ **DON'T (Не рекомендуется):**
+
+- Использовать Set Tier, если lifecycle policy может повторно архивировать blob
+- Ожидать мгновенного доступа к данным из Archive
+- Восстанавливать большое количество маленьких blob одновременно
+- Игнорировать стоимость rehydration
+
+> ⚠️ Помните:  
+> Archive — это офлайн tier. Данные остаются недоступными до завершения процесса восстановления.
 ### Lifecycle Policy Protection
 
 When using **Set Tier method**, protect against re-archival:
@@ -464,57 +566,75 @@ When using **Set Tier method**, protect against re-archival:
 **Key**: `daysAfterLastTierChangeGreaterThan: 7` ensures blob stays in online tier for at least 7 days after rehydration.
 
 ---
+## Cost Optimization (Оптимизация затрат)
 
-## Cost Optimization
-
-### Rehydration Costs
+### Rehydration Costs (Затраты на восстановление)
 
 | Component | Cost Factor |
-|-----------|-------------|
-| **Rehydration operation** | Per-GB charge (higher for High priority) |
-| **Data retrieval** | Per-GB egress charge |
-| **Storage during rehydration** | Archive tier storage cost continues |
-| **Destination storage** | Online tier storage cost (if copying) |
-
-### Cost Optimization Tips
-
-💰 **Optimize Costs:**
-1. Use **Standard priority** when possible
-2. Rehydrate only necessary blobs
-3. Batch rehydration requests
-4. Use **Copy method** to verify before deleting source
-5. Delete archived source after verification
-6. Plan rehydration to minimize urgent (High priority) requests
+|------------|-------------|
+| **Rehydration operation** | Оплата за GB (выше при High priority) |
+| **Data retrieval** | Оплата за извлечение данных (per-GB) |
+| **Storage during rehydration** | Хранение в Archive продолжается |
+| **Destination storage** | Хранение в online tier (при копировании) |
 
 ---
 
-## Exam Tips
+### Cost Optimization Tips (Советы по оптимизации)
 
-🎯 **Two rehydration methods**: Copy Blob (recommended), Set Blob Tier
+💰 **Как снизить расходы:**
 
-🎯 **Copy method recommended**: Microsoft recommends Copy Blob for most scenarios
+1. Использовать **Standard priority**, если нет срочности
+2. Восстанавливать только необходимые blob
+3. Группировать (batch) запросы на восстановление
+4. Использовать **Copy method** для проверки перед удалением источника
+5. Удалять архивный blob после проверки данных
+6. Планировать восстановление заранее, чтобы избежать High priority
 
-🎯 **Copy naming rule**: Must copy to different name OR different container (cannot overwrite source)
-
-🎯 **Set Tier characteristics**: Cannot cancel, doesn't update last modified time
-
-🎯 **Lifecycle risk**: Set Tier may cause re-archival if lifecycle policies based on last modified time
-
-🎯 **Two priorities**: Standard (up to 15 hours), High (< 1 hour for < 10 GB)
-
-🎯 **Rehydration time**: Several hours (not immediate)
-
-🎯 **Archive status values**: `rehydrate-pending-to-hot/cool/cold`
-
-🎯 **Cross-account support**: v2021-02-12+ allows copy to different account (same region)
-
-🎯 **Check rehydration**: Use Get Blob Properties with `x-ms-rehydrate-priority` header
-
-🎯 **Performance tip**: Rehydrate fewer, larger blobs (not many small blobs)
-
-🎯 **REST API operations**: Copy Blob, Copy Blob From URL, Set Blob Tier
+> 💡 Важно:  
+> Во время rehydration blob продолжает тарифицироваться как Archive.  
+> При Copy method дополнительно оплачивается хранение новой online-копии.
 
 ---
+
+## Exam Tips (Советы к экзамену AZ-204)
+
+🎯 **Два метода восстановления:**  
+Copy Blob (рекомендуется) и Set Blob Tier
+
+🎯 **Copy method — рекомендованный подход**
+
+🎯 **Правило именования при Copy:**  
+Нужно копировать в другое имя или контейнер (перезапись запрещена)
+
+🎯 **Set Tier особенности:**  
+Нельзя отменить, не обновляет last modified
+
+🎯 **Риск с lifecycle policy:**  
+Set Tier может привести к повторной архивации
+
+🎯 **Два приоритета:**  
+Standard (до 15 часов), High (< 1 часа для < 10 GB)
+
+🎯 **Rehydration не мгновенный:**  
+Занимает часы
+
+🎯 **Статусы восстановления:**  
+`rehydrate-pending-to-hot` / `cool` / `cold`
+
+🎯 **Cross-account поддержка:**  
+Версия сервиса 2021-02-12+ позволяет копирование между аккаунтами (в одном регионе)
+
+🎯 **Проверка статуса:**  
+Использовать Get Blob Properties и проверять заголовки, включая `x-ms-rehydrate-priority`
+
+🎯 **Совет по производительности:**  
+Лучше восстанавливать меньшее количество крупных blob
+
+🎯 **REST API операции:**  
+Copy Blob, Copy Blob From URL, Set Blob Tier
+
+---
+
 
 ## Quick Reference Commands
 

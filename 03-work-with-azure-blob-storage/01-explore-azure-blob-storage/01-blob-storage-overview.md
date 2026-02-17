@@ -2,122 +2,184 @@
 
 ## What is Azure Blob Storage?
 
-Azure Blob storage is Microsoft's **object storage solution for the cloud**, optimized for storing massive amounts of **unstructured data** (data that doesn't adhere to a particular data model or definition, such as text or binary data).
+**Azure Blob Storage** — это облачное объектное хранилище для хранения больших объёмов **неструктурированных данных**  
+(текст, бинарные файлы, изображения, видео и т.д.).
 
-## Use Cases
+> 💡 Объектное хранилище = данные хранятся как объекты (blob), а не как таблицы или файлы в традиционной файловой системе.
 
-| Use Case | Description |
-|----------|-------------|
-| **Browser Access** | Serving images or documents directly to a browser |
-| **Distributed Access** | Storing files for distributed access across applications |
-| **Streaming** | Streaming video and audio content |
-| **Logging** | Writing to log files for diagnostics and analytics |
-| **Backup/DR** | Storing data for backup, restore, disaster recovery, and archiving |
-| **Analysis** | Storing data for analysis by on-premises or Azure-hosted services |
-
-## Access Methods
-
-- **HTTP/HTTPS**: Accessible from anywhere in the world
-- **Azure Storage REST API**: Direct REST API calls
-- **Azure PowerShell**: PowerShell cmdlets
-- **Azure CLI**: Command-line interface
-- **Client Libraries**: SDKs for .NET, Java, Python, JavaScript, etc.
-
-## Storage Account
-
-The **Azure Storage account** is the top-level container for all Azure Blob storage. It provides:
-- **Unique namespace** for your Azure Storage data
-- **Global accessibility** over HTTP or HTTPS
-- **Base address** for all objects: `http://<account-name>.blob.core.windows.net`
+Blob Storage оптимизировано для:
+- Масштабируемости
+- Высокой доступности
+- Хранения больших объёмов данных
 
 ---
 
-## Types of Storage Accounts
+# Use Cases (Сценарии использования)
 
-### Performance Levels
+| Use Case | Description |
+|------------|-------------|
+| **Browser Access** | Раздача изображений и документов напрямую в браузер |
+| **Distributed Access** | Доступ к файлам из распределённых приложений |
+| **Streaming** | Потоковая передача видео и аудио |
+| **Logging** | Хранение логов и диагностических данных |
+| **Backup / DR** | Резервное копирование и архивирование |
+| **Analysis** | Хранение данных для аналитики |
+
+---
+
+# Access Methods (Способы доступа)
+
+- 🌐 **HTTP/HTTPS** — доступ из любой точки мира
+- 🔗 **Azure Storage REST API** — прямые REST-запросы
+- 🖥 **Azure PowerShell**
+- 💻 **Azure CLI**
+- 📦 **Client Libraries (SDK)** — .NET, Java, Python, JavaScript и др.
+
+> 🎯 Для production обычно используются SDK или Managed Identity.
+
+---
+
+# Storage Account (Учётная запись хранения)
+
+**Storage Account** — верхний уровень для Blob Storage.
+
+Предоставляет:
+
+- 🌍 **Уникальное пространство имён**
+- 🔐 Глобальный доступ через HTTP/HTTPS
+- 📍 Базовый адрес для объектов:
+             http://<account-name>.blob.core.windows.net
+
+Структура адреса blob:
+            https://<account-name>.blob.core.windows.net/<container-name>/<blob-name>
+
+---
+
+## Важно для AZ-204
+
+- Blob Storage предназначен для неструктурированных данных
+- Storage Account — корневой контейнер
+- Blob доступен через публичный URL (если разрешено)
+- Используйте Managed Identity вместо ключей доступа
+
+---
+
+# Types of Storage Accounts (Типы Storage Account)
+
+## Performance Levels (Уровни производительности)
 
 | Performance Level | Description | Use Case |
 |-------------------|-------------|----------|
-| **Standard** | General-purpose v2 account (recommended) | Most scenarios using Azure Storage |
-| **Premium** | Higher performance using solid-state drives | High transaction rates, low latency needs |
+| **Standard** | General-purpose v2 (рекомендуется) | Большинство сценариев |
+| **Premium** | SSD-диски, высокая производительность | Высокая нагрузка, низкая задержка |
 
-### Account Types
+> 💡 В 90% случаев на экзамене правильный выбор — **Standard general-purpose v2**.
+
+---
+
+# Account Types (Типы аккаунтов)
 
 | Account Type | Supported Services | Redundancy Options | Description |
 |--------------|-------------------|-------------------|-------------|
-| **Standard general-purpose v2** | Blob Storage (including Data Lake Storage), Queue Storage, Table Storage, Azure Files | LRS, GRS, RA-GRS, ZRS, GZRS, RA-GZRS | Standard storage account type for blobs, file shares, queues, and tables. **Recommended for most scenarios**. |
-| **Premium block blobs** | Blob Storage (including Data Lake Storage) | LRS, ZRS | Premium storage account for block blobs and append blobs. Recommended for **high transaction rates** or scenarios using **smaller objects** or requiring **consistently low storage latency**. |
-| **Premium file shares** | Azure Files | LRS, ZRS | Premium storage account for file shares only. Recommended for **enterprise or high-performance scale applications**. |
-| **Premium page blobs** | Page blobs only | LRS, ZRS | Premium storage account for page blobs only (used for VM disks). |
+| **Standard general-purpose v2** | Blob (вкл. Data Lake), Queue, Table, Files | LRS, GRS, RA-GRS, ZRS, GZRS, RA-GZRS | Универсальный тип. **Рекомендуется по умолчанию** |
+| **Premium block blobs** | Blob (block + append) | LRS, ZRS | Высокие транзакции, маленькие объекты, низкая задержка |
+| **Premium file shares** | Azure Files | LRS, ZRS | Высокопроизводительные файловые шары |
+| **Premium page blobs** | Page blobs | LRS, ZRS | Используется для дисков виртуальных машин |
 
-### Redundancy Options
+---
+
+# Redundancy Options (Варианты отказоустойчивости)
 
 | Option | Full Name | Description |
 |--------|-----------|-------------|
-| **LRS** | Locally Redundant Storage | Replicates data 3 times within a single data center |
-| **ZRS** | Zone-Redundant Storage | Replicates data across 3 availability zones |
-| **GRS** | Geo-Redundant Storage | Replicates data to a secondary region |
-| **RA-GRS** | Read-Access Geo-Redundant Storage | GRS with read access to secondary region |
-| **GZRS** | Geo-Zone-Redundant Storage | Combines ZRS and GRS |
-| **RA-GZRS** | Read-Access Geo-Zone-Redundant Storage | GZRS with read access to secondary region |
+| **LRS** | Locally Redundant Storage | 3 копии в одном дата-центре |
+| **ZRS** | Zone-Redundant Storage | Репликация в 3 availability zones |
+| **GRS** | Geo-Redundant Storage | Репликация в другой регион |
+| **RA-GRS** | Read-Access Geo-Redundant Storage | GRS + доступ на чтение во вторичном регионе |
+| **GZRS** | Geo-Zone-Redundant Storage | ZRS + георепликация |
+| **RA-GZRS** | Read-Access Geo-Zone-Redundant Storage | GZRS + доступ на чтение |
+
+> 🎯 RA-* варианты позволяют читать из secondary региона.
 
 ---
 
-## Access Tiers for Block Blob Data
+# Access Tiers for Block Blob Data (Уровни доступа)
 
-Azure Storage provides different access tiers optimized for particular usage patterns. Each tier balances storage costs vs. access costs.
-
-### Access Tier Comparison
-
-| Tier | Optimization | Minimum Storage Duration | Storage Cost | Access Cost | Use Case |
-|------|--------------|-------------------------|--------------|-------------|----------|
-| **Hot** | Frequent access of objects | None | Highest | Lowest | Frequently accessed data, **default tier** for new accounts |
-| **Cool** | Infrequently accessed data | 30 days | Lower | Higher | Storing large amounts of data accessed infrequently |
-| **Cold** | Rarely accessed data | 90 days | Lower than Cool | Higher than Cool | Data accessed rarely but needs quick retrieval |
-| **Archive** | Long-term archival | 180 days | Lowest | Highest | Data that can tolerate several hours of retrieval latency |
-
-### Tier Characteristics
-
-#### Hot Tier
-- **Highest storage costs**, but **lowest access costs**
-- Optimized for **frequent access**
-- **Default tier** for new storage accounts
-- Data accessed regularly
-
-#### Cool Tier
-- **Lower storage costs**, **higher access costs** compared to Hot
-- Optimized for data stored for **minimum 30 days**
-- Ideal for short-term backup and disaster recovery
-
-#### Cold Tier
-- **Lower storage costs** than Cool, **higher access costs** than Cool
-- Optimized for data stored for **minimum 90 days**
-- Balance between Cool and Archive tiers
-
-#### Archive Tier
-- **Available only for individual block blobs** (not at account/container level)
-- **Lowest storage cost**, **highest access cost**
-- Data must remain for **minimum 180 days**
-- Can tolerate **several hours of retrieval latency** (rehydration required)
-- Most cost-effective for **long-term archival**
-
-### Tier Switching
-
-💡 **Flexibility**: You can switch between access tiers at any time if usage patterns change.
-
-⚠️ **Early Deletion Fees**: Deleting or moving data before minimum storage duration incurs early deletion charges.
+Каждый уровень — компромисс между:
+- Стоимостью хранения
+- Стоимостью доступа
+- Минимальным сроком хранения
 
 ---
 
-## Key Concepts
+## Access Tier Comparison
 
-### Unstructured Data
-Data that doesn't adhere to a particular data model or definition, such as:
-- Text files
-- Binary data
-- Images, videos, audio
-- Log files
-- Backup files
+| Tier | Optimization | Minimum Duration | Storage Cost | Access Cost | Use Case |
+|------|--------------|-----------------|--------------|-------------|----------|
+| **Hot** | Частый доступ | Нет | Высокая | Низкая | Часто используемые данные |
+| **Cool** | Редкий доступ | 30 дней | Ниже | Выше | Бэкапы, DR |
+| **Cold** | Очень редкий доступ | 90 дней | Ниже Cool | Выше Cool | Баланс между Cool и Archive |
+| **Archive** | Долгосрочное хранение | 180 дней | Самая низкая | Самая высокая | Архив |
+
+---
+
+## Tier Characteristics (Характеристики)
+
+### 🔥 Hot
+- Самые высокие storage costs
+- Самые низкие access costs
+- Default tier
+
+---
+
+### ❄️ Cool
+- Минимум хранения: 30 дней
+- Дешевле хранить, дороже читать
+
+---
+
+### 🧊 Cold
+- Минимум хранения: 90 дней
+- Ещё дешевле хранение
+- Быстрее доступ, чем Archive
+
+---
+
+### 📦 Archive
+- Только для **individual block blobs**
+- Минимум хранения: 180 дней
+- Требуется **rehydration**
+- Доступ может занимать часы
+
+---
+
+# Tier Switching (Переключение уровней)
+
+💡 Можно менять tier в любое время.
+
+⚠️ Раннее удаление (< минимального срока) → штраф (early deletion fee).
+
+---
+
+# Key Concepts (Ключевые понятия)
+
+## Unstructured Data (Неструктурированные данные)
+
+- Текстовые файлы
+- Бинарные файлы
+- Изображения, видео
+- Логи
+- Резервные копии
+
+---
+
+# Важно для AZ-204
+
+- General-purpose v2 — основной тип аккаунта
+- Archive требует rehydration
+- Early deletion charges важны
+- RA-GRS позволяет читать secondary
+- Blob Storage хранит неструктурированные данные
 
 ### Storage Account Namespace
 Each storage account has a unique namespace:
@@ -125,37 +187,68 @@ Each storage account has a unique namespace:
 http://<account-name>.blob.core.windows.net
 ```
 
-All objects in the account are addressable via this base URL.
+Все объекты внутри Storage Account доступны по базовому URL:
+
+https://<account-name>.blob.core.windows.net
+
+
+Структура полного пути:
+
+https://<account-name>.blob.core.windows.net/<container-name>/<blob-name>
+---
+
+# Best Practices (Лучшие практики)
+
+✅ Используйте **Standard general-purpose v2** в большинстве сценариев  
+✅ Выбирайте **Premium block blobs** при высокой нагрузке и требованиях к низкой задержке  
+✅ Подбирайте **access tier** исходя из частоты доступа  
+✅ Используйте **Hot tier** для часто используемых данных  
+✅ Используйте **Cool / Cold tier** для редко используемых данных
+- Cool — минимум 30 дней
+- Cold — минимум 90 дней  
+  ✅ Используйте **Archive tier** для долгосрочного хранения (минимум 180 дней)  
+  ✅ Переключайте tier при изменении паттернов использования
+
+> 💡 Правильный выбор tier может существенно снизить стоимость хранения.
 
 ---
 
-## Best Practices
+# Exam Tips (Советы для экзамена)
 
-✅ **Use Standard general-purpose v2** for most scenarios
-✅ **Choose Premium block blobs** for high-performance requirements
-✅ **Select appropriate access tier** based on data access patterns
-✅ **Use Hot tier** for frequently accessed data
-✅ **Use Cool/Cold tier** for infrequently accessed data (30/90 days minimum)
-✅ **Use Archive tier** for long-term archival (180 days minimum)
-✅ **Consider tier switching** as usage patterns change
+🎯 **Типы аккаунтов**
+- Standard general-purpose v2 — основной и самый частый выбор
+- Premium block blobs — высокая производительность
 
----
+🎯 **Access tiers**
+- Hot — частый доступ
+- Cool — минимум 30 дней
+- Cold — минимум 90 дней
+- Archive — минимум 180 дней
 
-## Exam Tips
+🎯 **Минимальные сроки хранения**
+- Cool = 30 дней
+- Cold = 90 дней
+- Archive = 180 дней
 
-🎯 **Know the account types**: Standard general-purpose v2 (most common), Premium block blobs (high performance)
+🎯 **Ограничения Archive**
+- Только для individual block blobs
+- Требуется rehydration (может занять часы)
 
-🎯 **Understand access tiers**: Hot (frequent), Cool (30 days), Cold (90 days), Archive (180 days)
+🎯 **Cost tradeoff**
+- Чем "холоднее" tier → ниже стоимость хранения
+- Но выше стоимость доступа
 
-🎯 **Remember minimum durations**: Cool = 30 days, Cold = 90 days, Archive = 180 days
+🎯 **Redundancy**
+- LRS — локальная репликация
+- ZRS — по зонам
+- GRS — георепликация
+- RA-GRS — георепликация + доступ на чтение
 
-🎯 **Archive tier limitations**: Only for individual block blobs, requires rehydration (hours)
+🎯 **Premium vs Standard**
+- Premium использует SSD
+- Поддерживает только LRS и ZRS
+- Предназначен для высокопроизводительных сценариев
 
-🎯 **Cost tradeoff**: Storage cost ↓ as tier gets colder, Access cost ↑ as tier gets colder
-
-🎯 **Redundancy options**: LRS (local), ZRS (zonal), GRS (geo), RA-GRS (geo + read)
-
-🎯 **Premium vs Standard**: Premium uses SSDs, supports LRS/ZRS only, higher performance
 
 ---
 
@@ -199,18 +292,46 @@ New-AzStorageAccount `
   -Kind BlockBlobStorage
 ```
 
-### SKU Names
+# SKU Names (Имена SKU для Storage Account)
+
+SKU определяет комбинацию:
+- Уровня производительности (Standard / Premium)
+- Типа отказоустойчивости (LRS, ZRS, GRS и т.д.)
+
+---
+
+## Standard SKU
 
 | SKU Name | Description |
-|----------|-------------|
-| `Standard_LRS` | Standard locally redundant storage |
-| `Standard_GRS` | Standard geo-redundant storage |
-| `Standard_RAGRS` | Standard read-access geo-redundant storage |
-| `Standard_ZRS` | Standard zone-redundant storage |
-| `Standard_GZRS` | Standard geo-zone-redundant storage |
-| `Standard_RAGZRS` | Standard read-access geo-zone-redundant storage |
-| `Premium_LRS` | Premium locally redundant storage |
-| `Premium_ZRS` | Premium zone-redundant storage |
+|------------|-------------|
+| `Standard_LRS` | Standard + локальная репликация (3 копии в одном дата-центре) |
+| `Standard_GRS` | Standard + георепликация во второй регион |
+| `Standard_RAGRS` | Standard + георепликация + доступ на чтение secondary |
+| `Standard_ZRS` | Standard + репликация по availability zones |
+| `Standard_GZRS` | Standard + ZRS + георепликация |
+| `Standard_RAGZRS` | Standard + GZRS + доступ на чтение secondary |
+
+---
+
+## Premium SKU
+
+| SKU Name | Description |
+|------------|-------------|
+| `Premium_LRS` | Premium (SSD) + локальная репликация |
+| `Premium_ZRS` | Premium (SSD) + зональная репликация |
+
+---
+
+## Важно для AZ-204
+
+- **Premium поддерживает только LRS и ZRS**
+- `RA` означает **Read Access** к secondary региону
+- GZRS = ZRS + георепликация
+- Standard_LRS — самый простой и дешёвый вариант
+- Для высокой доступности между регионами — выбирайте GRS / RA-GRS / GZRS
+
+> 🎯 На экзамене часто спрашивают различие между GRS и RA-GRS.
+
 
 ---
 

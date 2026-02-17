@@ -1,28 +1,95 @@
 # Set and Retrieve Properties and Metadata Using REST
+(Управление свойствами и метаданными через REST API)
 
-## Overview
+## Overview (Обзор)
 
-You can manage container and blob properties/metadata using the **Azure Storage REST API**. This unit covers the REST operations and HTTP header conventions.
+Вы можете управлять свойствами и метаданными контейнеров и blob с помощью **Azure Storage REST API**.
+
+В этом разделе рассматриваются:
+
+- Основные REST-операции
+- Использование HTTP-заголовков
+- Формат передачи metadata
 
 ---
 
-## Metadata in REST API
+## Metadata in REST API (Метаданные в REST API)
 
-### x-ms-meta- Header Prefix
+### Префикс `x-ms-meta-`
 
-User-defined metadata is represented as **HTTP headers** with the `x-ms-meta-` prefix:
+Пользовательские метаданные передаются как **HTTP-заголовки** с префиксом:
+    x-ms-meta-
+
+
+---
+
+### Пример установки metadata (Set Blob Metadata)
+
+```http
+PUT https://{account}.blob.core.windows.net/{container}/{blob}?comp=metadata
+x-ms-version: 2021-12-02
+x-ms-date: Wed, 17 Jan 2026 12:00:00 GMT
+Authorization: SharedKey <account>:<signature>
+
+x-ms-meta-department: finance
+x-ms-meta-project: migration
+x-ms-meta-costcenter: cc123
+```
+
+## Важные правила (Metadata в REST API)
+
+- Ключ metadata передаётся после префикса `x-ms-meta-`  
+- Ключи **не чувствительны к регистру**  
+- Azure сохраняет ключи в **lowercase**  
+- Общий размер metadata — до **8 KB**  
+- Установка metadata **полностью заменяет** предыдущий набор  
+
+---
+
+## Получение Metadata
+
+```http
+GET https://{account}.blob.core.windows.net/{container}/{blob}
+```
+Metadata возвращаются в response headers:
+
+x-ms-meta-department: finance
+x-ms-meta-project: migration
 
 ```http
 x-ms-meta-name: value
 ```
+Основные REST-операции
+
+| Operation                | HTTP Method | Query Parameter  |
+| ------------------------ | ----------- | ---------------- |
+| Get Blob Properties      | HEAD        | —                |
+| Set Blob Metadata        | PUT         | `?comp=metadata` |
+| Get Container Properties | HEAD        | —                |
+| Set Container Metadata   | PUT         | `?comp=metadata` |
+
+```http
+ETag: "0x8DAF123456789AB"
+Last-Modified: Wed, 17 Jan 2026 11:55:00 GMT
+x-ms-lease-status: unlocked
+x-ms-blob-type: BlockBlob
+
+```
+🎯 Экзаменационный момент AZ-204
+Metadata передаётся через заголовки x-ms-meta-*
+Установка metadata выполняется через PUT ?comp=metadata
+Операция полностью заменяет предыдущие значения
+Свойства и metadata можно получить через HEAD-запрос
+
 
 ### Metadata Naming Rules
 
-✅ **Valid names:**
-- Must be valid HTTP header names
-- Only alphanumeric characters and underscores
-- Case-insensitive (Azure converts to lowercase)
-- Cannot contain whitespace or special characters
+✅ **Valid names (Допустимые имена metadata в REST API):**
+
+- Должны быть корректными HTTP header именами
+- Допускаются только буквы, цифры и символ `_`
+- Не чувствительны к регистру (Azure сохраняет в lowercase)
+- Не могут содержать пробелы или специальные символы
 
 ❌ **Invalid names:**
 ```http
@@ -198,56 +265,69 @@ x-ms-version: 2021-06-08
 
 ---
 
-## REST API Reference
+## REST API Reference (Справочник REST API)
 
-### Container Operations
+### Container Operations (Операции с контейнером)
 
 | Operation | Method | URI | Query Parameters |
-|-----------|--------|-----|------------------|
+|------------|--------|-----|------------------|
 | **Set Metadata** | PUT | `/{container}` | `?restype=container&comp=metadata` |
-| **Get Properties** | GET/HEAD | `/{container}` | `?restype=container` |
+| **Get Properties** | GET / HEAD | `/{container}` | `?restype=container` |
 | **List Blobs** | GET | `/{container}` | `?restype=container&comp=list` |
 
-### Blob Operations
+---
+
+### Blob Operations (Операции с blob)
 
 | Operation | Method | URI | Query Parameters |
-|-----------|--------|-----|------------------|
+|------------|--------|-----|------------------|
 | **Set Metadata** | PUT | `/{container}/{blob}` | `?comp=metadata` |
-| **Get Properties** | HEAD | `/{container}/{blob}` | None |
+| **Get Properties** | HEAD | `/{container}/{blob}` | — |
 | **Set Properties** | PUT | `/{container}/{blob}` | `?comp=properties` |
-| **Get Blob** | GET | `/{container}/{blob}` | None |
-| **Put Blob** | PUT | `/{container}/{blob}` | None |
+| **Get Blob** | GET | `/{container}/{blob}` | — |
+| **Put Blob** | PUT | `/{container}/{blob}` | — |
 
 ---
 
 ## Standard HTTP Headers (Blobs)
+(Стандартные HTTP-заголовки для blob)
 
 ### Request Headers for Set Blob Properties
+(Заголовки запроса для установки свойств blob)
 
 | Header | Purpose | Example |
-|--------|---------|---------|
-| **x-ms-blob-content-type** | MIME type | `application/json` |
-| **x-ms-blob-content-encoding** | Encoding | `gzip` |
-| **x-ms-blob-content-language** | Language | `en-US` |
-| **x-ms-blob-cache-control** | Cache behavior | `max-age=3600` |
-| **x-ms-blob-content-disposition** | Download behavior | `attachment; filename="file.pdf"` |
-| **x-ms-blob-content-md5** | MD5 hash | Base64-encoded MD5 |
+|----------|----------|----------|
+| **x-ms-blob-content-type** | MIME тип | `application/json` |
+| **x-ms-blob-content-encoding** | Кодировка | `gzip` |
+| **x-ms-blob-content-language** | Язык | `en-US` |
+| **x-ms-blob-cache-control** | Поведение кэширования | `max-age=3600` |
+| **x-ms-blob-content-disposition** | Поведение скачивания | `attachment; filename="file.pdf"` |
+| **x-ms-blob-content-md5** | MD5-хэш | Base64-encoded MD5 |
 
-### Response Headers
+---
+
+### Response Headers (Ответные заголовки)
 
 | Header | Type | Description |
-|--------|------|-------------|
-| **Content-Type** | Standard | MIME type of blob |
-| **Content-Length** | Standard | Size in bytes |
-| **Content-Encoding** | Standard | Encoding applied |
-| **Content-Language** | Standard | Content language |
-| **Cache-Control** | Standard | Cache directives |
-| **ETag** | Standard | Entity tag (concurrency) |
-| **Last-Modified** | Standard | Last modification time |
+|----------|------|-------------|
+| **Content-Type** | Standard | MIME тип blob |
+| **Content-Length** | Standard | Размер в байтах |
+| **Content-Encoding** | Standard | Применённая кодировка |
+| **Content-Language** | Standard | Язык содержимого |
+| **Cache-Control** | Standard | Директивы кэширования |
+| **ETag** | Standard | Entity tag (контроль конкуренции) |
+| **Last-Modified** | Standard | Время последнего изменения |
 | **x-ms-blob-type** | Azure | BlockBlob, AppendBlob, PageBlob |
 | **x-ms-lease-status** | Azure | Locked, Unlocked |
-| **x-ms-lease-state** | Azure | Available, Leased, etc. |
-| **x-ms-meta-*** | Azure | User metadata |
+| **x-ms-lease-state** | Azure | Available, Leased и др. |
+| **x-ms-meta-*** | Azure | Пользовательские metadata |
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> - `HEAD` используется для получения свойств без загрузки содержимого
+> - `PUT ?comp=metadata` заменяет весь набор metadata
+> - HTTP-заголовки управляют Content-Type, Cache-Control и другими свойствами
 
 ---
 
@@ -428,18 +508,34 @@ $response.Headers | Where-Object { $_.Key -like "x-ms-meta-*" } | Format-Table
 ```
 
 ---
-
-## Response Status Codes
+## Response Status Codes (Коды ответов REST API)
 
 | Status | Meaning | Common Causes |
-|--------|---------|---------------|
-| **200 OK** | Success | Operation completed successfully |
-| **400 Bad Request** | Invalid request | Invalid metadata name, malformed URI |
-| **401 Unauthorized** | Authentication failed | Invalid credentials, expired token |
-| **403 Forbidden** | Access denied | Insufficient permissions (missing RBAC role) |
-| **404 Not Found** | Resource not found | Container or blob doesn't exist |
-| **409 Conflict** | Conflict | Lease is active, concurrent modification |
-| **412 Precondition Failed** | Condition not met | If-Match/If-None-Match failed |
+|----------|------------|----------------|
+| **200 OK** | Успешно | Операция выполнена успешно |
+| **400 Bad Request** | Некорректный запрос | Неверное имя metadata, ошибочный URI |
+| **401 Unauthorized** | Ошибка аутентификации | Неверные учётные данные, истёкший токен |
+| **403 Forbidden** | Доступ запрещён | Недостаточно прав (отсутствует RBAC-роль) |
+| **404 Not Found** | Ресурс не найден | Контейнер или blob не существует |
+| **409 Conflict** | Конфликт | Активный lease, конкурентная модификация |
+| **412 Precondition Failed** | Условие не выполнено | Ошибка If-Match / If-None-Match |
+
+---
+
+### Важно понимать
+
+- **401** — проблема с аутентификацией
+- **403** — аутентификация успешна, но нет прав
+- **409** — чаще всего связано с lease или версионированием
+- **412** — используется при оптимистичной блокировке (ETag, условия If-Match)
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> - 403 = нет RBAC прав
+> - 409 = конфликт (lease / конкурентная операция)
+> - 412 = условная проверка ETag не прошла
+
 
 ---
 
@@ -509,16 +605,34 @@ else:
 ---
 
 ## Key Differences: REST vs .NET SDK
+(Основные различия REST API и .NET SDK)
 
 | Aspect | REST API | .NET SDK |
-|--------|----------|----------|
+|----------|------------|------------|
 | **Metadata headers** | `x-ms-meta-name: value` | `metadata["name"] = "value"` |
-| **Set metadata** | PUT with `?comp=metadata` | `SetMetadataAsync(metadata)` |
-| **Get properties** | HEAD request | `GetPropertiesAsync()` |
-| **Authentication** | Manual headers (Authorization, x-ms-date) | Built-in (DefaultAzureCredential) |
-| **Error handling** | HTTP status codes | Exceptions (RequestFailedException) |
-| **Date format** | RFC 1123 format required | Automatic |
-| **Signature** | Manual HMAC-SHA256 | Automatic |
+| **Set metadata** | `PUT ?comp=metadata` | `SetMetadataAsync(metadata)` |
+| **Get properties** | `HEAD` запрос | `GetPropertiesAsync()` |
+| **Authentication** | Ручные заголовки (Authorization, x-ms-date) | Встроенная (`DefaultAzureCredential`) |
+| **Error handling** | HTTP status codes | Исключения (`RequestFailedException`) |
+| **Date format** | Требуется формат RFC 1123 | Обрабатывается автоматически |
+| **Signature** | Ручная генерация HMAC-SHA256 | Генерируется автоматически |
+
+---
+
+### Что важно понимать
+
+- REST требует ручной работы с заголовками и подписью запроса
+- SDK инкапсулирует детали аутентификации и подписи
+- В SDK ошибки обрабатываются через исключения, а не через HTTP-коды напрямую
+- SDK значительно снижает вероятность ошибок в подписи и формате дат
+
+---
+
+> 🎯 Экзаменационный момент AZ-204:
+> - REST = полный контроль, но больше ручной работы
+> - SDK = абстракция поверх REST
+> - `RequestFailedException` — основной тип ошибки в .NET SDK
+
 
 ---
 
@@ -597,31 +711,54 @@ If ETag doesn't match (concurrent modification), returns **412 Precondition Fail
 
 ---
 
-## Exam Tips
+## Exam Tips (Советы к экзамену AZ-204)
 
-🎯 **x-ms-meta- prefix**: Required for metadata headers in REST API
+🎯 **Префикс `x-ms-meta-`**  
+Обязателен для передачи metadata через REST API
 
-🎯 **HEAD vs GET**: Use HEAD to retrieve properties/metadata without downloading blob body
+🎯 **HEAD vs GET**  
+`HEAD` используется для получения свойств и metadata без загрузки содержимого blob
 
-🎯 **Query parameters**: `?comp=metadata` for metadata operations, `?comp=properties` for properties
+🎯 **Query parameters**
+- `?comp=metadata` — операции с metadata
+- `?comp=properties` — операции со свойствами
 
-🎯 **Container operations**: Require `?restype=container` parameter
+🎯 **Операции с контейнером**  
+Требуют параметр `?restype=container`
 
-🎯 **x-ms-version**: Required header specifying API version (e.g., `2021-06-08`)
+🎯 **`x-ms-version`**  
+Обязательный заголовок с указанием версии API  
+(например, `2021-06-08`)
 
-🎯 **x-ms-date**: Required for Shared Key auth, RFC 1123 format
+🎯 **`x-ms-date`**  
+Обязателен при Shared Key аутентификации  
+Формат даты — RFC 1123
 
-🎯 **Authorization header**: Three methods - SharedKey, SAS, Bearer (OAuth)
+🎯 **Authorization header**  
+Три способа аутентификации:
+- SharedKey
+- SAS
+- Bearer (OAuth / Azure AD)
 
-🎯 **SetMetadata replaces all**: PUT operation replaces all metadata (not merge)
+🎯 **SetMetadata заменяет всё**  
+`PUT ?comp=metadata` полностью заменяет metadata (не merge)
 
-🎯 **Blob HTTP headers**: Use `x-ms-blob-content-type`, `x-ms-blob-cache-control`, etc.
+🎯 **HTTP-заголовки blob**  
+Используются `x-ms-blob-content-type`,  
+`x-ms-blob-cache-control` и другие
 
-🎯 **Status codes**: 200 OK (success), 400 (bad request), 403 (forbidden), 404 (not found)
+🎯 **Коды ответа**
+- 200 OK — успешно
+- 400 — некорректный запрос
+- 403 — недостаточно прав
+- 404 — ресурс не найден
 
-🎯 **Metadata naming**: Same rules as .NET (valid C# identifiers)
+🎯 **Правила именования metadata**  
+Такие же, как в .NET (валидные C#-идентификаторы)
 
-🎯 **8 KB limit**: Same limit applies to REST API
+🎯 **Лимит 8 KB**  
+Ограничение metadata действует и для REST API
+
 
 ---
 

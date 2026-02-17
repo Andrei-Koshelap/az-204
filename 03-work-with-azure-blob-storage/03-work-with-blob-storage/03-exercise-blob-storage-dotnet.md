@@ -1,22 +1,28 @@
 # Exercise: Create Blob Storage Resources Using .NET Client Library
+(Упражнение: создание ресурсов Blob Storage с помощью .NET Client Library)
 
-## Exercise Overview
+## Exercise Overview (Обзор упражнения)
 
-In this exercise, you'll create an Azure Storage account and build a .NET console application that:
-- Creates a blob container
-- Uploads a file to blob storage
-- Lists blobs in the container
-- Downloads the blob to a local file
+В этом упражнении вы создадите Azure Storage Account и напишете .NET консольное приложение, которое:
 
-**Estimated Time:** 30 minutes
+- Создаёт blob-контейнер
+- Загружает файл в Blob Storage
+- Выводит список blob в контейнере
+- Скачивает blob в локальный файл
+
+**Оценочное время:** 30 минут
 
 ---
 
-## Prerequisites
+## Prerequisites (Предварительные требования)
 
-- Azure subscription
-- Azure Cloud Shell or local development environment
-- .NET 6.0 or later SDK
+- Подписка Azure
+- Azure Cloud Shell или локальная среда разработки
+- .NET SDK 6.0 или новее
+
+> 💡 От себя:  
+> Рекомендуется установить пакеты `Azure.Storage.Blobs` и `Azure.Identity`,  
+> а также использовать `DefaultAzureCredential` (особенно если запускаете код в Azure Cloud Shell или в Azure-hosted среде с Managed Identity).
 
 ---
 
@@ -312,14 +318,18 @@ az storage blob list \
     --output table
 ```
 
-### Azure Portal Steps
+### Azure Portal Steps (Шаги в Azure Portal)
 
-1. Navigate to Azure Portal
-2. Go to your storage account
-3. Select **Containers** under **Data storage**
-4. Find your container (demo-container-*)
-5. Click on container to view blob
-6. Click on blob to see properties
+1. Откройте Azure Portal
+2. Перейдите в ваш **Storage Account**
+3. В разделе **Data storage** выберите **Containers**
+4. Найдите нужный контейнер (например, `demo-container-*`)
+5. Откройте контейнер, чтобы увидеть список blob
+6. Нажмите на конкретный blob, чтобы посмотреть его свойства (Properties)
+
+> 💡 Практический совет:  
+> В свойствах blob полезно проверять **Access tier**, **Last modified**, **Content-Type** и наличие **metadata/tags** — это часто помогает при отладке и проверке lifecycle/policy сценариев.
+
 
 ---
 
@@ -348,13 +358,19 @@ var serviceClient = new BlobServiceClient(
     new Uri($"https://{storageAccountName}.blob.core.windows.net"),
     new DefaultAzureCredential());
 ```
+### DefaultAzureCredential (Как работает цепочка аутентификации)
 
-**DefaultAzureCredential** tries multiple authentication methods:
-1. Environment variables
-2. Managed Identity
-3. Visual Studio
+`DefaultAzureCredential` последовательно пытается использовать несколько способов аутентификации:
+
+1. Переменные окружения (Environment variables)
+2. Managed Identity (если приложение запущено в Azure)
+3. Учетные данные Visual Studio
 4. Azure CLI
 5. Azure PowerShell
+
+> 💡 Это делает `DefaultAzureCredential` удобным для разработки и production:  
+> локально используется CLI/Visual Studio,  
+> в Azure — автоматически применяется Managed Identity.
 
 ### 2. Create Container
 
@@ -456,50 +472,59 @@ dotnet restore
 
 ---
 
-## Key Takeaways
+## Key Takeaways (Ключевые выводы)
 
-✅ **BlobServiceClient** - Entry point for blob storage operations
-✅ **DefaultAzureCredential** - Flexible authentication that tries multiple methods
-✅ **RBAC roles** - Required for Azure AD authentication
-✅ **Async/await** - All blob operations are asynchronous
-✅ **Unique naming** - Use GUIDs to avoid name collisions
-✅ **Stream operations** - Efficient for large files
-✅ **Resource cleanup** - Always delete containers/blobs when done
-
----
-
-## Exam Tips
-
-🎯 **DefaultAzureCredential**: Tries multiple auth methods automatically (Environment, Managed Identity, Azure CLI, etc.)
-
-🎯 **RBAC required**: Storage Blob Data Contributor role needed for write operations
-
-🎯 **CreateBlobContainerAsync**: Returns BlobContainerClient object
-
-🎯 **GetBlobClient**: Navigate from container to blob client
-
-🎯 **UploadAsync**: Upload from stream, overwrite parameter controls replace behavior
-
-🎯 **GetBlobsAsync**: Async enumerable for listing blobs
-
-🎯 **DownloadToAsync**: Download to stream (file, memory, etc.)
-
-🎯 **ExistsAsync**: Check if blob exists before operations
-
-🎯 **Container naming**: Lowercase, 3-63 characters, no consecutive dashes
+✅ **BlobServiceClient** — точка входа для операций с Blob Storage  
+✅ **DefaultAzureCredential** — гибкая аутентификация с автоматическим выбором метода  
+✅ **RBAC роли** — обязательны для Azure AD аутентификации  
+✅ **Async/await** — все операции выполняются асинхронно  
+✅ **Уникальные имена** — используйте GUID для предотвращения конфликтов  
+✅ **Работа со stream** — эффективна для больших файлов  
+✅ **Очистка ресурсов** — удаляйте контейнеры и blob после завершения работы
 
 ---
 
-## Additional Exercises
+## Exam Tips (Советы к экзамену AZ-204)
 
-### Exercise Variations
+🎯 **DefaultAzureCredential** автоматически перебирает методы аутентификации  
+(Environment, Managed Identity, Azure CLI и др.)
 
-1. **Upload multiple files**: Modify to upload all files from a directory
-2. **Set blob metadata**: Add custom metadata during upload
-3. **Set access tier**: Upload to Cool or Archive tier
-4. **Conditional operations**: Use If-Match headers for concurrency
-5. **Copy blobs**: Copy blob to another container
-6. **Blob snapshots**: Create and restore blob snapshots
+🎯 **RBAC обязателен:**  
+Для операций записи требуется роль `Storage Blob Data Contributor`
+
+🎯 **CreateBlobContainerAsync** возвращает объект `BlobContainerClient`
+
+🎯 **GetBlobClient** — переход от контейнера к конкретному blob
+
+🎯 **UploadAsync** — загрузка из stream; параметр `overwrite` управляет перезаписью
+
+🎯 **GetBlobsAsync** — асинхронное перечисление blob
+
+🎯 **DownloadToAsync** — скачивание в stream (файл, память и т.д.)
+
+🎯 **ExistsAsync** — проверка существования blob перед операциями
+
+🎯 **Требования к имени контейнера:**
+- только lowercase
+- 3–63 символа
+- без последовательных дефисов
+
+---
+
+## Additional Exercises (Дополнительные упражнения)
+
+### Exercise Variations (Варианты задания)
+
+1. **Загрузка нескольких файлов** — модифицировать код для загрузки всех файлов из директории
+2. **Установка metadata** — добавить пользовательские метаданные при загрузке
+3. **Установка access tier** — загрузить blob в Cool или Archive tier
+4. **Условные операции** — использовать If-Match для контроля конкуренции
+5. **Копирование blob** — копировать blob в другой контейнер
+6. **Snapshots** — создать и восстановить snapshot blob
+
+> 💡 Практический совет:  
+> Для подготовки к экзамену полезно реализовать все вариации руками — это закрепляет понимание SDK и REST-модели Blob Storage.
+
 
 ---
 
