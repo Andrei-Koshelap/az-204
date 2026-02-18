@@ -1,8 +1,76 @@
-# Secure App Configuration Data
+# Защита данных Azure App Configuration
 
-## Overview
+## Обзор
 
-Securing Azure App Configuration data involves multiple layers of protection: authentication, authorization, encryption, and network isolation. This unit covers security features and best practices to protect your application configuration.
+Защита данных в Azure App Configuration строится на нескольких уровнях:
+
+- 🔐 Аутентификация
+- 🛡 Авторизация
+- 🔒 Шифрование
+- 🌐 Сетевая изоляция
+
+В этом разделе рассматриваются механизмы безопасности и лучшие практики для защиты конфигурации приложений.
+
+---
+
+## Основные уровни защиты
+
+### 1. Аутентификация
+
+- Используется **Microsoft Entra ID**
+- Рекомендуется **Managed Identity**
+- Поддерживается аутентификация через Azure Identity SDK
+- REST API требует Bearer-токен
+
+---
+
+### 2. Авторизация
+
+- Используется **Azure RBAC**
+- Роли назначаются на уровне ресурса
+- Пример роли:
+    - App Configuration Data Reader
+    - App Configuration Data Owner
+
+Принцип: **Least Privilege** — давать только необходимые права.
+
+---
+
+### 3. Шифрование
+
+- 🔐 Данные шифруются:
+    - при хранении (at rest)
+    - при передаче (TLS)
+- Поддержка **Customer-Managed Keys (CMK)** в Standard tier
+
+---
+
+### 4. Сетевая изоляция
+
+- Поддержка **Private Endpoints**
+- Возможность отключения публичного доступа
+- Интеграция с VNet
+- Использование firewall-правил
+
+---
+
+## Лучшие практики
+
+- Использовать Managed Identity вместо connection string.
+- В production включать Private Endpoints.
+- Использовать Key Vault для хранения секретов.
+- Настроить логирование и аудит.
+- Разделять App Configuration по средам (dev/test/prod).
+
+---
+
+## Важно для AZ-204
+
+- Аутентификация → Entra ID.
+- Авторизация → Azure RBAC.
+- Шифрование → включено по умолчанию.
+- Network isolation → Private Endpoint.
+- App Configuration не предназначен для хранения секретов.
 
 ---
 
@@ -45,33 +113,46 @@ Securing Azure App Configuration data involves multiple layers of protection: au
 
 ## Managed Identities
 
-### What Are Managed Identities?
+### Что такое Managed Identity?
 
-A **managed identity** from Microsoft Entra ID (formerly Azure AD) allows Azure App Configuration to access other protected resources (like Azure Key Vault) without managing credentials.
-
-**Benefits**:
-- No credentials in code or configuration
-- Automatic credential rotation
-- Seamless integration with Azure services
-- Azure platform manages identity lifecycle
-
-### Types of Managed Identities
-
-| Type | Lifecycle | Sharing | Use Case |
-|------|-----------|---------|----------|
-| **System-Assigned** | Tied to App Configuration store | Cannot share | Simple scenarios, 1:1 relationship |
-| **User-Assigned** | Independent resource | Can share across multiple stores | Multiple stores, cross-region scenarios |
+**Managed Identity** в Microsoft Entra ID позволяет Azure App Configuration получать доступ к защищённым ресурсам (например, Azure Key Vault) без хранения и управления credential’ами.
 
 ---
 
-## Add System-Assigned Identity
+### Преимущества
 
-### When to Use
+- 🔐 Нет секретов в коде или конфигурации
+- 🔄 Автоматическая ротация credential’ов
+- 🔗 Нативная интеграция с сервисами Azure
+- ⚙️ Azure управляет жизненным циклом identity
 
-- Single App Configuration store
-- Simple authentication scenario
-- Identity lifecycle tied to store
-- No need to share identity
+---
+
+## Типы Managed Identity
+
+| Тип | Жизненный цикл | Совместное использование | Сценарий |
+|------|---------------|--------------------------|----------|
+| **System-Assigned** | Связан с App Configuration | Нельзя делить | Простой сценарий, 1:1 |
+| **User-Assigned** | Независимый ресурс | Можно использовать повторно | Несколько хранилищ, multi-region |
+
+---
+
+# Добавление System-Assigned Identity
+
+## Когда использовать
+
+- Один App Configuration store
+- Простая схема аутентификации
+- Identity должна удаляться вместе с store
+- Нет необходимости делиться identity
+
+---
+
+## Важно для AZ-204
+
+- Managed Identity — рекомендуемый способ аутентификации.
+- Если нет требований к совместному использованию identity → выбирать System-Assigned.
+- После включения identity нужно назначить RBAC-роль на целевой ресурс (например, Key Vault).
 
 ### Setup with Azure CLI
 
@@ -138,14 +219,34 @@ az appconfig identity show \
 
 ---
 
-## Add User-Assigned Identity
+## Добавление User-Assigned Identity
 
-### When to Use
+### Когда использовать
 
-- Multiple App Configuration stores
-- Share identity across stores
-- Cross-region scenarios
-- Independent lifecycle management
+- Несколько App Configuration store
+- Необходимо использовать одну identity для нескольких store
+- Сценарии с несколькими регионами (cross-region)
+- Требуется независимое управление жизненным циклом identity
+
+---
+
+## Почему выбирать User-Assigned
+
+- 🔁 Можно назначать нескольким ресурсам
+- 🔐 Централизованное управление правами (RBAC)
+- ♻️ Identity сохраняется при удалении store
+- 🧩 Удобно при Infrastructure as Code
+
+---
+
+## Важно для AZ-204
+
+- Если требуется shared identity → выбирать User-Assigned.
+- Если требуется независимый lifecycle → User-Assigned.
+- После назначения identity необходимо:
+    - выдать роль (например, доступ к Key Vault),
+    - указать Client ID при использовании нескольких identity.
+
 
 ### Setup with Azure CLI
 
@@ -228,40 +329,61 @@ az appconfig identity assign --name appconfig-prod --identities $IDENTITY_ID
 
 ## Customer-Managed Encryption Keys (CMK)
 
-### Default Encryption
+### Шифрование по умолчанию
 
-By default, Azure App Configuration encrypts all data at rest using **Microsoft-managed keys**:
-- 256-bit AES encryption
-- Each store has its own encryption key
-- Managed by Microsoft
-- No additional configuration needed
+По умолчанию Azure App Configuration шифрует все данные при хранении с использованием **ключей, управляемых Microsoft**:
 
-### Customer-Managed Keys (CMK)
+- 🔐 AES-256
+- Отдельный ключ для каждого store
+- Полностью управляется Microsoft
+- Не требует дополнительной настройки
 
-For additional control, use **customer-managed keys** stored in Azure Key Vault.
+---
 
-**Benefits**:
-- Full control over encryption keys
-- Key rotation control
-- Compliance requirements
-- Ability to revoke access
+## Customer-Managed Keys (CMK)
 
-**Requirements**:
-- ✅ **Standard tier** App Configuration instance
-- ✅ Azure Key Vault with **soft-delete** enabled
-- ✅ Azure Key Vault with **purge-protection** enabled
-- ✅ RSA or RSA-HSM key in Key Vault
-- ✅ Key must be enabled
-- ✅ Key must have **wrap** and **unwrap** capabilities
+Для дополнительного контроля можно использовать **ключи, управляемые клиентом**, хранящиеся в Azure Key Vault.
 
-### How CMK Works
+---
 
-1. **App Configuration** gets a managed identity
-2. **Managed identity** is granted `GET`, `WRAP`, and `UNWRAP` permissions on Key Vault
-3. **App Configuration** calls Key Vault to wrap its encryption key
-4. **Wrapped encryption key** is stored
-5. **Unwrapped key** is cached for 1 hour
-6. **App Configuration refreshes** unwrapped key hourly
+### Преимущества CMK
+
+- 🔑 Полный контроль над ключами шифрования
+- 🔄 Управление ротацией ключей
+- 📋 Соответствие требованиям compliance
+- 🚫 Возможность отзыва доступа к данным
+
+---
+
+### Требования
+
+- ✅ App Configuration уровня **Standard**
+- ✅ Azure Key Vault с включённым **soft-delete**
+- ✅ Azure Key Vault с включённой **purge-protection**
+- ✅ Ключ типа **RSA или RSA-HSM**
+- ✅ Ключ должен быть включён
+- ✅ Ключ должен поддерживать операции **wrap** и **unwrap**
+
+---
+
+## Как работает CMK
+
+1. App Configuration получает Managed Identity
+2. Managed Identity получает разрешения `GET`, `WRAP`, `UNWRAP` в Key Vault
+3. App Configuration вызывает Key Vault для обёртывания своего ключа шифрования
+4. Обёрнутый ключ сохраняется
+5. Развёрнутый (unwrapped) ключ кэшируется на 1 час
+6. Ключ обновляется автоматически каждый час
+
+---
+
+## Важно для AZ-204
+
+- CMK доступен только в Standard tier.
+- Требуется Managed Identity + разрешения в Key Vault.
+- Soft Delete и Purge Protection обязательны.
+- Если нужно соответствие регуляторным требованиям → использовать CMK.
+- По умолчанию используется Microsoft-managed encryption (достаточно для большинства сценариев).
 
 ```
 ┌──────────────────────────────────────────────────────┐
@@ -391,15 +513,42 @@ az keyvault key create \
 
 ## Private Endpoints
 
-### What Are Private Endpoints?
+### Что такое Private Endpoint?
 
-**Private endpoints** allow clients on a virtual network to securely access App Configuration over a **private link** using a private IP address from the VNet.
+**Private Endpoint** позволяет клиентам внутри виртуальной сети (VNet) безопасно подключаться к Azure App Configuration через **Private Link**, используя приватный IP-адрес из этой сети.
 
-**Benefits**:
-- Eliminate exposure to public internet
-- Secure data from VNet or on-premises networks
-- No data exfiltration risk
-- Comply with network security policies
+То есть трафик проходит по внутренней сети Azure, а не через публичный интернет.
+
+---
+
+### Преимущества
+
+- 🔒 Отсутствие доступа через публичный интернет
+- 🌐 Безопасный доступ из VNet или из on-premises (через VPN/ExpressRoute)
+- 🚫 Снижение риска утечки данных (data exfiltration)
+- 📋 Соответствие требованиям сетевой безопасности и compliance
+
+---
+
+### Как это работает
+
+- App Configuration получает Private Endpoint
+- Ему назначается приватный IP в VNet
+- Публичный доступ можно отключить
+- DNS настраивается для разрешения имени сервиса в приватный IP
+
+---
+
+### Важно для AZ-204
+
+- Private Endpoint используется для сетевой изоляции.
+- Частый сценарий:
+  > Нужно запретить доступ из интернета  
+  → использовать Private Endpoint.
+- Для production часто требуется:
+    - Private Endpoint
+    - отключённый публичный доступ.
+
 
 ### Architecture
 
@@ -435,13 +584,41 @@ az keyvault key create \
    │  • Private endpoint: ENABLED         │
    └──────────────────────────────────────┘
 ```
+### Создание Private Endpoint
 
-### Create Private Endpoint
+#### Предварительные требования
 
-#### Prerequisites
+- 🌐 Виртуальная сеть (VNet) с выделенной подсетью
+- 📦 Экземпляр App Configuration уровня **Standard**
 
-- Virtual Network with dedicated subnet
-- App Configuration Standard tier
+---
+
+### Почему это важно
+
+- Private Endpoint требует отдельной подсети.
+- Поддержка Private Endpoint доступна только в Standard tier.
+- Free tier не поддерживает сетевую изоляцию.
+
+---
+
+### Что обычно настраивается дополнительно
+
+- Приватная DNS-зона для корректного разрешения имени сервиса
+- Отключение публичного доступа (опционально, но рекомендуется)
+- Проверка доступа через VNet или VPN/ExpressRoute
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе есть требования:
+
+- запретить публичный доступ
+- обеспечить доступ только из VNet
+- соответствие строгим сетевым политикам
+
+→ использовать **Private Endpoint + Standard tier**.
+
 
 #### Step 1: Create Subnet for Private Endpoint
 
@@ -592,17 +769,40 @@ az appconfig network-rule remove \
 
 ---
 
-## Azure RBAC Roles
+## Azure RBAC роли
 
-Azure App Configuration uses Azure RBAC for authorization.
+Azure App Configuration использует **Azure RBAC** для управления доступом.
 
-### Built-in Roles
+---
 
-| Role | Permissions | Use Case |
-|------|-------------|----------|
-| **App Configuration Data Owner** | Read, write, delete configuration data | Administrators, CI/CD pipelines |
-| **App Configuration Data Reader** | Read configuration data | Applications, services (recommended) |
-| **App Configuration** (Contributor) | Manage App Configuration resource | Infrastructure management |
+## Встроенные роли
+
+| Роль | Разрешения | Сценарий использования |
+|------|------------|------------------------|
+| **App Configuration Data Owner** | Чтение, изменение, удаление конфигурации | Администраторы, CI/CD пайплайны |
+| **App Configuration Data Reader** | Только чтение конфигурации | Приложения и сервисы (рекомендуется) |
+| **App Configuration (Contributor)** | Управление ресурсом App Configuration | Управление инфраструктурой |
+
+---
+
+## Что важно понимать
+
+- Data Reader / Data Owner — это **data plane** доступ (доступ к данным).
+- Contributor — это **management plane** (управление самим ресурсом).
+- Для приложений в production рекомендуется назначать:
+    - **App Configuration Data Reader**
+    - через Managed Identity.
+
+---
+
+## Важно для AZ-204
+
+- RBAC — рекомендуемая модель авторизации.
+- Приложениям не нужен Contributor.
+- Использовать принцип **Least Privilege**.
+- Частый экзаменационный сценарий:
+  > Приложение должно читать конфигурацию  
+  → назначить роль **App Configuration Data Reader**.
 
 ### Grant Access to Application
 
@@ -798,53 +998,104 @@ az monitor diagnostic-settings create \
 ```
 
 ---
+# Exam Tips — AZ-204 (Security в App Configuration)
 
-## Exam Tips
+## Ключевые концепции
 
-### Key Concepts for AZ-204
+1. **Managed Identity**  
+   Устраняет необходимость хранить credential’ы в коде.
 
-1. **Managed identities** eliminate need for credentials in code
+2. **System-Assigned Identity**  
+   Связана с конкретным App Configuration store  
+   Удаляется вместе с ресурсом.
 
-2. **System-assigned**: Tied to App Configuration store, deleted with store
+3. **User-Assigned Identity**  
+   Независимый ресурс  
+   Может использоваться несколькими store.
 
-3. **User-assigned**: Independent resource, can be shared across stores
+4. **Требования для CMK**
+    - Standard tier
+    - Soft-delete включён
+    - Purge-protection включён
+    - RSA или RSA-HSM ключ
 
-4. **CMK requirements**: Standard tier, soft-delete, purge-protection, RSA key
+5. **Private Endpoint**  
+   Безопасный доступ через Private Link из VNet.
 
-5. **Private endpoints**: Secure access over private link from VNet
+6. **RBAC роли**
+    - Data Owner — чтение/запись
+    - Data Reader — только чтение
 
-6. **RBAC roles**: Data Owner (read/write), Data Reader (read-only)
+7. **Connection strings**  
+   Использовать только для разработки  
+   Содержат секреты.
 
-7. **Connection strings**: Only for development, contain secrets
+8. **DefaultAzureCredential**  
+   Сначала пробует Managed Identity, затем другие методы.
 
-8. **DefaultAzureCredential**: Tries managed identity, then other methods
+9. **Firewall для публичного доступа**  
+   Можно ограничить доступ конкретными IP-диапазонами.
 
-9. **Public access firewall**: Allow specific IP ranges
+10. **Обновление CMK**  
+    Расшифрованный ключ кэшируется на 1 час  
+    Обновляется автоматически каждый час.
 
-10. **CMK refresh**: Unwrapped key cached for 1 hour, refreshed hourly
+11. **Private DNS зона**  
+    `privatelink.azconfig.io`
 
-11. **Private DNS zone**: `privatelink.azconfig.io`
-
-12. **Key permissions for CMK**: GET, WRAP, UNWRAP
-
-### Common Exam Scenarios
-
-**Scenario 1**: "Web App needs to read App Configuration"
-→ **Answer**: Enable managed identity on Web App, grant "App Configuration Data Reader" role
-
-**Scenario 2**: "Secure App Configuration from public internet"
-→ **Answer**: Create private endpoint, disable public access
-
-**Scenario 3**: "Comply with regulation requiring customer-controlled encryption"
-→ **Answer**: Use customer-managed keys in Key Vault
-
-**Scenario 4**: "CI/CD pipeline needs to update configuration"
-→ **Answer**: Use service principal with "App Configuration Data Owner" role
-
-**Scenario 5**: "Share identity across multiple App Configuration stores"
-→ **Answer**: Use user-assigned managed identity
+12. **Права для CMK в Key Vault**  
+    Требуются разрешения:  
+    `GET`, `WRAP`, `UNWRAP`
 
 ---
+
+# Частые экзаменационные сценарии
+
+### Сценарий 1
+> Web App должен читать App Configuration
+
+→ Включить Managed Identity  
+→ Назначить роль **App Configuration Data Reader**
+
+---
+
+### Сценарий 2
+> Нужно защитить App Configuration от публичного интернета
+
+→ Создать Private Endpoint  
+→ Отключить публичный доступ
+
+---
+
+### Сценарий 3
+> Требуется соответствие регуляции с контролем ключей шифрования
+
+→ Использовать Customer-Managed Keys в Key Vault
+
+---
+
+### Сценарий 4
+> CI/CD pipeline должен обновлять конфигурацию
+
+→ Использовать Service Principal  
+→ Назначить роль **App Configuration Data Owner**
+
+---
+
+### Сценарий 5
+> Нужно использовать одну identity для нескольких store
+
+→ Использовать User-Assigned Managed Identity
+
+---
+
+## Главное для запоминания
+
+- Managed Identity — рекомендуемый способ аутентификации.
+- RBAC — модель авторизации.
+- CMK нужен для compliance.
+- Private Endpoint — для сетевой изоляции.
+- Connection strings — не для production.
 
 ## Quick Reference Commands
 

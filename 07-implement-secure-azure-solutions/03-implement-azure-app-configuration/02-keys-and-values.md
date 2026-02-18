@@ -1,22 +1,77 @@
-# Create Paired Keys and Values
+# Создание пар «ключ–значение» (Paired Keys and Values)
 
-## Overview
+## Обзор
 
-Azure App Configuration stores configuration data as **key-value pairs**. Keys serve as names to store and retrieve corresponding values. Understanding how to structure keys, use labels, and manage values effectively is essential for scalable configuration management.
+Azure App Configuration хранит данные конфигурации в виде **пар ключ–значение (key-value)**.  
+Ключ используется для хранения и получения соответствующего значения.
+
+Правильная структура ключей и использование labels критически важны для масштабируемого управления конфигурацией.
 
 ---
 
-## Keys
+# Ключи (Keys)
 
-### What Are Keys?
+## Что такое ключ?
 
-Keys are **unique identifiers** for configuration values. They function as names in key-value pairs and are used to store and retrieve corresponding values.
+Ключ — это **уникальный идентификатор** значения конфигурации.
 
-**Key Characteristics**:
-- **Case-sensitive**: `AppName` ≠ `appname`
-- **Unicode support**: Use any unicode character except `*`, `,`, and `\`
-- **Size limit**: 10,000 characters combined for key + value + attributes
-- **Treated as whole**: App Configuration doesn't parse key structure
+Он выступает как имя параметра, по которому приложение получает значение.
+
+---
+
+## Характеристики ключей
+
+- 🔠 **Чувствительность к регистру**  
+  `AppName` ≠ `appname`
+
+- 🌍 **Поддержка Unicode**  
+  Можно использовать любые Unicode-символы, кроме:
+- В ключах Azure App Configuration можно использовать любые Unicode-символы, кроме трёх специальных символов:
+
+звёздочка — *
+
+запятая — ,
+
+обратная косая черта — \
+
+
+- 📏 **Ограничение размера**  
+  10 000 символов суммарно для:
+- ключа
+- значения
+- атрибутов
+
+- 🧩 **Не анализируются структурно**  
+  App Configuration не разбирает иерархию ключа —  
+  структура (`:` или `/`) — это соглашение, а не встроенная логика.
+
+---
+
+## Рекомендации по структуре ключей
+
+Часто используют иерархический стиль:
+AppName:Service:Setting
+AppName:Database:ConnectionString
+AppName:Logging:LogLevel
+
+
+Преимущества:
+
+- Удобная группировка
+- Возможность выборки по префиксу
+- Понятная организация в больших проектах
+
+---
+
+## Важно для AZ-204
+
+- Ключи чувствительны к регистру.
+- Структура ключа — это соглашение, а не обязательная логика.
+- Размер одной записи ограничен 10 KB.
+- Для разных сред использовать labels, а не разные ключи.
+
+
+
 
 ### Key Naming Best Practices
 
@@ -38,11 +93,15 @@ MyApp:Logging:Level
 MyApp:Api:Timeout
 ```
 
-**Why Hierarchical is Better**:
-- ✅ **Easier to read**: Delimiters act as spaces in a sentence
-- ✅ **Easier to manage**: Logical grouping of related settings
-- ✅ **Easier to use**: Pattern matching for bulk retrieval
-- ✅ **Better organization**: Clear structure and relationships
+### Почему иерархическая структура лучше
+
+- ✅ **Проще читать** — разделители (`:` или `/`) делают ключ похожим на структурированную фразу
+- ✅ **Проще управлять** — логическая группировка связанных настроек
+- ✅ **Проще использовать** — можно выбирать настройки по шаблону (prefix filtering)
+- ✅ **Лучшая организация** — понятная структура и взаимосвязи между параметрами
+
+---
+
 
 ### Design Key Namespaces
 
@@ -153,15 +212,57 @@ Key: MyApp-Special
 
 ## Labels
 
-### What Are Labels?
+### Что такое Labels?
 
-Labels are **optional attributes** that differentiate key-values with the same key. They enable creating variants of a key without changing the key name.
+**Labels** — это необязательные атрибуты, которые позволяют различать значения с одинаковым ключом.
 
-**Label Characteristics**:
-- Optional (default: no label)
-- Case-sensitive
-- Used to create key variants
-- Common use: Environment differentiation
+Они дают возможность создавать варианты одного и того же ключа без изменения его имени.
+
+---
+
+### Характеристики Labels
+
+- 🏷 **Необязательные** (по умолчанию — без label)
+- 🔠 **Чувствительны к регистру**
+- 🔁 Позволяют создавать несколько вариантов одного ключа
+- 🌍 Чаще всего используются для разделения окружений
+
+---
+
+### Пример использования
+
+Ключ:
+App:Database:ConnectionString
+
+С разными label:
+
+| Key | Label | Value |
+|------|--------|--------|
+| App:Database:ConnectionString | dev | Dev DB |
+| App:Database:ConnectionString | staging | Staging DB |
+| App:Database:ConnectionString | prod | Production DB |
+
+Ключ остаётся тем же, меняется только label.
+
+---
+
+### Когда использовать Labels
+
+- Разделение dev / test / prod
+- Версионирование конфигурации
+- A/B тестирование
+- Feature branch конфигурации
+
+---
+
+### Важно для AZ-204
+
+- Labels позволяют хранить несколько значений одного ключа.
+- Не нужно создавать разные ключи для разных сред.
+- Частый сценарий:
+  > Разные значения для одного ключа в разных средах  
+  → использовать Labels.
+
 
 ### Label Use Cases
 
@@ -263,27 +364,47 @@ GET https://myappconfig.azconfig.io/kv/MyApp:Setting?label=%00
 
 ---
 
-## Values
+## Values (Значения)
 
-### What Are Values?
+### Что такое Values?
 
-Values are **unicode strings** assigned to keys. They represent the actual configuration data.
+Values — это **строки Unicode**, связанные с ключами.  
+Они содержат фактические данные конфигурации, которые использует приложение.
 
-**Value Characteristics**:
-- Unicode strings (any unicode character)
-- Optional content-type attribute
-- Size limit: 10 KB (combined with key and attributes)
-- Encrypted at rest and in transit
+---
 
-### Content Type Attribute
+### Характеристики значений
 
-The optional `content-type` attribute helps applications understand how to process the value.
+- 🌍 Поддерживают любые Unicode-символы
+- 🏷 Могут иметь необязательный атрибут `content-type`
+- 📏 Ограничение размера: 10 KB (вместе с ключом и атрибутами)
+- 🔐 Шифруются при хранении и передаче
 
-**Common Content Types**:
-- `application/json` - JSON data
-- `text/plain` - Plain text
-- `application/xml` - XML data
-- Custom types (e.g., `application/vnd.myapp.config+json`)
+---
+
+## Атрибут Content-Type
+
+Атрибут `content-type` помогает приложению определить способ обработки значения.
+
+Он используется для указания формата данных, но не влияет на механизм хранения.
+
+---
+
+### Распространённые типы
+
+- `application/json`
+- `text/plain`
+- `application/xml`
+- Пользовательские MIME-типы
+
+---
+
+## Важно для AZ-204
+
+- Значения всегда хранятся как строки.
+- Максимальный размер одной записи — 10 KB.
+- Для структурированных данных рекомендуется указывать `content-type`.
+- App Configuration не предназначен для хранения больших объёмов данных.
 
 **Example**:
 ```bash

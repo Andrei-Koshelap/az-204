@@ -156,6 +156,8 @@ Set-AzWebApp -ResourceGroupName <rg-name> `
 | **Event Hub** | `EVENTHUBCONNSTR_` | Event Hubs |
 | **Service Bus** | `SERVICEBUSCONNSTR_` | Service Bus |
 | **Notification Hub** | `NOTIFICATIONHUBCONNSTR_` | Notification Hubs |
+Azure Event Grid is for managing routing of all events from any source to any destination and event size limit is 1MB
+Azure Notification Hub is used to Send push notifications from any backend to any mobile device.
 
 ---
 

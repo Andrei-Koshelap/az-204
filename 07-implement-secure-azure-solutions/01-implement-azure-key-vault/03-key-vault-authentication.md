@@ -1,50 +1,77 @@
-# Authenticate to Azure Key Vault
+# Аутентификация в Azure Key Vault
 
-## Overview
+## Обзор
 
-Authentication with Key Vault works through **Microsoft Entra ID** (formerly Azure Active Directory), which authenticates the identity of any **security principal** requesting access to Azure resources.
-
----
-
-## What is a Security Principal?
-
-A **security principal** is an entity that can request access to Azure resources.
-
-| Type | Description | Examples |
-|------|-------------|----------|
-| **User** | Real people with accounts in Microsoft Entra ID | alice@contoso.com, bob@contoso.com |
-| **Group** | Collections of users | Developers, Admins, Data Scientists |
-| **Service Principal** | Represents apps or services (not people) | Web app, API, background job |
-| **Managed Identity** | Automatically managed service principal | VM, App Service, Function App |
-
-**Think of service principals as:** User accounts for applications instead of people.
+Аутентификация в Key Vault выполняется через **Microsoft Entra ID** (ранее Azure Active Directory).  
+Entra ID подтверждает личность любого **security principal**, который запрашивает доступ к ресурсам Azure.
 
 ---
 
-## Service Principal Creation Methods
+## Что такое Security Principal?
 
-For applications, there are **two main ways** to obtain a service principal:
+**Security principal** — это сущность, которая может запрашивать доступ к ресурсам Azure.
 
-### 1. Managed Identity (Recommended) ✅
+| Тип | Описание | Примеры |
+|------|----------|----------|
+| **User** | Реальный пользователь в Microsoft Entra ID | alice@contoso.com, bob@contoso.com |
+| **Group** | Группа пользователей | Developers, Admins, Data Scientists |
+| **Service Principal** | Представляет приложение или сервис | Web app, API, background job |
+| **Managed Identity** | Автоматически управляемый service principal | VM, App Service, Function App |
 
-**How it works:**
-- Azure creates and manages the service principal automatically
-- No credentials to store or rotate
-- Integrated with Azure Identity libraries
-- Works with Azure services: App Service, Functions, VMs, Container Instances, etc.
+💡 Service Principal можно воспринимать как «учётную запись пользователя», но для приложения.
 
-**Types:**
+---
 
-| Type | Lifecycle | Use Case |
-|------|-----------|----------|
-| **System-assigned** | Tied to resource (deleted with resource) | Single resource, simple scenarios |
-| **User-assigned** | Independent lifecycle | Multiple resources, cross-resource scenarios |
+## Способы создания Service Principal
 
-**Benefits:**
-- ✅ Zero credential management
-- ✅ Automatic rotation
-- ✅ No secrets in code or config
-- ✅ Azure handles everything
+Для приложений существует **два основных способа** получить service principal:
+
+---
+
+## 1. Managed Identity (Рекомендуется) ✅
+
+### Как работает
+
+- Azure автоматически создаёт и управляет service principal
+- Нет credential’ов для хранения или ротации
+- Интеграция с библиотеками Azure Identity
+- Поддерживается Azure сервисами: App Service, Functions, VM, Container Instances и др.
+
+---
+
+### Типы Managed Identity
+
+| Тип | Жизненный цикл | Сценарий |
+|------|---------------|-----------|
+| **System-assigned** | Связан с ресурсом (удаляется вместе с ним) | Один ресурс, простой сценарий |
+| **User-assigned** | Независимый жизненный цикл | Несколько ресурсов, общий доступ |
+
+---
+
+### Преимущества
+
+- ✅ Нет управления credential’ами
+- ✅ Автоматическая ротация
+- ✅ Нет секретов в коде или конфигурации
+- ✅ Azure полностью управляет безопасностью
+
+---
+
+### Когда использовать
+
+- Приложение работает в Azure
+- Требуется максимально безопасная модель
+- Нужно избежать хранения client secret
+
+---
+
+### Важно для AZ-204
+
+- Managed Identity — почти всегда правильный ответ для Azure-ресурсов.
+- После создания identity нужно назначить роль (обычно через Azure RBAC).
+- System-assigned проще для одиночного ресурса.
+- User-assigned удобна, если одна identity используется несколькими сервисами.
+
 
 **Example - Enable system-assigned managed identity:**
 ```bash
@@ -79,18 +106,54 @@ az role assignment create \
   --scope /subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.KeyVault/vaults/mykeyvault
 ```
 
-### 2. Manually Register Application
+## 2. Ручная регистрация приложения (Manually Register Application)
 
-**How it works:**
-- Register app in Microsoft Entra ID manually
-- Creates service principal and app object
-- App object identifies the app across tenants
-- You manage credentials (certificate or secret)
+### Как работает
 
-**When to use:**
-- Non-Azure environments (on-premises, other clouds)
-- Multi-tenant applications
-- Managed identity not available
+- Приложение регистрируется вручную в Microsoft Entra ID
+- Создаётся **Application object** и соответствующий **Service Principal**
+- Application object идентифицирует приложение между tenant’ами
+- Управление credential’ами (сертификат или secret) выполняется вами
+
+---
+
+### Что важно понимать
+
+- **Application object** — глобальное определение приложения
+- **Service Principal** — локальное представление приложения в конкретном tenant
+- Для аутентификации используются:
+    - Client ID
+    - Tenant ID
+    - Certificate (предпочтительно) или Secret
+
+---
+
+### Когда использовать
+
+- Приложение работает вне Azure (on-premises, другой cloud)
+- Multi-tenant сценарии
+- Managed Identity недоступна
+- Требуется интеграция с внешними системами
+
+---
+
+### Рекомендации
+
+- Предпочитать **Certificate**, а не client secret
+- Настроить мониторинг срока действия сертификата
+- Хранить сертификат в безопасном хранилище (например, Key Vault)
+
+---
+
+### Важно для AZ-204
+
+- Если приложение размещено вне Azure → Managed Identity недоступна.
+- Multi-tenant приложения требуют ручной регистрации.
+- В production избегать использования client secret.
+- Частая экзаменационная ловушка:
+  > Приложение работает вне Azure и требует безопасный доступ  
+  → Service Principal + Certificate.
+
 
 **Steps:**
 ```bash
@@ -112,23 +175,41 @@ az ad sp create-for-rbac \
 # }
 ```
 
-**Credential options:**
+## Варианты учётных данных (Credential Options)
 
-| Credential Type | Security | Rotation | Recommendation |
-|----------------|----------|----------|----------------|
-| **Certificate** | High | Manual | ✅ Recommended |
-| **Client Secret** | Medium | Manual | ⚠️ Use with caution |
+| Тип credential | Безопасность | Ротация | Рекомендация |
+|----------------|--------------|----------|--------------|
+| **Certificate** | Высокая | Ручная | ✅ Рекомендуется |
+| **Client Secret** | Средняя | Ручная | ⚠️ Использовать с осторожностью |
 
 ---
 
-## Authentication Methods Comparison
+### Вывод
 
-| Method | Security | Management | Use Case |
-|--------|----------|------------|----------|
-| **System-Assigned Managed Identity** | ⭐⭐⭐⭐⭐ | Automatic | Single Azure resource |
-| **User-Assigned Managed Identity** | ⭐⭐⭐⭐⭐ | Automatic | Multiple Azure resources |
-| **Service Principal + Certificate** | ⭐⭐⭐⭐ | Manual | Non-Azure, multi-tenant |
-| **Service Principal + Secret** | ⭐⭐⭐ | Manual | Last resort |
+- 🔐 **Certificate** безопаснее, чем client secret.
+- 🔄 Ротацию сертификатов нужно планировать заранее.
+- ❗ Client secret — по сути пароль, требует хранения и регулярной замены.
+
+---
+
+# Сравнение методов аутентификации
+
+| Метод | Безопасность | Управление | Сценарий |
+|--------|--------------|------------|----------|
+| **System-Assigned Managed Identity** | ⭐⭐⭐⭐⭐ | Автоматическое | Один Azure-ресурс |
+| **User-Assigned Managed Identity** | ⭐⭐⭐⭐⭐ | Автоматическое | Несколько Azure-ресурсов |
+| **Service Principal + Certificate** | ⭐⭐⭐⭐ | Ручное | Вне Azure, multi-tenant |
+| **Service Principal + Secret** | ⭐⭐⭐ | Ручное | Крайний случай |
+
+---
+
+### Что важно запомнить для AZ-204
+
+- 🥇 Managed Identity — лучший вариант для Azure.
+- 🥈 Service Principal + Certificate — допустимо вне Azure.
+- 🥉 Service Principal + Secret — последний вариант.
+- Если в вопросе требуется **минимизировать управление credential’ами** → правильный ответ почти всегда Managed Identity.
+- Если нужно поддержать **несколько Azure-ресурсов одной identity** → User-assigned Managed Identity.
 
 **Decision tree:**
 ```
@@ -143,41 +224,67 @@ Running in Azure?
 
 ---
 
-## Authentication in Application Code
+## Аутентификация в коде приложения
 
-### Azure Identity Client Libraries
+### Библиотеки Azure Identity
 
-Key Vault SDK uses **Azure Identity client library** for seamless authentication across environments with the same code.
+SDK для Key Vault использует **Azure Identity client library**, что позволяет использовать одинаковый код для аутентификации в разных средах (dev, test, prod).
 
-**Available SDKs:**
+---
 
-| Language | Package | Latest Version |
-|----------|---------|----------------|
+### Доступные SDK
+
+| Язык | Пакет | Версия |
+|------|--------|---------|
 | **.NET** | Azure.Identity | 1.10+ |
 | **Python** | azure-identity | 1.14+ |
 | **Java** | azure-identity | 1.10+ |
 | **JavaScript** | @azure/identity | 4.0+ |
 
-### DefaultAzureCredential
+---
 
-**The recommended authentication method** - tries multiple credential sources automatically:
+## DefaultAzureCredential
 
-**Credential chain (in order):**
+**Рекомендуемый способ аутентификации** — автоматически пробует несколько источников credential’ов.
 
-1. **EnvironmentCredential** - Environment variables
-2. **WorkloadIdentityCredential** - Kubernetes workload identity
-3. **ManagedIdentityCredential** - Managed identity (VM, App Service, etc.)
-4. **SharedTokenCacheCredential** - Shared token cache
-5. **VisualStudioCredential** - Visual Studio authentication
-6. **VisualStudioCodeCredential** - VS Code authentication
-7. **AzureCliCredential** - Azure CLI authentication
-8. **AzurePowerShellCredential** - Azure PowerShell authentication
-9. **AzureDeveloperCliCredential** - Azure Developer CLI
+### Цепочка credential (по порядку)
 
-**Benefits:**
-- ✅ Works in development (Azure CLI) and production (managed identity)
-- ✅ No code changes between environments
-- ✅ Falls back automatically if one method fails
+1. **EnvironmentCredential** — переменные окружения
+2. **WorkloadIdentityCredential** — Kubernetes workload identity
+3. **ManagedIdentityCredential** — Managed Identity (VM, App Service и др.)
+4. **SharedTokenCacheCredential** — общий кэш токенов
+5. **VisualStudioCredential** — аутентификация через Visual Studio
+6. **VisualStudioCodeCredential** — аутентификация через VS Code
+7. **AzureCliCredential** — вход через Azure CLI
+8. **AzurePowerShellCredential** — вход через Azure PowerShell
+9. **AzureDeveloperCliCredential** — Azure Developer CLI
+
+---
+
+### Преимущества
+
+- ✅ Работает в разработке (Azure CLI, VS Code) и в production (Managed Identity)
+- ✅ Не требует изменений кода между средами
+- ✅ Автоматически переходит к следующему способу при ошибке
+
+---
+
+### Почему это важно
+
+- В dev-среде разработчик может быть залогинен через Azure CLI.
+- В production тот же код будет использовать Managed Identity.
+- Это устраняет необходимость писать условную логику под разные окружения.
+
+---
+
+### Важно для AZ-204
+
+- DefaultAzureCredential — почти всегда правильный выбор.
+- Позволяет избежать хранения client secret.
+- Частый экзаменационный сценарий:
+  > Приложение должно работать локально и в Azure без изменения кода  
+  → использовать DefaultAzureCredential.
+
 
 ### .NET Example
 
@@ -544,31 +651,59 @@ var secret = await client.GetSecretAsync("ApiKey");
 
 ---
 
-## Exam Tips
+# Exam Tips (Советы к AZ-204)
 
-🎯 **Microsoft Entra ID**: Required for all Key Vault authentication
+🎯 **Microsoft Entra ID**  
+Обязателен для любой аутентификации в Key Vault.
 
-🎯 **Security principal types**: User, Group, Service Principal, Managed Identity
+🎯 **Типы security principal**  
+User, Group, Service Principal, Managed Identity.
 
-🎯 **Two ways to get service principal**: Managed identity (recommended) or manual registration
+🎯 **Два способа получить service principal**
+- Managed Identity (рекомендуется)
+- Ручная регистрация приложения
 
-🎯 **System-assigned managed identity**: Recommended for Azure resources
+🎯 **System-assigned Managed Identity**  
+Рекомендуется для Azure-ресурсов (VM, App Service, Functions).
 
-🎯 **DefaultAzureCredential**: Best practice - tries multiple auth methods automatically
+🎯 **DefaultAzureCredential**  
+Лучшая практика — автоматически перебирает несколько способов аутентификации.
 
-🎯 **Credential chain**: Environment → Managed Identity → Azure CLI → others
+🎯 **Цепочка credential**  
+Environment → Managed Identity → Azure CLI → остальные методы.
 
-🎯 **Azure Identity libraries**: Available for .NET, Python, Java, JavaScript
+🎯 **Azure Identity библиотеки**  
+Доступны для .NET, Python, Java, JavaScript.
 
-🎯 **REST API**: Requires Bearer token in Authorization header
+🎯 **REST API**  
+Требует Bearer token в заголовке `Authorization`.
 
-🎯 **HTTP 401**: Returned when token missing/invalid, includes WWW-Authenticate header
+🎯 **HTTP 401**  
+Возвращается при отсутствии/некорректном токене.  
+Содержит заголовок `WWW-Authenticate`.
 
-🎯 **Resource URL**: `https://vault.azure.net` for token requests
+🎯 **Resource URL для получения токена**
 
-🎯 **Local development**: Use Azure CLI authentication with DefaultAzureCredential
+https://vault.azure.net
 
-🎯 **No code changes**: Same code works locally (Azure CLI) and in Azure (managed identity)
+
+🎯 **Локальная разработка**  
+Использовать Azure CLI + DefaultAzureCredential.
+
+🎯 **Без изменений кода**  
+Один и тот же код работает:
+- локально (Azure CLI),
+- в Azure (Managed Identity).
+
+---
+
+### Часто проверяют на экзамене
+
+- Когда выбирать Managed Identity.
+- Как работает DefaultAzureCredential.
+- Что означает ошибка 401.
+- Какой resource URI использовать при получении токена.
+- Принцип: не хранить credential’ы в коде.
 
 ---
 

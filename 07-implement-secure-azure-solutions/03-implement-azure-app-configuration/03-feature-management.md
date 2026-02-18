@@ -1,10 +1,15 @@
-# Manage Application Features
+# Управление функциями приложения (Manage Application Features)
 
-## What is Feature Management?
+## Что такое Feature Management?
 
-**Feature management** is a modern software development practice that decouples feature release from code deployment. It enables quick changes to feature availability on demand without modifying or redeploying code.
+**Feature management** — это современный подход к разработке, который отделяет выпуск функциональности от деплоя кода.
 
-Also known as:
+Он позволяет включать или отключать функции по требованию без изменения или повторного развертывания приложения.
+
+---
+
+## Другие названия
+
 - Feature flags
 - Feature toggles
 - Feature switches
@@ -12,43 +17,82 @@ Also known as:
 
 ---
 
-## Why Use Feature Management?
+## Зачем это нужно
 
-### Traditional Deployment Challenge
-
-**Without Feature Flags**:
-```
-Code Change → Build → Test → Deploy → Feature Live
-```
-
-**Problems**:
-- Feature goes live immediately upon deployment
-- Cannot selectively enable for subset of users
-- Difficult to roll back without redeployment
-- Risk of incomplete features affecting all users
-
-### Modern Approach with Feature Flags
-
-**With Feature Flags**:
-```
-Code Change (with flag) → Build → Deploy → Control Feature via Configuration
-```
-
-**Benefits**:
-- ✅ Deploy code with feature disabled
-- ✅ Enable for specific users/groups
-- ✅ Gradual rollout (10% → 50% → 100%)
-- ✅ Instant rollback without redeployment
-- ✅ A/B testing and experimentation
-- ✅ Separate deployment from release
+- 🚀 Постепенный запуск новых функций
+- 🎯 Таргетирование определённых групп пользователей
+- 🧪 A/B тестирование
+- 🔄 Быстрое отключение проблемной функции без rollback
+- ⚡ Управление релизами без простоя
 
 ---
 
-## Basic Concepts
+## Важно для AZ-204
 
-### 1. Feature Flag
+- Feature flags — встроенная возможность Azure App Configuration.
+- Позволяют управлять функциональностью без redeploy.
+- Частый экзаменационный сценарий:
+  > Нужно включить новую функцию для части пользователей  
+  → использовать Feature Flags.
 
-A **feature flag** is a variable with a binary state (on/off) that determines whether a code block executes.
+
+---
+
+## Почему использовать Feature Management?
+
+### Проблема традиционного деплоя
+
+**Без Feature Flags**:
+
+```
+Изменение кода → Сборка → Тестирование → Деплой → Функция доступна всем
+```
+
+### Проблемы
+
+- Функция становится доступной сразу после деплоя
+- Нельзя включить только для части пользователей
+- Сложно откатить без повторного деплоя
+- Риск, что незавершённая функциональность повлияет на всех пользователей
+
+---
+
+## Современный подход с Feature Flags
+
+**С Feature Flags**:
+
+```
+Изменение кода (с флагом) → Сборка → Деплой → Управление функцией через конфигурацию
+```
+
+
+### Преимущества
+
+- ✅ Код можно задеплоить с отключённой функцией
+- ✅ Можно включать для отдельных пользователей или групп
+- ✅ Постепенный rollout (10% → 50% → 100%)
+- ✅ Мгновенный rollback без redeploy
+- ✅ A/B тестирование
+- ✅ Разделение деплоя и релиза
+
+---
+
+# Базовые понятия
+
+## 1. Feature Flag
+
+**Feature Flag** — это переменная с бинарным состоянием (включено / выключено), которая определяет, будет ли выполняться определённый участок кода.
+
+---
+
+### Что важно для AZ-204
+
+- Feature flags позволяют управлять релизом без изменения кода.
+- Поддерживаются нативно в Azure App Configuration.
+- Частый сценарий:
+  > Нужно включить функцию только для части пользователей  
+  → использовать Feature Flag с фильтром.
+
 
 **Simple Example**:
 ```csharp
@@ -57,43 +101,61 @@ if (featureFlag)
     // Run the following code
 }
 ```
+### Характеристики Feature Flag
 
-**Characteristics**:
-- Binary state: `true` (on) or `false` (off)
-- Associated with a code block
-- State triggers whether code executes
-- Can be static or dynamic
-
-### 2. Feature Manager
-
-A **feature manager** is an application package that handles the lifecycle of all feature flags.
-
-**Responsibilities**:
-- Load feature flags from configuration source
-- Evaluate feature flag state
-- Cache feature flags for performance
-- Update states dynamically
-- Apply filters and rules
-
-**Popular Libraries**:
-- **.NET**: `Microsoft.FeatureManagement`
-- **Java Spring**: Spring Cloud Feature Management
-- **JavaScript**: Custom or third-party libraries
-- **Python**: Custom implementations
-
-### 3. Filter
-
-A **filter** is a rule for evaluating the state of a feature flag.
-
-**Filter Types**:
-- **Percentage**: Enable for X% of users
-- **Targeting**: Enable for specific users/groups
-- **Time window**: Enable during specific dates/times
-- **Geographic**: Enable for specific regions
-- **Browser/Device**: Enable for specific browsers or devices
-- **Custom**: Your own business logic
+- Бинарное состояние: `true` (включено) или `false` (выключено)
+- Связан с конкретным блоком кода
+- Состояние определяет, будет ли выполнен код
+- Может быть статическим или динамическим
 
 ---
+
+## 2. Feature Manager
+
+**Feature Manager** — это библиотека или компонент приложения, который управляет жизненным циклом всех feature flags.
+
+### Основные обязанности
+
+- Загружает feature flags из источника конфигурации
+- Определяет текущее состояние флага
+- Кэширует значения для повышения производительности
+- Обновляет состояния динамически
+- Применяет фильтры и правила
+
+---
+
+### Популярные библиотеки
+
+- **.NET**: `Microsoft.FeatureManagement`
+- **Java Spring**: Spring Cloud Feature Management
+- **JavaScript**: кастомные или сторонние решения
+- **Python**: чаще всего кастомная реализация
+
+---
+
+## 3. Filter
+
+**Filter** — это правило, определяющее, включён ли feature flag для конкретного запроса или пользователя.
+
+---
+
+### Типы фильтров
+
+- **Percentage** — включение для X% пользователей
+- **Targeting** — включение для конкретных пользователей или групп
+- **Time window** — включение в определённый период времени
+- **Geographic** — включение для конкретных регионов
+- **Browser / Device** — включение для определённых устройств или браузеров
+- **Custom** — собственная бизнес-логика
+
+---
+
+## Важно для AZ-204
+
+- Feature Flag = бинарный переключатель.
+- Feature Manager отвечает за загрузку и оценку флагов.
+- Percentage и Targeting — самые часто встречающиеся фильтры в экзаменационных вопросах.
+- Feature flags позволяют управлять релизом без redeploy.
 
 ## How Feature Flags Work
 
@@ -374,43 +436,60 @@ When multiple filters are present, they are evaluated in order. **First filter t
   }
 }
 ```
+### Логика оценки (Evaluation Logic)
 
-**Evaluation logic**:
-1. Check if user is `admin@contoso.com` → If yes, enable (stop)
-2. Check if user is in 25% rollout → If yes, enable (stop)
-3. Otherwise, disable
+1. Проверить, является ли пользователь `admin@contoso.com` → если да, включить (остановить проверку)
+2. Проверить, попадает ли пользователь в 25% rollout → если да, включить (остановить проверку)
+3. В остальных случаях — отключить
 
 ---
 
-## Feature Flag Repository
+# Feature Flag Repository
 
-### Why Externalize Feature Flags?
+## Почему нужно выносить Feature Flags во внешний источник?
 
-**Problems with hard-coded flags**:
-- ❌ Require code changes to modify
-- ❌ Require redeployment
-- ❌ Cannot change at runtime
-- ❌ No centralized management
+### Проблемы «захардкоженных» флагов
 
-**Benefits of external repository**:
-- ✅ Change states without redeployment
-- ✅ Real-time feature control
-- ✅ Centralized management
-- ✅ Audit trail of changes
-- ✅ Different states per environment
+- ❌ Требуют изменения кода
+- ❌ Требуют redeploy
+- ❌ Нельзя изменить во время работы приложения
+- ❌ Нет централизованного управления
 
-### Azure App Configuration as Feature Flag Repository
+---
 
-Azure App Configuration is **designed specifically** for feature flag management:
+## Преимущества внешнего репозитория
 
-**Features**:
-- Centralized repository for all feature flags
-- Dedicated UI for feature management
-- Real-time state changes
-- Multiple filter types supported
-- Environment-specific flags (using labels)
-- Integration with .NET, Java Spring, and other frameworks
-- REST API for custom implementations
+- ✅ Изменение состояния без redeploy
+- ✅ Управление функциями в реальном времени
+- ✅ Централизованный контроль
+- ✅ Аудит изменений
+- ✅ Разные состояния для разных сред
+
+---
+
+# Azure App Configuration как репозиторий Feature Flags
+
+Azure App Configuration **специально разработан** для управления feature flags.
+
+### Возможности
+
+- Централизованное хранение всех feature flags
+- Отдельный UI для управления функциями
+- Изменение состояния в реальном времени
+- Поддержка различных типов фильтров
+- Разделение по средам (через labels)
+- Интеграция с .NET, Java Spring и другими платформами
+- REST API для кастомных решений
+
+---
+
+## Важно для AZ-204
+
+- Feature flags не должны быть в коде.
+- App Configuration — правильный сервис для управления флагами.
+- Частый сценарий:
+  > Нужно управлять включением функции без redeploy  
+  → использовать Azure App Configuration.
 
 **Setup in App Configuration**:
 ```bash
@@ -797,52 +876,94 @@ az appconfig feature filter add \
 
 ---
 
-## Exam Tips
+# Exam Tips — AZ-204 (Feature Management)
 
-### Key Concepts for AZ-204
+## Ключевые концепции
 
-1. **Feature flags decouple deployment from release**: Code can be deployed with feature disabled
+1. **Feature flags отделяют деплой от релиза**  
+   Код можно задеплоить с отключённой функцией.
 
-2. **Feature Manager**: Handles feature flag lifecycle (load, evaluate, cache, update)
+2. **Feature Manager**  
+   Управляет жизненным циклом флагов: загрузка, проверка, кэширование, обновление.
 
-3. **Filters**: Rules for evaluating feature state (Percentage, Targeting, Time Window)
+3. **Фильтры (Filters)**  
+   Определяют, включена ли функция:
+    - Percentage
+    - Targeting
+    - Time Window
 
-4. **Azure App Configuration**: Centralized repository for feature flags
+4. **Azure App Configuration**  
+   Централизованный репозиторий для feature flags.
 
-5. **Multiple filters = OR logic**: First filter that returns true enables the feature
+5. **Несколько фильтров = логика OR**  
+   Если первый фильтр возвращает `true`, функция включается.
 
-6. **Percentage filter**: Enable for X% of users (gradual rollout)
+6. **Percentage filter**  
+   Постепенный rollout для X% пользователей.
 
-7. **Targeting filter**: Enable for specific users or groups
+7. **Targeting filter**  
+   Включение для конкретных пользователей или групп.
 
-8. **Time Window filter**: Enable during specific dates/times
+8. **Time Window filter**  
+   Включение в определённый период времени.
 
-9. **Feature flags are temporary**: Should be removed after full rollout
+9. **Feature flags временные**  
+   После полного rollout их рекомендуется удалить.
 
-10. **Dynamic refresh**: Applications can detect flag changes without restart
+10. **Dynamic refresh**  
+    Приложение может применять изменения без перезапуска.
 
-11. **.NET library**: `Microsoft.FeatureManagement.AspNetCore`
+11. **.NET библиотека**  
+    `Microsoft.FeatureManagement.AspNetCore`
 
-12. **FeatureGate attribute**: Apply feature flag to entire controller or action
-
-### Common Exam Scenarios
-
-**Scenario 1**: "Release new feature to 10% of users initially"
-→ **Answer**: Use feature flag with Percentage filter (Value: 10)
-
-**Scenario 2**: "Enable feature for beta testers only"
-→ **Answer**: Use Targeting filter with specific users/groups
-
-**Scenario 3**: "Need to instantly disable problematic feature"
-→ **Answer**: Use feature flag as kill switch, disable in App Configuration
-
-**Scenario 4**: "Test two different checkout flows"
-→ **Answer**: Use feature flag with Percentage filter (50%) for A/B testing
-
-**Scenario 5**: "Enable sale feature only during Black Friday"
-→ **Answer**: Use Time Window filter with Start and End dates
+12. **Атрибут FeatureGate**  
+    Позволяет применить флаг к контроллеру или конкретному action.
 
 ---
+
+# Частые экзаменационные сценарии
+
+### Сценарий 1
+> Выпустить новую функцию для 10% пользователей
+
+→ Использовать Feature Flag + Percentage filter (10)
+
+---
+
+### Сценарий 2
+> Включить функцию только для beta-тестеров
+
+→ Использовать Targeting filter (конкретные пользователи или группы)
+
+---
+
+### Сценарий 3
+> Нужно мгновенно отключить проблемную функцию
+
+→ Использовать feature flag как kill switch и выключить его в App Configuration
+
+---
+
+### Сценарий 4
+> Протестировать два варианта checkout
+
+→ Использовать Percentage filter (50%) для A/B тестирования
+
+---
+
+### Сценарий 5
+> Включить акцию только на Black Friday
+
+→ Использовать Time Window filter с датами начала и окончания
+
+---
+
+## Главное для запоминания
+
+- Feature flags = управление релизом без redeploy.
+- Фильтры работают по логике OR.
+- Azure App Configuration — основной сервис для управления флагами.
+- Percentage и Targeting — самые часто встречающиеся в вопросах.
 
 ## Quick Reference
 

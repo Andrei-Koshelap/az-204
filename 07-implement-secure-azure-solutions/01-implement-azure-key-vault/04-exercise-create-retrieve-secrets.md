@@ -1,13 +1,27 @@
-# Exercise: Create and Retrieve Secrets from Azure Key Vault
+# Упражнение: Создание и чтение секретов в Azure Key Vault
 
-## Exercise Overview
+## Обзор упражнения
 
-In this exercise, you'll:
-- Create an Azure Key Vault
-- Store secrets using Azure CLI
-- Build a .NET console application to create and retrieve secrets programmatically
-- Use managed identity for secure authentication
-- Clean up resources
+В этом упражнении вы:
+
+- Создадите Azure Key Vault
+- Сохраните секреты с помощью Azure CLI
+- Соберёте .NET console-приложение для программного создания и получения секретов
+- Используете Managed Identity для безопасной аутентификации
+- Выполните очистку ресурсов (cleanup)
+
+---
+
+### Дополнение от себя (практика + AZ-204)
+
+- На экзамене часто проверяют связку **Key Vault + Managed Identity** как “правильный” способ доступа к секретам без хранения credential’ов.
+- В реальном проекте обычно делают так:
+   - dev: `DefaultAzureCredential` + Azure CLI login
+   - prod: `DefaultAzureCredential` + Managed Identity
+- Для оптимизации и безопасности обычно добавляют:
+   - least privilege роли (`Key Vault Secrets User` / `Secrets Officer`)
+   - логирование (Diagnostic Settings)
+   - Soft Delete + Purge Protection для production
 
 **Estimated time**: 30 minutes
 
@@ -652,37 +666,55 @@ az account set --subscription "your-subscription-name"
 ```
 
 ---
+## Основные выводы (Key Takeaways)
 
-## Key Takeaways
-
-✅ **SecretClient** - Main class for secret operations  
-✅ **DefaultAzureCredential** - Automatic authentication (Azure CLI, managed identity, etc.)  
-✅ **SetSecretAsync** - Create or update secret (creates new version)  
-✅ **GetSecretAsync** - Retrieve secret value  
-✅ **Secret versioning** - Each update creates new version, old versions retained  
-✅ **Soft delete** - Deleted secrets retained for 90 days by default  
-✅ **Azure RBAC** - Use Key Vault Secrets User role for read access  
-✅ **URI format** - `https://{vault-name}.vault.azure.net`
+✅ **SecretClient** — основной класс для работы с секретами  
+✅ **DefaultAzureCredential** — автоматическая аутентификация (Azure CLI, Managed Identity и др.)  
+✅ **SetSecretAsync** — создание или обновление секрета (создаёт новую версию)  
+✅ **GetSecretAsync** — получение значения секрета  
+✅ **Версионирование секретов** — каждое обновление создаёт новую версию, старые версии сохраняются  
+✅ **Soft Delete** — удалённые секреты хранятся 90 дней по умолчанию  
+✅ **Azure RBAC** — для чтения использовать роль *Key Vault Secrets User*  
+✅ **Формат URI** — `https://{vault-name}.vault.azure.net`
 
 ---
 
-## Exam Tips
+## Exam Tips (Советы к AZ-204)
 
-🎯 **DefaultAzureCredential**: Best practice for authentication (works locally and in Azure)
+🎯 **DefaultAzureCredential**  
+Лучшая практика для аутентификации — работает локально и в Azure без изменения кода.
 
-🎯 **SetSecretAsync**: Creates new secret or new version of existing secret
+🎯 **SetSecretAsync**  
+Создаёт новый секрет или новую версию существующего.
 
-🎯 **Secret versions**: Each update creates new version, old versions remain accessible
+🎯 **Версии секретов**  
+Каждое обновление создаёт новую версию, старые остаются доступными.
 
-🎯 **GetSecretAsync**: Retrieves latest version by default, can specify version
+🎯 **GetSecretAsync**  
+По умолчанию возвращает последнюю версию, но можно указать конкретную.
 
-🎯 **Soft delete**: Enabled by default, 90-day retention
+🎯 **Soft Delete**  
+Включён по умолчанию, хранение 90 дней.
 
-🎯 **Azure RBAC roles**: Key Vault Secrets User (read), Key Vault Secrets Officer (manage)
+🎯 **Azure RBAC роли**
+- *Key Vault Secrets User* — чтение
+- *Key Vault Secrets Officer* — управление
 
-🎯 **Secret size limit**: 25 KB maximum
+🎯 **Ограничение размера секрета**  
+Максимум 25 KB.
 
-🎯 **Authentication**: Microsoft Entra ID required, managed identity recommended
+🎯 **Аутентификация**  
+Требуется Microsoft Entra ID, предпочтительно использовать Managed Identity.
+
+---
+
+### Что часто проверяют на экзамене
+
+- Разницу между созданием секрета и созданием новой версии.
+- Как работает DefaultAzureCredential.
+- Какая роль нужна только для чтения.
+- Что происходит при удалении секрета (Soft Delete).
+- Лимит размера секрета.
 
 ---
 

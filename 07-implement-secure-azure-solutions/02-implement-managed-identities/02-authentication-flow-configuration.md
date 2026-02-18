@@ -460,15 +460,38 @@ print(f"Secret: {secret.value}")
 
 ---
 
-## Required RBAC Roles
+## Необходимые RBAC-роли
 
-### To Configure Managed Identities
+### Для настройки Managed Identities
 
-| Operation | Required Role |
-|-----------|--------------|
-| Enable system-assigned identity | Virtual Machine Contributor |
-| Create user-assigned identity | Managed Identity Contributor |
-| Assign user-assigned identity to VM | Virtual Machine Contributor + Managed Identity Operator |
+| Операция | Требуемая роль |
+|------------|----------------|
+| Включить system-assigned identity | Virtual Machine Contributor |
+| Создать user-assigned identity | Managed Identity Contributor |
+| Назначить user-assigned identity к VM | Virtual Machine Contributor + Managed Identity Operator |
+
+---
+
+### Что важно понимать
+
+- Включение System-Assigned Identity требует прав на изменение самого ресурса.
+- Создание User-Assigned Identity — это создание отдельного Azure-ресурса.
+- Назначение User-Assigned Identity требует:
+    - прав на VM
+    - прав на управление identity
+
+---
+
+### Важно для AZ-204
+
+- После создания identity необходимо назначить RBAC-роль на целевой ресурс (например, Key Vault).
+- Частый сценарий:
+  > Identity включена, но доступ к Key Vault отсутствует  
+  → забыта роль (например, Key Vault Secrets User).
+- Различайте:
+    - Права на настройку identity
+    - Права самой identity на доступ к ресурсам
+
 
 ### Grant Permissions to Managed Identity
 
@@ -480,32 +503,73 @@ az role assignment create \
     --scope <RESOURCE_SCOPE>
 ```
 
-**Common roles for managed identities:**
+## Распространённые роли для Managed Identity
 
-| Resource | Role | Purpose |
-|----------|------|---------|
-| Key Vault | Key Vault Secrets User | Read secrets |
-| Key Vault | Key Vault Secrets Officer | Manage secrets |
-| Storage | Storage Blob Data Reader | Read blobs |
-| Storage | Storage Blob Data Contributor | Read/write blobs |
-| SQL Database | SQL DB Contributor | Manage databases |
-| Cosmos DB | Cosmos DB Account Reader Role | Read Cosmos DB data |
-| Event Hubs | Azure Event Hubs Data Receiver | Receive events |
-| Service Bus | Azure Service Bus Data Receiver | Receive messages |
+| Ресурс | Роль | Назначение |
+|---------|------|------------|
+| **Key Vault** | Key Vault Secrets User | Чтение секретов |
+| **Key Vault** | Key Vault Secrets Officer | Управление секретами |
+| **Storage** | Storage Blob Data Reader | Чтение blob |
+| **Storage** | Storage Blob Data Contributor | Чтение и запись blob |
+| **SQL Database** | SQL DB Contributor | Управление базами данных |
+| **Cosmos DB** | Cosmos DB Account Reader Role | Чтение данных Cosmos DB |
+| **Event Hubs** | Azure Event Hubs Data Receiver | Получение событий |
+| **Service Bus** | Azure Service Bus Data Receiver | Получение сообщений |
+
+---
+
+### Практические рекомендации
+
+- Назначайте только необходимую роль (least privilege).
+- Для чтения → использовать роли с `Reader`.
+- Для записи → использовать `Contributor` или специализированные роли.
+- Не использовать Owner/Contributor на уровне subscription без необходимости.
 
 ---
 
-## Azure SDKs Supporting Managed Identities
+### Важно для AZ-204
 
-| Language | Package | Example |
-|----------|---------|---------|
-| **.NET** | Azure.Identity | [.NET Example](https://github.com/Azure/azure-sdk-for-net/tree/main/sdk/identity/Azure.Identity) |
-| **Java** | azure-identity | [Java Example](https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/identity/azure-identity) |
-| **Python** | azure-identity | [Python Example](https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/identity/azure-identity) |
-| **JavaScript** | @azure/identity | [JS Example](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/identity/identity) |
-| **Go** | azidentity | [Go Example](https://github.com/Azure/azure-sdk-for-go/tree/main/sdk/azidentity) |
+- После включения Managed Identity роль нужно назначить вручную.
+- Частая ошибка:
+  > Identity включена, но доступ не работает  
+  → не назначена соответствующая RBAC-роль.
+- Для Key Vault чаще всего:
+    - Чтение → **Key Vault Secrets User**
+    - Управление → **Key Vault Secrets Officer**
+
 
 ---
+
+## Azure SDK с поддержкой Managed Identity
+
+| Язык | Пакет | Пример |
+|------|--------|---------|
+| **.NET** | Azure.Identity | https://github.com/Azure/azure-sdk-for-net/tree/main/sdk/identity/Azure.Identity |
+| **Java** | azure-identity | https://github.com/Azure/azure-sdk-for-java/tree/main/sdk/identity/azure-identity |
+| **Python** | azure-identity | https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/identity/azure-identity |
+| **JavaScript** | @azure/identity | https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/identity/identity |
+| **Go** | azidentity | https://github.com/Azure/azure-sdk-for-go/tree/main/sdk/azidentity |
+
+---
+
+### Что важно знать
+
+- Все SDK используют библиотеку **Azure Identity**.
+- Для Managed Identity чаще всего применяется:
+    - `DefaultAzureCredential`
+    - или `ManagedIdentityCredential`
+- Код одинаково работает:
+    - локально (через Azure CLI)
+    - в Azure (через Managed Identity)
+
+---
+
+### Для AZ-204
+
+- Нужно помнить название пакета для .NET: **Azure.Identity**.
+- Managed Identity поддерживается всеми основными языками.
+- В большинстве вопросов правильный выбор — использовать SDK + Managed Identity вместо хранения секретов.
+
 
 ## Complete Example: VM with Managed Identity
 
@@ -589,30 +653,79 @@ print(f"Retrieved password: {secret.value}")
 
 ## Exam Tips
 
-🎯 **System-assigned flow**: 7 steps from enable to access
+# Exam Tips (Советы к AZ-204)
 
-🎯 **User-assigned flow**: Identity created separately, then assigned to resources
+🎯 **System-assigned flow**  
+7 шагов: включение identity → создание service principal → получение токена → доступ к ресурсу.
 
-🎯 **IMDS endpoint**: `http://169.254.169.254/metadata/identity/oauth2/token`
+🎯 **User-assigned flow**  
+Identity создаётся отдельно, затем назначается ресурсам.
 
-🎯 **IMDS accessible**: Only from within the Azure resource (VM, App Service, etc.)
+🎯 **IMDS endpoint**  
+ `http://169.254.169.254/metadata/identity/oauth2/token`
+Это локальный IP-адрес (link-local)
+Не доступен из интернета
+Требует заголовок: Metadata: true
 
-🎯 **Token format**: JWT (JSON Web Token)
+🎯 **Доступ к IMDS**  
+Доступен только изнутри Azure-ресурса (VM, App Service и т.д.).
 
-🎯 **Token expiration**: Typically 3599 seconds (1 hour)
+🎯 **Формат токена**  
+JWT (JSON Web Token).
 
-🎯 **Pre-authorization**: User-assigned identities can be granted permissions before assignment
+🎯 **Срок действия токена**  
+Обычно ~3599 секунд (примерно 1 час).
 
-🎯 **DefaultAzureCredential**: Recommended - tries managed identity first
+🎯 **Pre-authorization**  
+User-assigned identity можно заранее наделить правами до назначения ресурсу.
 
-🎯 **Client ID**: Required when multiple user-assigned identities on same resource
+🎯 **DefaultAzureCredential**  
+Рекомендуемый способ — автоматически использует Managed Identity при наличии.
 
-🎯 **Required roles**: Virtual Machine Contributor, Managed Identity Operator
+🎯 **Client ID**  
+Требуется, если к ресурсу привязано несколько user-assigned identity.
 
-🎯 **Code changes**: None needed between local dev and Azure production
+🎯 **Требуемые роли**  
+Virtual Machine Contributor, Managed Identity Operator (для настройки).
 
-🎯 **Multiple identities**: User-assigned can be shared; system-assigned cannot
+🎯 **Без изменений кода**  
+Один и тот же код работает:
+- локально (Azure CLI)
+- в Azure (Managed Identity)
 
+🎯 **Несколько identity**
+- User-assigned можно использовать совместно
+- System-assigned — нельзя (1:1)
+
+---
+
+### Часто проверяют
+
+- Разницу lifecycle между типами identity.
+- Когда нужен Client ID.
+- Что такое IMDS и где он доступен.
+- Почему Managed Identity безопаснее client secret.
+- Как работает DefaultAzureCredential.
+
+Что такое IMDS?
+
+IMDS (Instance Metadata Service) — это встроенный сервис в Azure, который предоставляет информацию о текущем экземпляре ресурса и позволяет получать токены для Managed Identity.
+
+Он работает как локальный HTTP endpoint внутри Azure-ресурса.
+
+Зачем нужен IMDS?
+
+IMDS используется для:
+
+🔐 Получения access token для Microsoft Entra ID
+
+📦 Получения метаданных о ресурсе (VM, App Service и т.д.)
+
+🔄 Безопасной аутентификации без хранения credential’ов
+
+Когда приложение использует Managed Identity, оно обращается к IMDS, а не напрямую к Entra ID.
+
+169.254.169.254 = локальный endpoint Azure для Managed Identity.
 ---
 
 ## Additional Resources

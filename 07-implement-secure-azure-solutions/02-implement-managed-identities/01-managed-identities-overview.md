@@ -1,44 +1,75 @@
-# Explore Managed Identities
+# Изучение Managed Identities
 
-## Overview
+## Обзор
 
-**Managed identities** eliminate the need for developers to manage credentials (secrets, certificates, keys) when accessing Azure resources. Applications use managed identities to obtain Microsoft Entra tokens without storing or managing any credentials.
+**Managed Identities** позволяют разработчикам не управлять credential’ами (секретами, сертификатами, ключами) при доступе к ресурсам Azure.
 
-**Problem solved:** The credential management challenge
-- ❌ Before: Store credentials in config, secrets in Key Vault, rotation complexity
-- ✅ After: Azure manages everything automatically, no credentials to store
+Приложения используют Managed Identity для получения токенов Microsoft Entra без хранения и обслуживания каких-либо учётных данных.
 
 ---
 
-## Why Use Managed Identities?
+## Какая проблема решается?
 
-### The Credential Management Challenge
+### ❌ Раньше
 
-**Traditional approach problems:**
+- Хранение credential’ов в конфигурации
+- Секреты в Key Vault
+- Сложная ротация
+- Риск утечки
+- Bootstrap-проблема (где хранить secret для доступа к секретам)
+
+### ✅ Теперь
+
+- Azure автоматически управляет identity
+- Нет credential’ов в коде
+- Нет необходимости в ручной ротации
+- Минимизация риска компрометации
+
+---
+
+# Почему стоит использовать Managed Identities?
+
+## Проблема управления credential’ами (Credential Management Challenge)
+
+### Важно для AZ-204
+
+- Если приложение работает в Azure → Managed Identity почти всегда правильный ответ.
+- Устраняет bootstrap-проблему.
+- Работает через Microsoft Entra ID.
+- Не требует client secret или сертификата.
+
+
+**В традиционном подходе::**
+- Приложение требует доступ к ресурсу (например, Key Vault или Storage)
+- Необходимо создать Service Principal
+- Нужно хранить client secret или сертификат
+- Требуется регулярная ротация
+- Возникает риск утечки через:
+  - исходный код
+  - конфигурационные файлы
+  - CI/CD пайплайны
+
 ```csharp
 // ❌ BAD: Credentials in code/config
 string connectionString = "AccountName=storage;AccountKey=ABC123...";
 string clientSecret = "super-secret-password-12345";
 ```
 
-**Issues:**
-- Credentials must be stored somewhere (code, config, Key Vault)
-- Manual rotation required
-- Risk of credential leak
-- Complex secret management
-
-**Managed identity approach:**
+**Managed Identity устраняет все эти проблемы.**
 ```csharp
 // ✅ GOOD: No credentials needed!
 var credential = new DefaultAzureCredential();  // Uses managed identity automatically
 var client = new BlobServiceClient(new Uri("https://myaccount.blob.core.windows.net"), credential);
 ```
 
-**Benefits:**
-- ✅ **Zero credential management**: Azure handles everything
-- ✅ **Automatic rotation**: No expiration concerns
-- ✅ **No secrets to leak**: Nothing to steal or expose
-- ✅ **Simplified code**: Same code locally (Azure CLI) and in production (managed identity)
+
+### Ключевые преимущества
+
+- 🔐 Нет хранения секретов
+- 🔄 Автоматическая ротация
+- 🧩 Нативная интеграция с Azure SDK
+- ⚙️ Работает с `DefaultAzureCredential`
+- 🛡 Минимизация человеческого фактора
 
 ---
 
@@ -65,27 +96,53 @@ Azure Resource (Key Vault, Storage, SQL, etc.)
 
 ---
 
-## Types of Managed Identities
+## Типы Managed Identities
 
 ### 1. System-Assigned Managed Identity
 
-**Definition:** Enabled directly on an Azure service instance. Lifecycle tied to the resource.
+**Определение:**  
+Включается непосредственно на экземпляре Azure-ресурса. Жизненный цикл полностью связан с этим ресурсом.
 
-**How it works:**
-1. Enable managed identity on resource (VM, App Service, etc.)
-2. Azure creates service principal in Microsoft Entra ID
-3. Credentials provisioned to the resource automatically
-4. When resource is deleted, identity is automatically removed
+---
 
-**Characteristics:**
+### Как работает
 
-| Aspect | System-Assigned |
+1. Вы включаете Managed Identity на ресурсе (VM, App Service и т.д.)
+2. Azure автоматически создаёт Service Principal в Microsoft Entra ID
+3. Credential’ы автоматически привязываются к ресурсу
+4. При удалении ресурса identity удаляется автоматически
+
+---
+
+### Характеристики
+
+| Аспект | System-Assigned |
 |--------|-----------------|
-| **Creation** | Created as part of Azure resource |
-| **Lifecycle** | Tied to parent resource (shared lifecycle) |
-| **Sharing** | Cannot be shared (1:1 relationship) |
-| **Deletion** | Automatic when parent resource deleted |
-| **Use case** | Single resource needing its own identity |
+| **Создание** | Создаётся вместе с Azure-ресурсом |
+| **Жизненный цикл** | Связан с родительским ресурсом |
+| **Совместное использование** | Нельзя использовать повторно (1:1) |
+| **Удаление** | Автоматически при удалении ресурса |
+| **Сценарий** | Один ресурс — одна identity |
+
+---
+
+### Когда использовать
+
+- Приложение работает на одном Azure-ресурсе
+- Не требуется совместное использование identity
+- Нужна простая конфигурация без управления lifecycle
+
+---
+
+### Важно для AZ-204
+
+- System-assigned — самый простой вариант.
+- Подходит для большинства сценариев.
+- Если identity должна использоваться несколькими ресурсами → нужен User-assigned.
+- Частый экзаменационный сценарий:
+  > Один App Service требует доступ к Key Vault  
+  → включить System-Assigned Managed Identity.
+
 
 **Example:**
 ```bash
@@ -112,11 +169,29 @@ VM-2 ←→ System-Assigned Identity B (dedicated, cannot share)
 AppService-1 ←→ System-Assigned Identity C (dedicated, cannot share)
 ```
 
-**When to use:**
-- ✅ Single resource workloads
-- ✅ Resources needing independent identities
-- ✅ Simple scenarios with 1:1 mapping
-- ✅ Resources that won't be frequently recreated
+### Когда использовать System-Assigned Managed Identity
+
+- ✅ Нагрузки с одним ресурсом (single resource workloads)
+- ✅ Ресурсы, которым требуется собственная независимая identity
+- ✅ Простые сценарии с моделью 1:1 (один ресурс — одна identity)
+- ✅ Ресурсы, которые не пересоздаются часто
+
+---
+
+### Дополнительные рекомендации
+
+- Подходит для большинства типовых сценариев (App Service → Key Vault).
+- Минимум конфигурации — включается одной настройкой.
+- Если ресурс часто пересоздаётся (например, в CI/CD с полным пересозданием инфраструктуры), стоит учитывать, что identity будет создаваться заново.
+- Если требуется одна identity для нескольких ресурсов — лучше использовать **User-Assigned Managed Identity**.
+
+---
+
+### Важно для AZ-204
+
+- Если в вопросе указан один Azure-ресурс и нет требований к совместному использованию identity → выбирать **System-Assigned Managed Identity**.
+- Это самый простой и часто правильный вариант.
+
 
 **Example scenario:**
 ```
@@ -127,23 +202,49 @@ Accesses Key Vault to retrieve secrets
 
 ### 2. User-Assigned Managed Identity
 
-**Definition:** Created as a standalone Azure resource. Independent lifecycle from resources using it.
+**Определение:**  
+Создаётся как отдельный Azure-ресурс. Жизненный цикл не зависит от ресурсов, которые её используют.
 
-**How it works:**
-1. Create user-assigned identity as separate resource
-2. Azure creates service principal in Microsoft Entra ID
-3. Assign identity to one or more Azure resources
-4. Identity persists independently of resource lifecycle
+---
 
-**Characteristics:**
+### Как работает
 
-| Aspect | User-Assigned |
+1. Создаётся User-Assigned Managed Identity как отдельный ресурс
+2. Azure создаёт Service Principal в Microsoft Entra ID
+3. Identity назначается одному или нескольким Azure-ресурсам
+4. Identity продолжает существовать независимо от удаления ресурсов
+
+---
+
+### Характеристики
+
+| Аспект | User-Assigned |
 |--------|---------------|
-| **Creation** | Standalone Azure resource |
-| **Lifecycle** | Independent (must be explicitly deleted) |
-| **Sharing** | Can be shared across multiple resources |
-| **Deletion** | Manual (persists after resource deletion) |
-| **Use case** | Multiple resources sharing same identity |
+| **Создание** | Отдельный Azure-ресурс |
+| **Жизненный цикл** | Независимый (удаляется вручную) |
+| **Совместное использование** | Можно назначать нескольким ресурсам |
+| **Удаление** | Не удаляется автоматически |
+| **Сценарий** | Несколько ресурсов используют одну identity |
+
+---
+
+### Когда использовать
+
+- Несколько ресурсов должны иметь одинаковые права
+- Нужен контроль жизненного цикла identity
+- Инфраструктура часто пересоздаётся
+- Требуется централизованное управление доступом
+
+---
+
+### Важно для AZ-204
+
+- Если в вопросе говорится:
+  > Несколько ресурсов должны использовать одну identity  
+  → выбирать **User-Assigned Managed Identity**.
+- Позволяет избежать повторной настройки ролей при пересоздании ресурсов.
+- Более гибкий, но немного сложнее в управлении.
+
 
 **Example:**
 ```bash
@@ -174,12 +275,29 @@ User-Assigned Identity X
     ├── AppService-1
     └── Function-1
 ```
+### Когда использовать User-Assigned Managed Identity
 
-**When to use:**
-- ✅ Multiple resources needing same permissions
-- ✅ Resources recycled frequently (permissions stay consistent)
-- ✅ Pre-authorization needed during provisioning
-- ✅ Resources requiring identical access to resources
+- ✅ Несколько ресурсов должны иметь одинаковые разрешения
+- ✅ Ресурсы часто пересоздаются (при этом права остаются неизменными)
+- ✅ Требуется предварительная авторизация на этапе provisioning
+- ✅ Ресурсам нужен идентичный доступ к другим ресурсам
+
+---
+
+### Практические преимущества
+
+- Можно заранее назначить роли (RBAC), ещё до создания основного ресурса.
+- При пересоздании App Service / VM не требуется повторная настройка доступа.
+- Удобно в инфраструктуре как код (ARM, Bicep, Terraform).
+
+---
+
+### Важно для AZ-204
+
+- Если требуется **одна identity для нескольких ресурсов** → выбирать User-Assigned.
+- Если ресурс часто удаляется и создаётся заново → User-Assigned снижает операционные риски.
+- Если нет требования к совместному использованию → проще выбрать System-Assigned.
+
 
 **Example scenario:**
 ```
@@ -191,18 +309,36 @@ Access same Key Vault, Storage, and SQL Database
 
 ---
 
-## Comparison: System-Assigned vs User-Assigned
+## Сравнение: System-Assigned vs User-Assigned
 
-| Feature | System-Assigned | User-Assigned |
-|---------|-----------------|---------------|
-| **Creation** | Part of resource creation | Standalone resource |
-| **Lifecycle** | Tied to resource | Independent |
-| **Sharing** | No (1:1 only) | Yes (many:1) |
-| **Deletion** | Automatic | Manual |
-| **Permission Management** | Per resource | Centralized |
-| **Resource Recreation** | Identity lost | Identity persists |
-| **Complexity** | Simple | Slightly more complex |
-| **Best For** | Single resources | Multiple resources |
+| Характеристика | System-Assigned | User-Assigned |
+|----------------|----------------|---------------|
+| **Создание** | Включается как часть ресурса | Отдельный Azure-ресурс |
+| **Жизненный цикл** | Связан с ресурсом | Независимый |
+| **Совместное использование** | Нет (только 1:1) | Да (many:1) |
+| **Удаление** | Автоматическое | Ручное |
+| **Управление правами** | Для каждого ресурса отдельно | Централизованное |
+| **Пересоздание ресурса** | Identity теряется | Identity сохраняется |
+| **Сложность** | Простая настройка | Немного сложнее |
+| **Лучше всего подходит** | Один ресурс | Несколько ресурсов |
+
+---
+
+### Как быстро выбрать (для AZ-204)
+
+- Один ресурс → **System-Assigned**
+- Несколько ресурсов с одинаковыми правами → **User-Assigned**
+- Частое пересоздание инфраструктуры → **User-Assigned**
+- Нужна максимально простая конфигурация → **System-Assigned**
+
+---
+
+### Частая экзаменационная логика
+
+- “One-to-one relationship” → System-Assigned
+- “Shared identity across services” → User-Assigned
+- “Independent lifecycle required” → User-Assigned
+- “Minimal configuration, single app” → System-Assigned
 
 ---
 
@@ -234,6 +370,8 @@ Read/write to Cosmos DB
 ### User-Assigned Use Cases
 
 1. **Auto-Scaling Web Farm**
+   **Сценарий:**  
+   Веб-приложение работает на нескольких VM / экземплярах App Service с автоскейлингом.
 ```
 User-Assigned Identity "WebAppIdentity"
     ↓ Shared by
@@ -245,12 +383,46 @@ User-Assigned Identity "WebAppIdentity"
 Key Vault, Storage, Application Insights
 ```
 
-**Benefits:**
-- Add/remove VMs without updating permissions
-- Pre-configure identity before VM creation
-- Consistent access across all instances
+### Преимущества использования Managed Identity
+
+- ✅ Можно добавлять и удалять VM без изменения прав доступа
+- ✅ Identity можно настроить заранее до создания VM
+- ✅ Одинаковые разрешения для всех экземпляров
+
+---
+
+### Какая identity подходит?
+
+- Если все экземпляры должны использовать одинаковые разрешения → **User-Assigned Managed Identity**
+- Если каждый экземпляр должен иметь собственную identity → **System-Assigned**
+
+---
+
+### Почему это важно
+
+В автоскейлинге ресурсы создаются и удаляются динамически.  
+User-Assigned identity позволяет:
+
+- не переназначать RBAC при каждом масштабировании
+- избежать потери прав при пересоздании экземпляров
+- централизованно управлять доступом
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе есть:
+- auto-scaling
+- web farm
+- multiple VM instances
+- consistent permissions across instances
+
+→ чаще всего правильный ответ — **User-Assigned Managed Identity**.
+
 
 2. **Blue-Green Deployment**
+   Два идентичных окружения (Blue и Green). Одно активно в production, второе используется для тестирования и переключения без простоя.
+
 ```
 User-Assigned Identity "AppIdentity"
     ↓ Shared by
@@ -259,13 +431,49 @@ User-Assigned Identity "AppIdentity"
     ↓ Both access
 Same Azure resources with identical permissions
 ```
+### Преимущества использования Managed Identity
 
-**Benefits:**
-- Switch environments without permission changes
-- Test with production permissions
-- Zero-downtime deployments
+- ✅ Переключение между окружениями без изменения прав доступа
+- ✅ Возможность тестировать с теми же production-разрешениями
+- ✅ Развёртывание без простоя (zero-downtime)
 
-3. **Dev/Test/Prod Consistency**
+---
+
+### Какая identity подходит?
+
+- 🔹 Если оба окружения должны иметь одинаковые права → **User-Assigned Managed Identity**
+- 🔹 Если каждое окружение изолировано и требует отдельной identity → **System-Assigned**
+
+---
+
+### Почему это важно
+
+При Blue-Green deployment:
+
+- Новый слот или среда создаётся заранее
+- После тестирования происходит переключение трафика
+- RBAC-права не должны меняться в момент переключения
+
+User-Assigned identity позволяет:
+
+- назначить права один раз
+- использовать одну identity для обоих окружений
+- избежать ошибок доступа при switch-over
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе упоминается:
+- blue-green
+- deployment slots
+- zero downtime
+- switching environments without reconfiguring permissions
+
+→ вероятный правильный ответ — **User-Assigned Managed Identity**.
+
+### 3. Консистентность Dev/Test/Prod
+Одинаковая модель доступа во всех средах — разработка, тестирование и production.
 ```
 User-Assigned Identity per environment
     ├── Dev Identity → Dev resources
@@ -273,19 +481,37 @@ User-Assigned Identity per environment
     └── Prod Identity → Prod resources
 ```
 
-**Benefits:**
-- Consistent identity model across environments
-- Permissions stay with identity, not individual resources
-- Easy to replicate environments
+### Преимущества
+
+- ✅ Единая модель identity во всех средах
+- ✅ Разрешения закреплены за identity, а не за конкретными ресурсами
+- ✅ Легко воспроизводить окружения (Infrastructure as Code)
 
 ---
 
-## Supported Azure Services
+### Почему это важно
 
-### Services Supporting Managed Identities
+- Можно заранее назначить RBAC-права identity.
+- При создании новой среды не требуется повторная настройка доступа.
+- Уменьшается риск ошибок при миграции dev → prod.
 
-| Category | Services |
-|----------|----------|
+---
+
+### Для AZ-204
+
+Если требуется:
+- одинаковая модель безопасности в разных средах
+- перенос инфраструктуры без перенастройки RBAC
+  → часто подходит **User-Assigned Managed Identity**.
+
+---
+
+# Поддерживаемые сервисы Azure
+
+## Сервисы, поддерживающие Managed Identities
+
+| Категория | Сервисы |
+|------------|----------|
 | **Compute** | Virtual Machines, VM Scale Sets, App Service, Functions, Container Instances, AKS |
 | **Data** | SQL Database, Synapse Analytics, Data Factory, Data Lake Storage |
 | **Analytics** | Azure Databricks, Stream Analytics, HDInsight |
@@ -293,9 +519,11 @@ User-Assigned Identity per environment
 | **Management** | Automation, Azure DevOps |
 | **Security** | Key Vault, App Configuration |
 
-### Services Supporting Microsoft Entra Authentication
+---
 
-Managed identities can authenticate to any service that supports **Microsoft Entra authentication**:
+## Сервисы, поддерживающие аутентификацию Microsoft Entra
+
+Managed Identity может использоваться с любым сервисом, поддерживающим **Microsoft Entra authentication**:
 
 - ✅ Key Vault
 - ✅ Azure Storage (Blob, Queue, Table, Files)
@@ -309,6 +537,14 @@ Managed identities can authenticate to any service that supports **Microsoft Ent
 - ✅ Azure App Configuration
 
 ---
+
+### Что важно запомнить для AZ-204
+
+- Managed Identity работает только с сервисами, поддерживающими Entra authentication.
+- Не требует хранения connection string или access keys.
+- Частый сценарий вопроса:
+  > Нужно безопасно подключиться к Storage или SQL без хранения секретов  
+  → использовать Managed Identity.
 
 ## How Managed Identities Work
 
@@ -329,14 +565,44 @@ Managed identities can authenticate to any service that supports **Microsoft Ent
         ↓
 6. Azure resource validates token and grants access
 ```
+### Что происходит «за кулисами» (Behind the Scenes)
 
-### Behind the Scenes
+#### Создание System-Assigned Managed Identity
 
-**System-Assigned Identity Creation:**
-1. Azure Resource Manager receives request to enable identity
-2. Service principal created in Microsoft Entra ID
-3. Credentials provisioned to Azure Instance Metadata Service
-4. Resource can now request tokens from IMDS
+1. **Azure Resource Manager (ARM)** получает запрос на включение Managed Identity
+2. В **Microsoft Entra ID** создаётся Service Principal
+3. Credential’ы автоматически передаются в **Azure Instance Metadata Service (IMDS)**
+4. Ресурс получает возможность запрашивать токены через IMDS
+
+---
+
+### Как приложение получает токен
+
+- Приложение обращается к локальному endpoint IMDS
+- IMDS запрашивает токен у Microsoft Entra ID
+- Возвращается access token для нужного ресурса (например, Key Vault)
+- Приложение использует токен в заголовке `Authorization: Bearer <token>`
+
+---
+
+### Почему это безопасно
+
+- Credential’ы не покидают Azure инфраструктуру
+- Нет хранения секретов в коде
+- Токены имеют ограниченный срок действия
+- Azure управляет всей ротацией автоматически
+
+---
+
+### Важно для AZ-204
+
+- IMDS используется только внутри Azure.
+- Managed Identity не работает вне Azure.
+- Если в вопросе упоминается:
+  - Instance Metadata Service
+  - локальный endpoint для токена
+    → речь идёт о Managed Identity.
+
 
 **Token Acquisition:**
 ```bash
@@ -382,46 +648,65 @@ az role assignment create \
   --scope /subscriptions/{sub-id}/resourceGroups/{rg}/providers/Microsoft.Storage/storageAccounts/mystorageaccount
 ```
 
-### Common RBAC Roles for Managed Identities
+## Часто используемые RBAC-роли для Managed Identity
 
-| Resource | Role | Permissions |
-|----------|------|-------------|
-| **Key Vault** | Key Vault Secrets User | Read secrets |
-| **Key Vault** | Key Vault Secrets Officer | Manage secrets |
-| **Storage** | Storage Blob Data Reader | Read blobs |
-| **Storage** | Storage Blob Data Contributor | Read/write blobs |
-| **SQL Database** | SQL DB Contributor | Manage databases |
-| **Cosmos DB** | Cosmos DB Account Reader | Read Cosmos DB account |
+| Ресурс | Роль | Разрешения |
+|---------|------|------------|
+| **Key Vault** | Key Vault Secrets User | Чтение секретов |
+| **Key Vault** | Key Vault Secrets Officer | Управление секретами |
+| **Storage** | Storage Blob Data Reader | Чтение blob |
+| **Storage** | Storage Blob Data Contributor | Чтение и запись blob |
+| **SQL Database** | SQL DB Contributor | Управление базами данных |
+| **Cosmos DB** | Cosmos DB Account Reader | Чтение учётной записи Cosmos DB |
+
+---
+
+# Exam Tips (Советы к AZ-204)
+
+🎯 **Два типа Managed Identity**
+- System-assigned (привязана к ресурсу)
+- User-assigned (отдельный ресурс)
+
+🎯 **Жизненный цикл System-assigned**  
+Удаляется автоматически вместе с ресурсом.
+
+🎯 **Жизненный цикл User-assigned**  
+Независимый, требуется ручное удаление.
+
+🎯 **Совместное использование**
+- System-assigned → нельзя делить (1:1)
+- User-assigned → можно назначать нескольким ресурсам
+
+🎯 **Service Principal**  
+Managed Identity — это особый тип Service Principal.
+
+🎯 **Аутентификация**  
+Всегда через Microsoft Entra ID.
+
+🎯 **Token endpoint (IMDS)**
+http://169.254.169.254/metadata/identity/oauth2/token
+
+
+🎯 **Best practice**  
+Использовать Managed Identity вместо Service Principal с secret.
+
+🎯 **Role assignments**  
+После включения Managed Identity необходимо назначить RBAC-роль.
+
+🎯 **DefaultAzureCredential**  
+Автоматически использует Managed Identity, если она доступна.
+
+🎯 **Поддерживаемые сервисы**  
+VM, App Service, Functions, Container Instances и другие.
 
 ---
 
-## Exam Tips
+### Часто проверяют на экзамене
 
-🎯 **Two types**: System-assigned (tied to resource) vs User-assigned (standalone)
-
-🎯 **System-assigned lifecycle**: Automatic deletion when resource deleted
-
-🎯 **User-assigned lifecycle**: Independent, must be explicitly deleted
-
-🎯 **System-assigned sharing**: Cannot be shared (1:1 relationship)
-
-🎯 **User-assigned sharing**: Can be assigned to multiple resources
-
-🎯 **Service principal**: Managed identities are special service principals
-
-🎯 **Authentication**: Microsoft Entra ID required
-
-🎯 **Token endpoint**: `http://169.254.169.254/metadata/identity/oauth2/token`
-
-🎯 **Best practice**: Use managed identities instead of service principals with secrets
-
-🎯 **Role assignments**: Required after enabling managed identity
-
-🎯 **DefaultAzureCredential**: Automatically uses managed identity when available
-
-🎯 **Supported services**: VM, App Service, Functions, Container Instances, and more
-
----
+- Разницу между System и User-assigned.
+- Нужно ли назначать роль после включения identity (да).
+- Как работает IMDS.
+- Почему Managed Identity безопаснее client secret.
 
 ## Quick Reference
 

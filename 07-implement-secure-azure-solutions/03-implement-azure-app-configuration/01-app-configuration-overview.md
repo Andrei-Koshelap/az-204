@@ -1,81 +1,131 @@
-# Azure App Configuration Service Overview
+# Обзор Azure App Configuration
 
-## What is Azure App Configuration?
+## Что такое Azure App Configuration?
 
-Azure App Configuration is a **fully managed service** that provides centralized management of application settings and feature flags. It solves the challenge of managing configuration across distributed cloud applications.
+**Azure App Configuration** — это полностью управляемый сервис для централизованного хранения настроек приложения и feature flags.
 
-### The Problem It Solves
-
-Modern cloud applications often consist of multiple distributed components (microservices, serverless functions, containers) running across different environments. Managing configuration across these components leads to:
-
-- **Configuration sprawl**: Settings scattered across multiple deployment files
-- **Hard-to-troubleshoot errors**: Inconsistent configurations between environments
-- **Deployment coupling**: Need to redeploy applications to change settings
-- **Security concerns**: Credentials stored in code or configuration files
-
-### The Solution
-
-App Configuration provides a centralized configuration store with:
-- Single source of truth for application settings
-- Dynamic configuration updates without redeployment
-- Feature flag management for controlled feature rollouts
-- Integration with Azure Key Vault for sensitive data
+Он решает проблему управления конфигурацией в распределённых облачных приложениях.
 
 ---
 
-## Key Benefits
+## Какую проблему он решает?
 
-### 1. **Fully Managed Service**
-- Set up in minutes with Azure Portal or CLI
-- No infrastructure to maintain
-- Built-in high availability and scalability
-- Microsoft-managed updates and patching
+Современные cloud-приложения часто состоят из:
 
-### 2. **Flexible Key Representations**
-- Hierarchical key naming: `AppName:Service1:ApiEndpoint`
-- Label-based variants: Same key, different values per environment
-- Query patterns for bulk retrieval
-- Unicode character support
+- микросервисов
+- serverless-функций
+- контейнеров
+- нескольких окружений (dev / test / prod)
 
-### 3. **Tagging with Labels**
-- Environment segmentation (dev, staging, production)
-- Version management (v1.0, v2.0)
-- Feature branch configurations
-- A/B testing scenarios
+Без централизованного подхода возникают проблемы:
 
-### 4. **Point-in-Time Replay**
-- Configuration snapshots at specific timestamps
-- Audit historical changes
-- Rollback to previous configurations
-- Compliance and troubleshooting support
+- ❌ **Configuration sprawl** — настройки разбросаны по разным файлам и сервисам
+- ❌ **Сложность диагностики** — разные конфигурации в разных средах
+- ❌ **Связка с деплоем** — для изменения настройки нужно пересобирать приложение
+- ❌ **Риски безопасности** — секреты хранятся в коде или config-файлах
 
-### 5. **Feature Flag Management**
-- Dedicated UI for feature management
-- Percentage-based rollouts
-- Targeted releases (user groups, regions)
-- Real-time feature control
+---
 
-### 6. **Enhanced Security**
-- Integration with Azure Managed Identities
-- Azure RBAC for access control
-- Private endpoints for network isolation
-- Encryption at rest and in transit
-- Customer-managed encryption keys (CMK)
+## Решение
 
-### 7. **Native Framework Integration**
+Azure App Configuration предоставляет:
+
+- ✅ Единый источник истины для настроек
+- ✅ Динамическое обновление конфигурации без redeploy
+- ✅ Управление feature flags
+- ✅ Интеграцию с Azure Key Vault для хранения секретов
+
+---
+
+# Основные преимущества
+
+## 1. Полностью управляемый сервис
+
+- Разворачивается за минуты через Portal или CLI
+- Нет инфраструктуры для поддержки
+- Встроенная высокая доступность
+- Обновления и патчи управляются Microsoft
+
+---
+
+## 2. Гибкая структура ключей
+
+- Иерархические ключи:  
+  `AppName:Service1:ApiEndpoint`
+- Варианты по label (один ключ — разные значения для окружений)
+- Поддержка выборки по шаблону
+- Поддержка Unicode
+
+---
+
+## 3. Использование Labels
+
+Labels позволяют:
+
+- Разделять окружения (dev, staging, production)
+- Управлять версиями (v1.0, v2.0)
+- Конфигурации для feature branches
+- A/B тестирование
+
+---
+
+## 4. Point-in-Time Replay
+
+- Получение конфигурации на определённый момент времени
+- Аудит изменений
+- Откат к предыдущей версии
+- Поддержка troubleshooting и compliance
+
+---
+
+## 5. Управление Feature Flags
+
+- Отдельный UI для управления фичами
+- Процентный rollout
+- Таргетинг по группам пользователей или регионам
+- Включение/отключение фич в реальном времени
+
+---
+
+## 6. Повышенная безопасность
+
+- Интеграция с Managed Identity
+- Azure RBAC для контроля доступа
+- Private Endpoints
+- Шифрование данных в транзите и при хранении
+- Поддержка Customer-Managed Keys (CMK)
+
+---
+
+## 7. Интеграция с фреймворками
+
 - .NET Configuration Provider
-- Spring Cloud integration for Java
-- JavaScript/Node.js support
-- Python provider
-- REST API for custom implementations
+- Spring Cloud (Java)
+- JavaScript / Node.js
+- Python
+- REST API для кастомных решений
 
 ---
 
-## Common Use Cases
+# Важно для AZ-204
 
-### Centralized Configuration Management
+- App Configuration ≠ Key Vault.
+    - App Configuration — для настроек и feature flags.
+    - Key Vault — для секретов.
+- Лучшая практика:
+    - Настройки → App Configuration
+    - Секреты → Key Vault (через reference)
+- Частый сценарий вопроса:
+  > Нужно менять конфигурацию без redeploy  
+  → использовать Azure App Configuration.
 
-**Scenario**: Microservices architecture with 20+ services across multiple regions
+---
+
+## Частые сценарии использования (Common Use Cases)
+### Централизованное управление конфигурацией
+
+**Сценарий:**  
+Микросервисная архитектура с 20+ сервисами в нескольких регионах.
 
 ```yaml
 # Hierarchical organization
@@ -88,28 +138,65 @@ MyApp:Feature:EnableNewUI
 Key: MyApp:Database:ConnectionString, Label: Development
 Key: MyApp:Database:ConnectionString, Label: Production
 ```
+**Преимущества:**
 
-**Benefits**:
-- Single update affects all services
-- Consistent configuration across instances
-- Easy environment promotion
+- ✅ Одно изменение применяется ко всем сервисам
+- ✅ Консистентная конфигурация между инстансами
+- ✅ Упрощённое продвижение между средами (dev → test → prod)
+- ✅ Уменьшение ошибок из-за «разъехавшихся» настроек
 
-### Dynamic Configuration Updates
+---
 
-**Scenario**: Change logging level without restarting application
+### Динамическое обновление конфигурации
 
-**Traditional Approach**:
-1. Edit configuration file
-2. Build new container image
-3. Deploy to production
-4. Wait for pods to restart
-5. **Downtime**: 5-10 minutes
+**Сценарий:**  
+Необходимо изменить уровень логирования без перезапуска приложения.
 
-**With App Configuration**:
-1. Update value in App Configuration
-2. Application detects change (polling or push)
-3. Apply new configuration dynamically
-4. **Downtime**: 0 minutes
+---
+
+### Традиционный подход
+
+1. Изменить конфигурационный файл
+2. Собрать новый контейнерный образ
+3. Задеплоить в production
+4. Дождаться перезапуска pod’ов
+5. ⛔ **Простой**: 5–10 минут
+
+---
+
+### С использованием Azure App Configuration
+
+1. Изменить значение в App Configuration
+2. Приложение обнаруживает изменение (polling или push)
+3. Новая конфигурация применяется динамически
+4. ✅ **Простой**: 0 минут
+
+---
+
+## Почему это важно
+
+- Можно изменять:
+    - уровень логирования
+    - endpoint’ы
+    - feature flags
+    - параметры кэширования
+- Без redeploy
+- Без перезапуска контейнеров
+- Без downtime
+
+---
+
+## Важно для AZ-204
+
+Если в вопросе говорится:
+
+- нужно изменить настройку без перезапуска
+- требуется zero-downtime
+- микросервисная архитектура
+- централизованная конфигурация
+
+→ правильный ответ: **Azure App Configuration**.
+
 
 ```csharp
 // .NET Core example with automatic refresh
@@ -183,15 +270,41 @@ builder.Configuration.AddAzureAppConfiguration(options =>
 
 ## App Configuration vs. Key Vault
 
-| Aspect | App Configuration | Key Vault |
-|--------|------------------|-----------|
-| **Primary Purpose** | Application settings and feature flags | Secrets, keys, and certificates |
-| **Data Sensitivity** | Non-sensitive configuration | Sensitive data (passwords, keys) |
-| **Size Limit** | 10 KB per key-value | 25 KB for secrets |
-| **Access Patterns** | Frequent reads, bulk retrieval | Infrequent reads, individual access |
-| **Feature Flags** | ✅ Native support | ❌ Not designed for this |
-| **Dynamic Refresh** | ✅ Built-in support | ⚠️ Manual polling |
-| **Best For** | Connection strings, endpoints, settings | Passwords, certificates, API keys |
+| Аспект | App Configuration | Key Vault |
+|----------|------------------|-----------|
+| **Основное назначение** | Настройки приложения и feature flags | Секреты, ключи и сертификаты |
+| **Чувствительность данных** | Нечувствительная конфигурация | Чувствительные данные (пароли, ключи) |
+| **Лимит размера** | 10 KB на key-value | 25 KB для секретов |
+| **Паттерн доступа** | Частые чтения, массовая выборка | Редкие обращения, точечный доступ |
+| **Feature Flags** | ✅ Встроенная поддержка | ❌ Не предназначен для этого |
+| **Динамическое обновление** | ✅ Поддержка из коробки | ⚠️ Требует ручного polling |
+| **Лучше всего подходит для** | Endpoint’ов, строк подключения (без секретов), настроек | Паролей, сертификатов, API-ключей |
+
+---
+
+## Главное различие
+
+- **App Configuration** → управление конфигурацией приложения.
+- **Key Vault** → безопасное хранение секретов.
+
+---
+
+## Лучшая практика
+
+Использовать их вместе:
+
+- Настройки → **App Configuration**
+- Секреты → **Key Vault**
+- В App Configuration хранить **reference** на секрет в Key Vault
+
+---
+
+## Важно для AZ-204
+
+- Если вопрос про feature flags → App Configuration.
+- Если вопрос про хранение пароля → Key Vault.
+- Если требуется динамическое обновление без redeploy → App Configuration.
+- Если требуется высокая защита чувствительных данных → Key Vault.
 
 ### Integration Pattern (Recommended)
 
@@ -218,40 +331,80 @@ MyApp:Database:Password --> Key Vault Reference
 
 ---
 
-## Client Libraries
+## Клиентские библиотеки (Client Libraries)
 
-App Configuration provides native libraries for popular frameworks:
+Azure App Configuration предоставляет нативные библиотеки для популярных платформ:
 
-| Language/Framework | Package | Documentation |
-|-------------------|---------|---------------|
-| **.NET Core** | `Microsoft.Extensions.Configuration.AzureAppConfiguration` | [Docs](https://docs.microsoft.com/azure/azure-app-configuration/quickstart-dotnet-core-app) |
-| **ASP.NET Core** | `Microsoft.Azure.AppConfiguration.AspNetCore` | [Docs](https://docs.microsoft.com/azure/azure-app-configuration/quickstart-aspnet-core-app) |
-| **.NET Framework** | `Microsoft.Configuration.ConfigurationBuilders.AzureAppConfiguration` | [Docs](https://docs.microsoft.com/azure/azure-app-configuration/quickstart-dotnet-app) |
-| **Java Spring** | `spring-cloud-azure-appconfiguration-config` | [Docs](https://docs.microsoft.com/azure/azure-app-configuration/quickstart-java-spring-app) |
-| **JavaScript/Node.js** | `@azure/app-configuration` | [Docs](https://docs.microsoft.com/azure/azure-app-configuration/quickstart-javascript) |
-| **Python** | `azure-appconfiguration` | [Docs](https://docs.microsoft.com/azure/azure-app-configuration/quickstart-python) |
-| **REST API** | Direct HTTPS | [API Reference](https://docs.microsoft.com/rest/api/appconfiguration/) |
+| Язык / Фреймворк | Пакет | Документация |
+|------------------|---------|---------------|
+| **.NET Core** | `Microsoft.Extensions.Configuration.AzureAppConfiguration` | https://docs.microsoft.com/azure/azure-app-configuration/quickstart-dotnet-core-app |
+| **ASP.NET Core** | `Microsoft.Azure.AppConfiguration.AspNetCore` | https://docs.microsoft.com/azure/azure-app-configuration/quickstart-aspnet-core-app |
+| **.NET Framework** | `Microsoft.Configuration.ConfigurationBuilders.AzureAppConfiguration` | https://docs.microsoft.com/azure/azure-app-configuration/quickstart-dotnet-app |
+| **Java Spring** | `spring-cloud-azure-appconfiguration-config` | https://docs.microsoft.com/azure/azure-app-configuration/quickstart-java-spring-app |
+| **JavaScript / Node.js** | `@azure/app-configuration` | https://docs.microsoft.com/azure/azure-app-configuration/quickstart-javascript |
+| **Python** | `azure-appconfiguration` | https://docs.microsoft.com/azure/azure-app-configuration/quickstart-python |
+| **REST API** | Прямой HTTPS-доступ | https://docs.microsoft.com/rest/api/appconfiguration/ |
 
 ---
 
-## Pricing Tiers
+## Что важно понимать
+
+- Для .NET есть глубокая интеграция с `IConfiguration`.
+- Поддерживается динамическое обновление конфигурации.
+- Можно подключать Azure App Configuration как отдельный provider.
+- Работает совместно с Managed Identity через Azure Identity.
+
+---
+
+## Для AZ-204
+
+- Для .NET чаще всего используется пакет:  
+  `Microsoft.Extensions.Configuration.AzureAppConfiguration`
+- Если требуется динамическое обновление конфигурации в ASP.NET Core → использовать соответствующий provider.
+- REST API используется для кастомных или нестандартных интеграций.
+- Managed Identity + App Configuration — рекомендуемая связка.
+
+
+---
+## Тарифные планы (Pricing Tiers)
 
 ### Free Tier
-- **Cost**: Free
-- **Requests**: 1,000 per day
-- **Storage**: 10 MB
-- **Best For**: Development, testing, small applications
+
+- **Стоимость**: Бесплатно
+- **Запросы**: 1 000 в день
+- **Хранилище**: 10 MB
+- **Лучше всего подходит для**: разработки, тестирования, небольших приложений
+
+---
 
 ### Standard Tier
-- **Cost**: $1.20 per day + $0.06 per 10,000 requests
-- **Requests**: Unlimited
-- **Storage**: 1 GB included (additional storage extra)
-- **Features**:
-  - Soft delete (7-90 days retention)
-  - Customer-managed keys (CMK)
-  - Private endpoints
-  - 99.9% SLA
-- **Best For**: Production applications
+
+- **Стоимость**: $1.20 в день + $0.06 за 10 000 запросов
+- **Запросы**: Без ограничений
+- **Хранилище**: 1 GB включено (дополнительное — оплачивается отдельно)
+
+**Дополнительные возможности:**
+
+- Soft delete (7–90 дней хранения)
+- Customer-Managed Keys (CMK)
+- Private endpoints
+- SLA 99.9%
+
+**Лучше всего подходит для:** production-приложений
+
+---
+
+## Что важно для AZ-204
+
+- Free — для dev/test.
+- Standard — для production.
+- Private endpoints и CMK доступны только в Standard.
+- Если в вопросе есть требования:
+    - SLA
+    - network isolation
+    - customer-managed encryption  
+      → выбирать Standard tier.
+
 
 **Example Cost Calculation** (Standard Tier):
 ```
@@ -387,26 +540,49 @@ app.Run();
                                     └───────────────────────┘
 ```
 
-### Request Flow
+## Поток запроса (Request Flow)
 
-1. **Application Startup**:
-   - Application initializes with connection string or managed identity
-   - Configuration provider connects to App Configuration
-   - Initial configuration loaded into memory
+### 1. Запуск приложения (Application Startup)
 
-2. **Configuration Retrieval**:
-   - Application requests configuration values
-   - Provider checks local cache
-   - If cache expired, fetches from App Configuration
-   - Key Vault references resolved automatically
-
-3. **Dynamic Refresh** (Optional):
-   - Provider polls App Configuration for changes
-   - Sentinel key monitored for bulk refresh
-   - Updated values propagated to application
-   - No restart required
+- Приложение инициализируется через connection string или Managed Identity
+- Configuration provider подключается к Azure App Configuration
+- Начальная конфигурация загружается в память
 
 ---
+
+### 2. Получение конфигурации (Configuration Retrieval)
+
+- Приложение запрашивает значение настройки
+- Provider проверяет локальный кэш
+- Если кэш устарел — выполняется запрос в App Configuration
+- Ссылки на Key Vault (Key Vault references) автоматически разрешаются
+
+---
+
+### 3. Динамическое обновление (Dynamic Refresh, опционально)
+
+- Provider периодически опрашивает App Configuration
+- Отслеживается sentinel key (ключ-индикатор массового обновления)
+- Обновлённые значения применяются к приложению
+- Перезапуск приложения не требуется
+
+---
+
+## Что важно понимать
+
+- Кэширование снижает нагрузку и стоимость запросов.
+- Sentinel key позволяет обновить множество настроек одним изменением.
+- Key Vault reference позволяет хранить секреты в Key Vault, а не в App Configuration.
+
+---
+
+## Важно для AZ-204
+
+- Dynamic refresh работает без redeploy.
+- Sentinel key используется для массового обновления конфигурации.
+- App Configuration + Key Vault — рекомендуемая архитектура.
+- Managed Identity предпочтительнее connection string.
+
 
 ## Security Features
 
@@ -552,50 +728,109 @@ builder.Configuration.AddAzureAppConfiguration(options =>
 
 ---
 
-## Exam Tips
+# Exam Tips — AZ-204 (Azure App Configuration)
 
-### Key Concepts for AZ-204
+## Ключевые концепции
 
-1. **Service Purpose**: App Configuration is for **application settings and feature flags**, not secrets (use Key Vault for secrets)
+1. **Назначение сервиса**  
+   App Configuration предназначен для **настроек приложения и feature flags**,  
+   а не для хранения секретов (для секретов используется Key Vault).
 
-2. **Labels**: Enable multiple values for same key (environment variants: dev, staging, prod)
+2. **Labels**  
+   Позволяют хранить несколько значений одного ключа  
+   (варианты для dev, staging, prod).
 
-3. **Key Vault Integration**: App Configuration can store Key Vault references for secrets
+3. **Интеграция с Key Vault**  
+   Можно хранить ссылку (reference) на секрет из Key Vault.
 
-4. **Authentication**: Managed identities are the recommended authentication method
+4. **Аутентификация**  
+   Рекомендуется использовать Managed Identity.
 
-5. **Dynamic Refresh**: Applications can refresh configuration without restarting using polling or push notifications
+5. **Dynamic Refresh**  
+   Приложение может обновлять конфигурацию без перезапуска  
+   (polling или push-механизм).
 
-6. **Feature Flags**: Native support for feature management with percentage rollouts and targeting filters
+6. **Feature Flags**  
+   Встроенная поддержка:
+    - процентный rollout
+    - таргетинг по пользователям и группам
 
-7. **Pricing**: Free tier (1,000 requests/day) vs Standard tier (unlimited, SLA, advanced features)
+7. **Тарифы**
+    - Free — 1 000 запросов/день
+    - Standard — без ограничений, SLA, Private Endpoint, CMK
 
-8. **Size Limits**: 10 KB per key-value pair (combine multiple small values, not large datasets)
+8. **Ограничение размера**  
+   10 KB на одну пару key-value  
+   (не хранить большие данные или payload’ы).
 
-9. **Client Libraries**: Native providers for .NET, Java Spring, JavaScript, Python
+9. **Клиентские библиотеки**  
+   Поддержка для:
+    - .NET
+    - Java Spring
+    - JavaScript
+    - Python
 
-10. **Point-in-Time**: Configuration snapshots support audit, rollback, and compliance
+10. **Point-in-Time**  
+    Поддержка snapshot’ов конфигурации для:
+    - аудита
+    - отката
+    - compliance
 
-11. **Private Endpoints**: Isolate App Configuration from public internet
+11. **Private Endpoints**  
+    Позволяют изолировать сервис от публичного интернета.
 
-12. **No Replacement for Key Vault**: Store connection strings in App Configuration, passwords in Key Vault
+12. **Не замена Key Vault**
+    - Connection strings → App Configuration
+    - Пароли → Key Vault
 
-### Common Exam Scenarios
+---
 
-**Scenario 1**: "Need to change logging level without redeploying"
-→ **Answer**: Use App Configuration with dynamic refresh
+# Частые экзаменационные сценарии
 
-**Scenario 2**: "Store database password securely"
-→ **Answer**: Store in Key Vault, reference from App Configuration
+### Сценарий 1
+> Нужно изменить уровень логирования без redeploy
 
-**Scenario 3**: "Enable feature for 25% of users"
-→ **Answer**: Use App Configuration feature flags with percentage filter
+→ Использовать **App Configuration + Dynamic Refresh**
 
-**Scenario 4**: "Different API endpoints for dev/staging/prod"
-→ **Answer**: Use labels in App Configuration
+---
 
-**Scenario 5**: "Authenticate App Service to App Configuration"
-→ **Answer**: Enable managed identity, grant "App Configuration Data Reader" role
+### Сценарий 2
+> Нужно безопасно хранить пароль базы данных
+
+→ Хранить в **Key Vault**,  
+в App Configuration — только reference
+
+---
+
+### Сценарий 3
+> Включить новую функцию для 25% пользователей
+
+→ Использовать **Feature Flags + Percentage Filter**
+
+---
+
+### Сценарий 4
+> Разные API endpoint для dev/staging/prod
+
+→ Использовать **Labels**
+
+---
+
+### Сценарий 5
+> Аутентифицировать App Service к App Configuration
+
+→ Включить **Managed Identity**  
+→ Назначить роль **App Configuration Data Reader**
+
+---
+
+## Главное, что нужно запомнить
+
+- App Configuration = настройки + feature flags.
+- Key Vault = секреты.
+- Managed Identity — рекомендуемый способ аутентификации.
+- Dynamic refresh = без перезапуска.
+- Labels = окружения.
 
 ---
 

@@ -1,28 +1,62 @@
-# Discover Azure Key Vault Best Practices
+# Лучшие практики Azure Key Vault
 
-## Overview
+## Обзор
 
-Azure Key Vault is a tool for securely storing and accessing secrets. A **secret** is anything you want to tightly control access to: API keys, passwords, certificates, tokens, or connection strings. A **vault** is a logical group of secrets with centralized access control.
+Azure Key Vault — это сервис для безопасного хранения и доступа к секретам.  
+**Secret (секрет)** — любые данные, доступ к которым должен быть строго ограничен: API-ключи, пароли, сертификаты, токены, строки подключения.  
+**Vault** — логическая группа секретов с централизованным управлением доступом.
 
 ---
 
-## Authentication Methods
+## Методы аутентификации
 
-To perform operations with Key Vault, you must **authenticate first**. There are three ways to authenticate:
+Перед выполнением операций с Key Vault необходимо пройти **аутентификацию**. Существует три способа:
 
-### 1. Managed Identities for Azure Resources ✅ **RECOMMENDED**
+---
 
-**How it works:**
-- Assign an identity to your Azure resource (VM, App Service, Function, etc.)
-- Azure automatically manages credential rotation
-- No secrets in code or configuration
-- Service principal client secret rotated automatically by Azure
+### 1. Managed Identities для ресурсов Azure ✅ **РЕКОМЕНДУЕТСЯ**
 
-**Benefits:**
-- ✅ **No credential management**: Azure handles everything
-- ✅ **Automatic rotation**: No expiration concerns
-- ✅ **Best security**: No secrets to leak
-- ✅ **Seamless integration**: Works with all Azure services
+**Как работает:**
+
+- Назначаете Managed Identity ресурсу Azure (VM, App Service, Function и т.д.)
+- Azure автоматически управляет ротацией учётных данных
+- Нет секретов в коде или конфигурации
+- Service principal создаётся и обслуживается Azure
+
+**Преимущества:**
+
+- ✅ **Нет управления credential’ами** — Azure делает всё автоматически
+- ✅ **Автоматическая ротация** — нет риска истечения срока действия
+- ✅ **Максимальная безопасность** — нечего утечь
+- ✅ **Простая интеграция** — нативная поддержка в Azure сервисах
+
+---
+
+### Почему это best practice
+
+- Не нужно хранить `client secret`
+- Нет необходимости использовать Azure Key Vault для хранения секретов, чтобы получить доступ к Azure Key Vault
+- Минимизация человеческого фактора
+- Часто это **правильный ответ в вопросах AZ-204**
+
+---
+
+### Когда использовать
+
+- Azure App Service
+- Azure Functions
+- Azure VM
+- Azure Kubernetes Service (через workload identity)
+- Azure Container Apps
+
+---
+
+### Дополнение (что важно для экзамена)
+
+- Managed Identity = разновидность Service Principal, управляемая Azure.
+- Требует назначения роли (обычно через Azure RBAC).
+- Работает только внутри Azure.
+- Если приложение размещено вне Azure → потребуется Service Principal.
 
 **Example:**
 ```bash
@@ -50,17 +84,43 @@ var secret = await client.GetSecretAsync("MySecret");
 Console.WriteLine($"Secret value: {secret.Value.Value}");
 ```
 
-### 2. Service Principal and Certificate ⚠️ **ACCEPTABLE**
+### 2. Service Principal + Certificate ⚠️ **ДОПУСТИМО**
 
-**How it works:**
-- Create service principal in Microsoft Entra ID
-- Associate X.509 certificate with service principal
-- Application uses certificate to authenticate
+**Как работает:**
 
-**Considerations:**
-- ⚠️ **Manual rotation**: You must rotate certificates before expiration
-- ⚠️ **Certificate storage**: Certificate must be stored securely
-- ✅ **Better than secrets**: Certificates more secure than passwords
+- Создаётся Service Principal в Microsoft Entra ID
+- К нему привязывается X.509 сертификат
+- Приложение использует сертификат для аутентификации
+
+---
+
+### Особенности и ограничения
+
+- ⚠️ **Ручная ротация** — сертификат нужно обновлять до истечения срока действия
+- ⚠️ **Безопасное хранение** — приватный ключ должен храниться защищённо
+- ✅ **Безопаснее, чем secret** — сертификаты надёжнее паролей
+
+---
+
+### Когда использовать
+
+- Приложение работает вне Azure (on-premise, сторонний хостинг)
+- Нельзя использовать Managed Identity
+- Требуется более высокий уровень безопасности, чем при использовании client secret
+
+---
+
+### Дополнение (важно для AZ-204)
+
+- Лучше использовать **сертификат**, а не client secret.
+- Срок действия сертификата нужно контролировать (monitoring + alert).
+- В production желательно хранить сам сертификат в:
+    - Azure Key Vault
+    - защищённом хранилище
+- Частый экзаменационный сценарий:
+  > Приложение работает вне Azure, нужен безопасный доступ к Key Vault  
+  → Service Principal + Certificate.
+
 
 **Example:**
 ```bash
@@ -88,31 +148,73 @@ var client = new SecretClient(
 );
 ```
 
-### 3. Service Principal and Secret ❌ **NOT RECOMMENDED**
+### 3. Service Principal + Secret ❌ **НЕ РЕКОМЕНДУЕТСЯ**
 
-**How it works:**
-- Service principal with client secret (password)
-- Application uses client ID + secret to authenticate
+**Как работает:**
 
-**Why avoid:**
-- ❌ **Hard to rotate**: Difficult to automate rotation
-- ❌ **Bootstrap problem**: Where do you store the secret used to access Key Vault?
-- ❌ **Secret sprawl**: Defeats purpose of Key Vault
-- ❌ **Security risk**: Secrets can be leaked, stolen, or compromised
-
-**Only use when:**
-- Managed identity not available (on-premises, third-party cloud)
-- Testing/development scenarios
+- Создаётся Service Principal с client secret (пароль)
+- Приложение использует Client ID + Secret для аутентификации
 
 ---
 
-## Authentication Method Comparison
+### Почему стоит избегать
 
-| Method | Security | Rotation | Complexity | Use Case |
-|--------|----------|----------|------------|----------|
-| **Managed Identity** | ⭐⭐⭐⭐⭐ | Automatic | Low | Azure resources (VMs, App Service, Functions) |
-| **Service Principal + Cert** | ⭐⭐⭐⭐ | Manual | Medium | Non-Azure resources, cross-tenant |
-| **Service Principal + Secret** | ⭐⭐ | Manual | Medium | Last resort, dev/test only |
+- ❌ **Сложная ротация** — автоматизировать обновление secret непросто
+- ❌ **Bootstrap-проблема** — где хранить secret для доступа к Key Vault?
+- ❌ **Разрастание секретов (secret sprawl)** — противоречит идее централизованного хранения
+- ❌ **Риск безопасности** — secret можно утечь, украсть или скомпрометировать
+
+---
+
+### Когда допустимо использовать
+
+- Managed Identity недоступна (on-premises, сторонние облака)
+- В тестовой или dev-среде
+- В краткосрочных PoC-сценариях
+
+---
+
+### Дополнение (что важно для AZ-204)
+
+- Если в вопросе есть выбор:
+    - Managed Identity → почти всегда правильный ответ
+    - Service Principal + Certificate → допустимо
+    - Service Principal + Secret → последний вариант
+- Client secret — это обычный пароль.
+- В production предпочтительнее:
+    - Managed Identity
+    - или Service Principal + Certificate
+
+
+---
+
+## Сравнение методов аутентификации
+
+| Метод | Безопасность | Ротация | Сложность | Сценарий использования |
+|--------|-------------|----------|------------|------------------------|
+| **Managed Identity** | ⭐⭐⭐⭐⭐ | Автоматическая | Низкая | Ресурсы Azure (VM, App Service, Functions) |
+| **Service Principal + Certificate** | ⭐⭐⭐⭐ | Ручная | Средняя | Вне Azure, cross-tenant сценарии |
+| **Service Principal + Secret** | ⭐⭐ | Ручная | Средняя | Крайний случай, dev/test |
+
+---
+
+### Ключевые выводы
+
+- 🥇 **Managed Identity** — самый безопасный и простой вариант.
+- 🥈 **Service Principal + Certificate** — хороший компромисс, если MI недоступна.
+- 🥉 **Service Principal + Secret** — использовать только при отсутствии других вариантов.
+
+---
+
+### Что важно для AZ-204
+
+- Если приложение работает в Azure → выбирать **Managed Identity**.
+- Если приложение вне Azure → выбирать **Service Principal + Certificate**.
+- Client secret — это по сути пароль, и он требует:
+    - безопасного хранения
+    - регулярной ротации
+- Вопросы экзамена часто проверяют выбор **наиболее безопасного способа** с минимальным управлением credential’ами.
+
 
 **Decision tree:**
 ```
@@ -125,31 +227,48 @@ Is your application running in Azure?
 
 ---
 
-## Encryption of Data in Transit
+## Шифрование данных при передаче (Encryption of Data in Transit)
 
-Azure Key Vault enforces **Transport Layer Security (TLS)** protocol to protect data traveling between clients and Key Vault.
+Azure Key Vault использует протокол **Transport Layer Security (TLS)** для защиты данных, передаваемых между клиентом и сервисом.
 
-### TLS Security Features
+---
 
-| Feature | Description |
-|---------|-------------|
-| **Protocol** | TLS 1.2+ (TLS 1.0/1.1 deprecated) |
-| **Authentication** | Strong mutual authentication |
-| **Privacy** | AES encryption for all traffic |
-| **Integrity** | Detects tampering, interception, forgery |
-| **Key lengths** | RSA 2048-bit minimum |
+## Возможности безопасности TLS
 
-### Perfect Forward Secrecy (PFS)
+| Возможность | Описание |
+|-------------|----------|
+| **Протокол** | TLS 1.2+ (TLS 1.0/1.1 устарели и отключены) |
+| **Аутентификация** | Надёжная взаимная аутентификация |
+| **Конфиденциальность** | Шифрование трафика с использованием AES |
+| **Целостность** | Обнаружение подмены, перехвата или модификации |
+| **Длина ключа** | Минимум RSA 2048-bit |
 
-**How it works:**
-- Each connection uses unique session keys
-- Compromising one session key doesn't affect others
-- Even if long-term private key is compromised, past sessions remain secure
+---
 
-**Key features:**
-- **Unique keys per connection**: Different key for each TLS session
-- **Ephemeral keys**: Keys discarded after session ends
-- **RSA 2048-bit**: Strong encryption for key exchange
+## Perfect Forward Secrecy (PFS)
+
+### Как это работает
+
+- Каждое соединение использует уникальные сессионные ключи
+- Компрометация одного сессионного ключа не влияет на другие
+- Даже если долгосрочный приватный ключ будет скомпрометирован, предыдущие сессии останутся защищёнными
+
+---
+
+### Ключевые особенности PFS
+
+- 🔑 **Уникальный ключ на каждое соединение** — отдельный ключ для каждой TLS-сессии
+- ⏳ **Эфемерные ключи** — уничтожаются после завершения сессии
+- 🔐 **RSA 2048-bit** — надёжное шифрование при обмене ключами
+
+---
+
+### Дополнение (что важно для AZ-204)
+
+- Все взаимодействия с Key Vault происходят по HTTPS.
+- TLS защищает данные **в транзите**, но не отвечает за хранение — за это отвечает шифрование на стороне сервиса.
+- Если в вопросе упоминается защита данных между приложением и Key Vault → правильный ответ связан с **TLS 1.2+**.
+- PFS означает, что перехват трафика сегодня не позволит расшифровать старые сессии в будущем.
 
 **Client negotiation:**
 ```
@@ -184,11 +303,30 @@ Organization
 └── App2-Prod-KeyVault
 ```
 
-**Benefits:**
-- ✅ **Isolation**: Secrets not shared across environments
-- ✅ **Security**: Breach in one vault doesn't affect others
-- ✅ **Access control**: Different permissions per environment
-- ✅ **Compliance**: Easier to audit and meet regulatory requirements
+### Преимущества (Benefits)
+
+- ✅ **Изоляция** — секреты не разделяются между средами (dev, test, prod)
+- ✅ **Безопасность** — компрометация одного vault не влияет на другие
+- ✅ **Гибкий контроль доступа** — разные роли и разрешения для каждой среды
+- ✅ **Соответствие требованиям (Compliance)** — проще проводить аудит и соблюдать регуляторные нормы
+
+---
+
+### Дополнение (Best Practice)
+
+Рекомендуется создавать отдельный Key Vault для каждой среды:
+
+- `kv-app-dev`
+- `kv-app-test`
+- `kv-app-prod`
+
+Это:
+
+- снижает риск случайного использования production-секретов в dev
+- упрощает управление доступом
+- помогает соблюдать принцип least privilege
+- часто является правильным архитектурным решением в вопросах AZ-204
+
 
 **Example naming convention:**
 ```
@@ -212,20 +350,44 @@ for env in dev uat prod; do
 done
 ```
 
-### 2. Control Access to Your Vault 🔒
+### 2. Контролируйте доступ к вашему Vault 🔒
 
-**Principle of Least Privilege:** Grant only the minimum permissions required.
+**Принцип наименьших привилегий (Least Privilege):**  
+Предоставляйте только те разрешения, которые действительно необходимы.
 
-**Azure RBAC roles (recommended):**
+---
 
-| Role | Scope | Permissions |
-|------|-------|-------------|
-| **Key Vault Administrator** | Full control | Create/delete vaults, manage all objects |
-| **Key Vault Secrets Officer** | Secrets management | Create, read, update, delete secrets |
-| **Key Vault Secrets User** | Read-only | Read secret values only |
-| **Key Vault Crypto Officer** | Keys management | Create, read, update, delete keys |
-| **Key Vault Crypto User** | Use keys | Encrypt, decrypt, sign, verify |
-| **Key Vault Reader** | Metadata only | View vault/object metadata (not values) |
+### Роли Azure RBAC (рекомендуемый подход)
+
+| Роль | Область | Разрешения |
+|------|----------|------------|
+| **Key Vault Administrator** | Полный контроль | Создание/удаление vault, управление всеми объектами |
+| **Key Vault Secrets Officer** | Управление секретами | Создание, чтение, обновление, удаление секретов |
+| **Key Vault Secrets User** | Только чтение | Чтение значений секретов |
+| **Key Vault Crypto Officer** | Управление ключами | Создание, чтение, обновление, удаление ключей |
+| **Key Vault Crypto User** | Использование ключей | Шифрование, расшифровка, подпись, проверка |
+| **Key Vault Reader** | Только метаданные | Просмотр метаданных (без значений) |
+
+---
+
+### Best Practices
+
+- ✅ Назначайте роли на минимально возможном уровне (resource group / vault / объект).
+- ✅ Разделяйте доступ к секретам и ключам.
+- ✅ Используйте Managed Identity вместо выдачи прав пользователям.
+- ❌ Не назначайте Administrator без необходимости.
+- ❌ Не выдавайте доступ ко всему subscription, если нужен доступ только к одному vault.
+
+---
+
+### Важно для AZ-204
+
+- RBAC предпочтительнее Access Policies.
+- Частая ловушка:  
+  если нужно только читать секрет → выбрать **Key Vault Secrets User**, а не Administrator.
+- Различайте:
+    - Управление объектами (management plane)
+    - Доступ к значениям секретов (data plane)
 
 **Best practices:**
 ```bash
@@ -241,22 +403,47 @@ az keyvault set-policy \
   --object-id <id> \
   --secret-permissions all  # Too permissive!
 ```
+### Чек-лист по контролю доступа 🔐
 
-**Access control checklist:**
-- ✅ Use Azure RBAC instead of access policies
-- ✅ Assign permissions to managed identities, not individual users
-- ✅ Use groups for user access management
-- ✅ Regularly review and audit access
-- ✅ Remove unused permissions
-- ❌ Never grant "all" permissions
-- ❌ Avoid using access keys/connection strings
+- ✅ Использовать **Azure RBAC**, а не Access Policies
+- ✅ Назначать права **Managed Identity**, а не отдельным пользователям
+- ✅ Использовать **группы** для управления доступом пользователей
+- ✅ Регулярно проводить аудит и пересмотр прав
+- ✅ Удалять неиспользуемые разрешения
+- ❌ Никогда не выдавать «полный доступ ко всему» без необходимости
+- ❌ Избегать использования access keys и connection strings вместо RBAC
 
-### 3. Backup Your Vault 💾
+---
 
-**Why backup:**
-- Accidental deletion of secrets/keys/certificates
-- Corruption or misconfiguration
-- Compliance and audit requirements
+## 3. Делайте резервное копирование Vault 💾
+
+### Зачем нужен backup
+
+- Случайное удаление секретов, ключей или сертификатов
+- Ошибки конфигурации или некорректные изменения
+- Требования compliance и аудита
+
+---
+
+### Best Practices
+
+- Включить **Soft Delete** (по умолчанию включён).
+- Включить **Purge Protection** для production.
+- Использовать встроенные команды backup/restore для:
+    - Secrets
+    - Keys
+    - Certificates
+- Хранить резервные копии в защищённом месте (например, отдельный Storage Account).
+
+---
+
+### Важно для AZ-204
+
+- Soft Delete ≠ Backup, но защищает от случайного удаления.
+- Purge Protection предотвращает окончательное удаление до окончания периода хранения.
+- Если в вопросе говорится о защите от случайного удаления → включить Soft Delete + Purge Protection.
+- Если требуется восстановление в другом регионе → использовать механизм backup/restore.
+
 
 **Backup strategy:**
 ```bash
@@ -283,13 +470,31 @@ az keyvault secret restore \
   --file MySecret.backup
 ```
 
-**Backup best practices:**
-- ✅ **Regular schedule**: Daily or weekly backups
-- ✅ **Secure storage**: Store backups in separate Azure Storage account
-- ✅ **Encryption**: Backups are encrypted automatically
-- ✅ **Test restores**: Verify backups work before you need them
-- ✅ **Version control**: Keep multiple backup versions
-- ✅ **Automation**: Use Azure Automation or Logic Apps
+### Лучшие практики резервного копирования (Backup Best Practices)
+
+- ✅ **Регулярность** — выполнять резервное копирование ежедневно или еженедельно
+- ✅ **Отдельное хранилище** — хранить backup в другом Azure Storage Account
+- ✅ **Шифрование** — резервные копии автоматически шифруются
+- ✅ **Тестовое восстановление** — периодически проверять, что restore действительно работает
+- ✅ **Версионирование** — хранить несколько версий резервных копий
+- ✅ **Автоматизация** — использовать Azure Automation или Logic Apps
+
+---
+
+### Дополнение (важно для практики и AZ-204)
+
+- Backup/Restore выполняется на уровне объекта (secret/key/certificate).
+- Для production рекомендуется:
+    - отдельный subscription или resource group для хранения backup
+    - ограниченный доступ к storage с backup-файлами
+- Soft Delete защищает от случайного удаления,  
+  но полноценный backup нужен для:
+    - восстановления в другой регион
+    - миграции
+    - disaster recovery сценариев
+- Частый экзаменационный сценарий:
+  > Нужно защититься от случайного удаления и обеспечить восстановление  
+  → включить Soft Delete + Purge Protection + настроить регулярный backup.
 
 **Automated backup example:**
 ```json
@@ -313,13 +518,55 @@ az keyvault secret restore \
 }
 ```
 
-### 4. Enable Logging 📊
+### 4. Включите логирование 📊
 
-**Why logging matters:**
-- Security auditing (who accessed what, when)
-- Troubleshooting access issues
-- Compliance requirements (SOC 2, ISO 27001, HIPAA)
-- Anomaly detection
+### Почему логирование важно
+
+- 🔐 **Аудит безопасности** — кто, к чему и когда получил доступ
+- 🛠 **Диагностика проблем доступа** — ошибки авторизации, отказ в доступе
+- 📋 **Соответствие требованиям (Compliance)** — SOC 2, ISO 27001, HIPAA
+- 🚨 **Обнаружение аномалий** — подозрительная активность, массовые запросы
+
+---
+
+### Что рекомендуется включить
+
+- **Diagnostic settings** для Key Vault
+- Логи операций с:
+    - Secrets
+    - Keys
+    - Certificates
+- Логи аутентификации и авторизации
+
+---
+
+### Куда отправлять логи
+
+- **Azure Monitor Logs** — анализ через KQL
+- **Storage Account** — долгосрочное хранение
+- **Event Hub** — интеграция с SIEM
+
+---
+
+### Best Practices
+
+- ✅ Включать логирование для всех production vault
+- ✅ Настроить alert’ы на:
+    - множественные ошибки доступа
+    - частые попытки аутентификации
+    - операции purge/delete
+- ✅ Ограничить доступ к логам (они могут содержать чувствительную информацию)
+
+---
+
+### Важно для AZ-204
+
+- Логирование настраивается через **Diagnostic Settings**.
+- Частый вопрос:
+  > Нужно отслеживать доступ к секретам  
+  → включить Diagnostic logs и отправить в Azure Monitor.
+- Для compliance почти всегда требуется аудит доступа к секретам.
+
 
 **Enable diagnostic logs:**
 ```bash
@@ -355,13 +602,40 @@ az monitor diagnostic-settings create \
   --workspace $(az monitor log-analytics workspace show --resource-group myresourcegroup --workspace-name mylogworkspace --query id -o tsv)
 ```
 
-**Log destinations:**
+### Назначения логов (Log Destinations)
 
-| Destination | Use Case | Cost |
-|-------------|----------|------|
-| **Log Analytics** | Query, analyze, create alerts | Moderate |
-| **Storage Account** | Long-term archive | Low |
-| **Event Hub** | Stream to SIEM (Splunk, QRadar) | Moderate |
+| Назначение | Сценарий использования | Стоимость |
+|------------|------------------------|-----------|
+| **Log Analytics** | Запросы, анализ, создание alert’ов | Средняя |
+| **Storage Account** | Долгосрочное архивное хранение | Низкая |
+| **Event Hub** | Потоковая передача в SIEM (Splunk, QRadar) | Средняя |
+
+---
+
+### Как выбрать
+
+- 🔎 Нужен анализ и алерты → **Log Analytics**
+- 🗄 Нужно просто хранить для аудита → **Storage Account**
+- 🛡 Используется внешняя SIEM-система → **Event Hub**
+
+---
+
+### Best Practices
+
+- Для production часто используют комбинацию:
+    - Log Analytics (операционный мониторинг)
+    - Storage Account (архив)
+- Настраивать retention policy в Log Analytics.
+- Ограничивать доступ к логам (они могут содержать чувствительные метаданные).
+
+---
+
+### Важно для AZ-204
+
+- Логирование включается через **Diagnostic Settings**.
+- Если требуется мониторинг и alerting → выбирать **Log Analytics**.
+- Если требуется интеграция с SIEM → выбирать **Event Hub**.
+
 
 **Key metrics to monitor:**
 
@@ -430,12 +704,41 @@ az keyvault secret purge \
   --name MyDeletedSecret
 ```
 
-#### Purge Protection (Recommended for Production)
+#### Purge Protection (Рекомендуется для Production)
 
-**What it does:**
-- Prevents **permanent deletion** during soft-delete retention period
-- Even admins cannot purge deleted objects
-- Mandatory wait period before permanent deletion
+### Что делает
+
+- 🔒 Предотвращает **окончательное удаление** объектов в период Soft Delete
+- 🚫 Даже администраторы не могут выполнить purge удалённых объектов
+- ⏳ Обязательный период ожидания перед возможностью полного удаления
+
+---
+
+### Как это работает
+
+1. Объект (secret/key/certificate) удаляется → переходит в состояние *soft-deleted*.
+2. В течение retention-периода (до 90 дней) его можно восстановить.
+3. Если включена **Purge Protection**, принудительное удаление (purge) невозможно до окончания этого периода.
+
+---
+
+### Зачем это нужно
+
+- Защита от:
+    - случайного удаления
+    - злонамеренных действий
+    - атак с повышением привилегий
+- Требование многих стандартов compliance (финансовый сектор, healthcare и др.)
+
+---
+
+### Важно для AZ-204
+
+- Soft Delete включён по умолчанию.
+- Purge Protection нужно включать отдельно.
+- В production-сценариях почти всегда правильный ответ:
+  → включить **Soft Delete + Purge Protection**.
+- Если в вопросе говорится о защите от администраторов или внутренних угроз → это про Purge Protection.
 
 **Enable purge protection:**
 ```bash
@@ -468,93 +771,114 @@ Day 91: Soft-delete retention expires
        Automatic permanent deletion
 ```
 
-**Best practices:**
-- ✅ Enable for **production** environments
-- ✅ Enable for **compliance** requirements (GDPR, HIPAA)
-- ⚠️ Test impact in dev/test first (cannot undo)
-- ❌ Not needed for short-lived dev/test vaults
+### Лучшие практики (Purge Protection)
+
+- ✅ Включать для **production**-сред
+- ✅ Включать при требованиях compliance (GDPR, HIPAA)
+- ⚠️ Сначала протестировать влияние в dev/test (отключить нельзя)
+- ❌ Не требуется для краткоживущих dev/test vault
 
 ---
 
-## Security Checklist
+# Security Checklist
 
-### Setup Phase
-- ✅ Create separate vaults per app per environment
-- ✅ Enable soft delete (enabled by default)
-- ✅ Enable purge protection for production vaults
-- ✅ Configure diagnostic logging
-- ✅ Set up Log Analytics workspace
+## Этап настройки (Setup Phase)
 
-### Access Control
-- ✅ Use managed identities for Azure resources
-- ✅ Use Azure RBAC (not access policies)
-- ✅ Follow principle of least privilege
-- ✅ Grant permissions to groups, not individual users
-- ✅ Regularly review access assignments
-
-### Network Security
-- ✅ Use private endpoints for production
-- ✅ Configure firewall rules if using public endpoint
-- ✅ Disable public access if not needed
-- ✅ Use service endpoints for Azure VNet resources
-
-### Operations
-- ✅ Implement backup strategy (daily recommended)
-- ✅ Test backup restores regularly
-- ✅ Monitor logs for suspicious activity
-- ✅ Set up alerts for failed authentication
-- ✅ Rotate secrets regularly
-- ✅ Document secret ownership and purpose
-
-### Compliance
-- ✅ Enable audit logging for compliance
-- ✅ Retain logs per regulatory requirements (90+ days)
-- ✅ Use HSM-backed keys for compliance (if required)
-- ✅ Implement key rotation policies
-- ✅ Document security controls
+- ✅ Создавать отдельный vault для каждого приложения и каждой среды
+- ✅ Включить Soft Delete (включён по умолчанию)
+- ✅ Включить Purge Protection для production
+- ✅ Настроить диагностическое логирование
+- ✅ Создать Log Analytics workspace
 
 ---
 
-## Common Pitfalls to Avoid
+## Контроль доступа (Access Control)
 
-| Pitfall | Risk | Solution |
-|---------|------|----------|
-| Sharing vaults across apps | Secret sprawl, unclear ownership | One vault per app |
-| Granting "all" permissions | Over-privileged access | Specific roles only |
-| Ignoring logs | Missed security incidents | Enable logging + alerts |
-| No backup strategy | Data loss | Regular automated backups |
-| Hardcoded credentials | Secret leakage | Use managed identities |
-| Public endpoint without firewall | Unauthorized access | Private endpoints or firewall |
-| No soft delete/purge protection | Accidental permanent deletion | Enable both for production |
-| Using access policies | Inconsistent permissions | Use Azure RBAC |
+- ✅ Использовать Managed Identity для ресурсов Azure
+- ✅ Использовать Azure RBAC (а не Access Policies)
+- ✅ Следовать принципу наименьших привилегий
+- ✅ Назначать права группам, а не отдельным пользователям
+- ✅ Регулярно пересматривать назначения ролей
 
 ---
 
-## Exam Tips
+## Сетевая безопасность (Network Security)
 
-🎯 **Managed identity**: Always the recommended authentication method for Azure resources
+- ✅ Использовать Private Endpoints для production
+- ✅ Настроить firewall, если используется public endpoint
+- ✅ Отключить публичный доступ, если он не нужен
+- ✅ Использовать Service Endpoints для ресурсов в VNet
 
-🎯 **Three authentication methods**: Managed identity (best), Service principal + certificate (acceptable), Service principal + secret (avoid)
+---
 
-🎯 **TLS encryption**: All data in transit encrypted with TLS 1.2+
+## Операционная деятельность (Operations)
 
-🎯 **Perfect Forward Secrecy (PFS)**: Unique keys per session, RSA 2048-bit minimum
+- ✅ Реализовать стратегию резервного копирования (рекомендуется ежедневно)
+- ✅ Регулярно тестировать восстановление
+- ✅ Мониторить логи на подозрительную активность
+- ✅ Настроить alert’ы на ошибки аутентификации
+- ✅ Регулярно ротировать секреты
+- ✅ Документировать владельца и назначение каждого секрета
 
-🎯 **Separate vaults**: One vault per application per environment (best practice)
+---
 
-🎯 **Azure RBAC**: Recommended over legacy access policies
+## Соответствие требованиям (Compliance)
 
-🎯 **Soft delete**: Enabled by default, 7-90 day retention (90 days default)
+- ✅ Включить аудит логирования
+- ✅ Хранить логи согласно регуляторным требованиям (90+ дней)
+- ✅ Использовать HSM-ключи при необходимости compliance
+- ✅ Настроить политики ротации ключей
+- ✅ Документировать меры безопасности
 
-🎯 **Purge protection**: Prevents permanent deletion, cannot be disabled once enabled
+---
 
-🎯 **Logging destinations**: Storage Account (archive), Event Hub (stream), Log Analytics (query)
+# Частые ошибки (Common Pitfalls)
 
-🎯 **Backup scope**: Individual objects (secrets, keys, certificates), not entire vault
+| Ошибка | Риск | Решение |
+|--------|------|----------|
+| Один vault для нескольких приложений | Разрастание секретов, неясная ответственность | Отдельный vault на приложение |
+| Назначение «всех прав» | Избыточные привилегии | Назначать конкретные роли |
+| Игнорирование логов | Пропущенные инциденты | Включить логирование и alert’ы |
+| Нет стратегии backup | Потеря данных | Регулярный автоматизированный backup |
+| Хардкод credential’ов | Утечка секретов | Использовать Managed Identity |
+| Public endpoint без firewall | Несанкционированный доступ | Private Endpoint или firewall |
+| Нет Soft Delete/Purge Protection | Безвозвратное удаление | Включить оба для production |
+| Использование Access Policies | Несогласованная модель прав | Использовать Azure RBAC |
 
-🎯 **Security principle**: Least privilege access, grant minimum required permissions
+---
 
-🎯 **Bootstrap problem**: Don't use secrets to access Key Vault (use managed identity)
+# Exam Tips (Советы к AZ-204)
+
+🎯 **Managed Identity** — основной рекомендуемый способ аутентификации в Azure
+
+🎯 **Три метода аутентификации**:
+- Managed Identity (лучший)
+- Service Principal + Certificate (допустимо)
+- Service Principal + Secret (избегать)
+
+🎯 **TLS** — шифрование данных в транзите через TLS 1.2+
+
+🎯 **Perfect Forward Secrecy (PFS)** — уникальные ключи для каждой сессии, минимум RSA 2048-bit
+
+🎯 **Отдельные vault** — один vault на приложение и среду
+
+🎯 **Azure RBAC** — предпочтительнее Access Policies
+
+🎯 **Soft Delete** — включён по умолчанию (7–90 дней, по умолчанию 90)
+
+🎯 **Purge Protection** — предотвращает окончательное удаление, нельзя отключить после включения
+
+🎯 **Назначения логов**:
+- Storage Account — архив
+- Event Hub — потоковая передача
+- Log Analytics — анализ
+
+🎯 **Backup** — выполняется на уровне отдельных объектов (secrets, keys, certificates), а не всего vault
+
+🎯 **Принцип безопасности** — Least Privilege
+
+🎯 **Bootstrap-проблема** — не использовать secret для доступа к Key Vault → использовать Managed Identity
+
 
 ---
 

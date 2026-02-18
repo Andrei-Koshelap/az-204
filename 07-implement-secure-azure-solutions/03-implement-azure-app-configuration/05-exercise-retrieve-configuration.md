@@ -1,27 +1,29 @@
-# Exercise: Retrieve Configuration Settings from Azure App Configuration
+# Упражнение: Получение настроек из Azure App Configuration
 
-## Overview
+## Обзор
 
-In this hands-on exercise, you will:
-1. Create an Azure App Configuration resource
-2. Store configuration key-values using Azure CLI
-3. Build a .NET console application
-4. Retrieve configuration settings from App Configuration
-5. Use hierarchical keys and configuration providers
-6. Clean up resources
+В этом практическом упражнении вы:
 
-**Estimated time**: 15-20 minutes
+1. Создадите ресурс Azure App Configuration
+2. Сохраните пары key-value через Azure CLI
+3. Соберёте .NET console-приложение
+4. Получите настройки из App Configuration
+5. Используете иерархические ключи и configuration providers
+6. Выполните очистку ресурсов (cleanup)
+
+⏱️ **Оценка времени**: 15–20 минут
 
 ---
 
-## Prerequisites
+## Предварительные требования (Prerequisites)
 
-### Required Tools
+### Необходимые инструменты
 
-- **Azure Subscription**: [Sign up for free](https://azure.microsoft.com/free/)
-- **.NET 8.0 SDK**: [Download](https://dotnet.microsoft.com/download)
-- **Azure CLI**: [Install](https://docs.microsoft.com/cli/azure/install-azure-cli)
-- **Code Editor**: Visual Studio Code or Visual Studio
+- **Подписка Azure**: https://azure.microsoft.com/free/
+- **.NET 8.0 SDK**: https://dotnet.microsoft.com/download
+- **Azure CLI**: https://docs.microsoft.com/cli/azure/install-azure-cli
+- **Редактор кода**: Visual Studio Code или Visual Studio
+
 
 ### Verify Prerequisites
 
@@ -786,28 +788,48 @@ az appconfig update --name $APP_CONFIG_NAME --sku Standard
 
 ---
 
-## Key Takeaways
+## Основные выводы
 
-### What You Learned
+### Что вы изучили
 
-1. ✅ **Created** Azure App Configuration store
-2. ✅ **Stored** hierarchical key-values
-3. ✅ **Built** .NET console application
-4. ✅ **Retrieved** configuration programmatically
-5. ✅ **Implemented** dynamic refresh
-6. ✅ **Used** labels for environment variants
-7. ✅ **Applied** strongly-typed configuration
-8. ✅ **Verified** configuration in Azure Portal
+1. ✅ **Создали** хранилище Azure App Configuration
+2. ✅ **Сохранили** иерархические пары ключ-значение
+3. ✅ **Разработали** консольное приложение на .NET
+4. ✅ **Получили** конфигурацию программно
+5. ✅ **Реализовали** динамическое обновление настроек
+6. ✅ **Использовали** метки (labels) для разных окружений
+7. ✅ **Применили** строго типизированную конфигурацию
+8. ✅ **Проверили** настройки через Azure Portal
 
-### Configuration Patterns Explored
+> 💡 Дополнительно:
+> - Освоили централизованное управление конфигурацией в облаке
+> - Поняли, как отделить конфигурацию от кода (12-Factor App principle)
+> - Научились проектировать масштабируемую конфигурационную стратегию для микросервисов
 
-| Pattern | Description | Use Case |
-|---------|-------------|----------|
-| **Hierarchical Keys** | `App:Component:Setting` | Organize related settings |
-| **Labels** | Environment variants | Dev/Staging/Prod separation |
-| **Dynamic Refresh** | Auto-update without restart | Real-time configuration changes |
-| **Strongly-Typed** | Bind to C# classes | Type safety and IntelliSense |
-| **JSON Values** | Complex objects | Structured configuration |
+---
+
+## Рассмотренные паттерны конфигурации
+
+| Паттерн | Описание | Сценарий использования |
+|----------|------------|------------------------|
+| **Иерархические ключи** | `App:Component:Setting` | Организация связанных настроек |
+| **Метки (Labels)** | Варианты для разных окружений | Разделение Dev / Staging / Prod |
+| **Динамическое обновление** | Автообновление без перезапуска | Изменение конфигурации в реальном времени |
+| **Строго типизированная модель** | Привязка к C# классам | Типобезопасность и IntelliSense |
+| **JSON-значения** | Сложные объекты | Структурированная конфигурация |
+
+---
+
+### Практическое замечание
+
+При подготовке к экзамену AZ-204 важно понимать не только *как* подключить Azure App Configuration, но и:
+
+- когда использовать **Azure App Configuration**, а когда — **Azure Key Vault**
+- как работает механизм **Feature Flags**
+- какие ограничения существуют при использовании dynamic refresh
+- как конфигурация масштабируется в распределённых системах
+
+Этот блок особенно важен для вопросов, связанных с управлением конфигурацией, DevOps-практиками и облачной архитектурой.
 
 ### Code Patterns Learned
 
@@ -841,68 +863,87 @@ foreach (var setting in settings.GetChildren())
 ```
 
 ---
+## Следующие шаги
 
-## Next Steps
+### Изучить дополнительно
 
-### Explore Further
+1. **Аутентификация через Managed Identity**:
+   - Развернуть приложение в Azure App Service
+   - Включить Managed Identity
+   - Удалить строку подключения (connection string)
 
-1. **Managed Identity Authentication**:
-   - Deploy application to App Service
-   - Enable managed identity
-   - Remove connection string
+2. **Feature Flags (флаги функций)**:
+   - Добавить feature flag в App Configuration
+   - Использовать пакет `Microsoft.FeatureManagement`
+   - Реализовать процентное включение (percentage rollout)
 
-2. **Feature Flags**:
-   - Add feature flag to App Configuration
-   - Use `Microsoft.FeatureManagement` package
-   - Implement percentage rollout
+3. **Интеграция с Key Vault**:
+   - Хранить секреты в Key Vault
+   - Настроить ссылки из App Configuration
+   - Использовать Key Vault references
 
-3. **Key Vault Integration**:
-   - Store secrets in Key Vault
-   - Reference from App Configuration
-   - Use Key Vault references
+4. **Интеграция с ASP.NET Core**:
+   - Создать веб-приложение
+   - Подключить провайдер конфигурации
+   - Реализовать middleware для автоматического обновления конфигурации
 
-4. **ASP.NET Core Integration**:
-   - Create web application
-   - Use configuration provider
-   - Implement automatic refresh middleware
-
-### Practice Exercises
-
-1. Create separate App Configuration stores for dev/staging/prod
-2. Implement feature flag for experimental feature
-3. Add Key Vault reference for database password
-4. Deploy to Azure App Service with managed identity
-5. Set up continuous deployment with configuration updates
+> 💡 Рекомендуется протестировать сценарий без connection string, используя `DefaultAzureCredential`.  
+> Это часто встречается в реальных production-архитектурах и на экзамене.
 
 ---
 
-## Exam Tips
+## Практические задания
 
-### Key Concepts Demonstrated
+1. Создать отдельные App Configuration для dev / staging / prod
+2. Реализовать feature flag для экспериментальной функциональности
+3. Добавить ссылку на Key Vault для пароля базы данных
+4. Развернуть приложение в Azure App Service с Managed Identity
+5. Настроить CI/CD с обновлением конфигурации при деплое
 
-1. **Connection String**: Quick setup for development, contains secrets
-2. **Hierarchical Keys**: `App:Component:Setting` pattern
-3. **Labels**: Enable environment-specific values
-4. **ConfigurationBuilder**: Standard .NET configuration pattern
-5. **Dynamic Refresh**: Cache expiration and refresh triggers
-6. **Strongly-Typed**: Bind configuration to C# classes
-7. **Azure CLI**: Create, update, query, and delete operations
-
-### Common Exam Scenarios
-
-**Scenario**: "Retrieve configuration settings in .NET application"
-→ **Answer**: Use `ConfigurationBuilder.AddAzureAppConfiguration(connectionString)`
-
-**Scenario**: "Different database connection strings for dev/prod"
-→ **Answer**: Use same key with different labels (Development, Production)
-
-**Scenario**: "Update configuration without restarting application"
-→ **Answer**: Configure refresh with `ConfigureRefresh()` and `SetCacheExpiration()`
-
-**Scenario**: "Organize related settings"
-→ **Answer**: Use hierarchical key naming (e.g., `MyApp:Database:*`)
+> 🔎 Полезно дополнительно проверить:
+> - Как работает кэширование конфигурации
+> - Какие роли (RBAC) нужны для доступа к App Configuration
+> - Разницу между Data Plane и Control Plane операциями
 
 ---
+
+## Советы к экзамену
+
+### Ключевые понятия
+
+1. **Connection String** — быстрый способ подключения для разработки, содержит секреты
+2. **Иерархические ключи** — паттерн `App:Component:Setting`
+3. **Labels** — позволяют задавать значения для конкретных окружений
+4. **ConfigurationBuilder** — стандартный паттерн конфигурации в .NET
+5. **Dynamic Refresh** — управление временем жизни кэша и триггерами обновления
+6. **Strongly-Typed Configuration** — привязка конфигурации к C# классам
+7. **Azure CLI** — создание, обновление, запрос и удаление ресурсов
+
+---
+
+## Типичные экзаменационные сценарии
+
+**Сценарий**: «Получить настройки конфигурации в .NET приложении»  
+→ **Ответ**: Использовать `ConfigurationBuilder.AddAzureAppConfiguration(connectionString)`
+
+**Сценарий**: «Разные строки подключения к БД для dev/prod»  
+→ **Ответ**: Использовать один и тот же ключ с разными метками (Development, Production)
+
+**Сценарий**: «Обновить конфигурацию без перезапуска приложения»  
+→ **Ответ**: Настроить обновление через `ConfigureRefresh()` и `SetCacheExpiration()`
+
+**Сценарий**: «Организовать связанные настройки»  
+→ **Ответ**: Использовать иерархическую структуру ключей (например, `MyApp:Database:*`)
+
+---
+
+### ⚠️ Частая ловушка на экзамене
+
+- Если вопрос касается **безопасности** — правильный ответ почти всегда связан с **Managed Identity**, а не с connection string.
+- Если речь идёт о секретах — используйте **Key Vault**, а не хранение паролей напрямую в App Configuration.
+- Если требуется постепенное включение функции — выбирайте **Feature Flags**, а не ручное изменение конфигурации.
+
+Эти различия часто являются ключом к правильному ответу в задачах уровня AZ-204.
 
 ## Additional Resources
 

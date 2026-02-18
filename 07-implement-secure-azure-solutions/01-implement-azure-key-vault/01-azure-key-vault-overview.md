@@ -1,129 +1,155 @@
-# Explore Azure Key Vault
+# Изучение Azure Key Vault
 
-## Overview
+## Обзор
 
-**Azure Key Vault** is a cloud service for securely storing and accessing secrets, keys, and certificates. It eliminates the need to store sensitive information in application code and provides centralized secret management with strict access control.
-
----
-
-## What is Azure Key Vault?
-
-Azure Key Vault helps solve three key problems:
-
-| Problem | Solution |
-|---------|----------|
-| **Secrets Management** | Securely store and control access to tokens, passwords, certificates, API keys, and other secrets |
-| **Key Management** | Create and control encryption keys used to encrypt your data |
-| **Certificate Management** | Provision, manage, and deploy public and private SSL/TLS certificates |
+**Azure Key Vault** — это облачный сервис для безопасного хранения и доступа к секретам, ключам и сертификатам. Он устраняет необходимость хранить чувствительные данные в коде приложения и обеспечивает централизованное управление секретами с жёстким контролем доступа.
 
 ---
 
-## Key Vault Types
+## Что такое Azure Key Vault?
 
-Azure Key Vault supports two types of containers:
+Azure Key Vault решает три ключевые задачи:
+
+| Проблема | Решение |
+|----------|----------|
+| **Управление секретами (Secrets Management)** | Безопасное хранение и контроль доступа к токенам, паролям, сертификатам, API-ключам и другим секретам |
+| **Управление ключами (Key Management)** | Создание и контроль ключей шифрования для защиты данных |
+| **Управление сертификатами (Certificate Management)** | Выпуск, хранение и автоматическое управление SSL/TLS сертификатами |
+
+---
+
+## Типы Key Vault
+
+Azure Key Vault поддерживает два типа контейнеров:
 
 ### 1. Vaults (Standard)
 
-- **Storage**: Software and HSM-backed keys, secrets, and certificates
-- **Protection**: Software-based encryption
-- **Use case**: Most applications
-- **Cost**: Lower cost option
+- **Хранение**: ключи (software и HSM-backed), секреты, сертификаты
+- **Защита**: программное шифрование
+- **Сценарий**: большинство приложений
+- **Стоимость**: более экономичный вариант
 
 ### 2. Managed HSM Pools (Premium)
 
-- **Storage**: HSM-backed keys only
-- **Protection**: Hardware Security Module (HSM) protected
-- **Use case**: Regulatory compliance, high-security requirements
-- **Cost**: Higher cost, FIPS 140-2 Level 3 validated
+- **Хранение**: только HSM-backed ключи
+- **Защита**: аппаратный модуль безопасности (HSM)
+- **Сценарий**: регуляторные требования, повышенная безопасность
+- **Стоимость**: выше, соответствует FIPS 140-2 Level 3
 
 ---
 
-## Service Tiers Comparison
+## Сравнение уровней сервиса
 
-| Feature | Standard | Premium |
-|---------|----------|---------|
-| **Key Protection** | Software-protected | HSM-protected |
-| **Encryption** | AES 256-bit | AES 256-bit |
-| **FIPS Compliance** | FIPS 140-2 Level 1 | FIPS 140-2 Level 2 (Vaults)<br>FIPS 140-2 Level 3 (Managed HSM) |
-| **Key Types** | RSA, EC | RSA, EC, OCT (Managed HSM only) |
-| **Pricing** | Per-operation | Per-operation + HSM fee |
-| **Best For** | Most applications | Regulatory compliance, high-security |
+| Возможность | Standard | Premium |
+|-------------|----------|----------|
+| **Защита ключей** | Software-protected | HSM-protected |
+| **Шифрование** | AES 256-bit | AES 256-bit |
+| **FIPS соответствие** | FIPS 140-2 Level 1 | FIPS 140-2 Level 2 (Vaults)<br>FIPS 140-2 Level 3 (Managed HSM) |
+| **Типы ключей** | RSA, EC | RSA, EC, OCT (только Managed HSM) |
+| **Ценообразование** | За операцию | За операцию + плата за HSM |
+| **Лучше всего подходит** | Большинство приложений | Регуляторные требования, high-security |
 
 ---
 
-## Key Benefits of Using Azure Key Vault
+## Основные преимущества Azure Key Vault
 
-### 1. Centralized Application Secrets
+### 1. Централизованное хранение секретов
 
-✅ **Single source of truth** for all application secrets
-- Store connection strings, API keys, passwords centrally
-- Applications access secrets via URIs instead of hardcoding
-- Retrieve specific versions of secrets when needed
-- Easy rotation and updates without code changes
+✅ **Единый источник истины (Single source of truth)**
 
-**Example URI format:**
+- Хранение connection strings, API-ключей и паролей централизованно
+- Приложения обращаются к секретам по URI вместо хардкода
+- Возможность получать конкретную версию секрета
+- Ротация секретов без изменения кода
+
+**Пример формата URI:**
 ```
-https://{vault-name}.vault.azure.net/secrets/{secret-name}/{version}
+    https://{vault-name}.vault.azure.net/secrets/{secret-name}/{version}
 ```
 
-### 2. Securely Store Secrets and Keys
+---
 
-✅ **Multi-layered security**:
-- **Authentication**: Microsoft Entra ID (formerly Azure AD)
-- **Authorization**: 
-  - Azure RBAC (Role-Based Access Control) - recommended
-  - Key Vault access policies (legacy)
-- **Encryption**:
-  - Standard tier: Software-protected keys
-  - Premium tier: FIPS 140-2 Level 2 HSM-protected keys
+### 2. Безопасное хранение секретов и ключей
 
-| Authorization Method | Management Plane | Data Plane |
-|---------------------|------------------|------------|
-| **Azure RBAC** | ✅ Supported | ✅ Supported |
-| **Access Policies** | ❌ Not supported | ✅ Supported |
+✅ **Многоуровневая безопасность**
 
-**Best practice**: Use Azure RBAC for consistent authorization across Azure resources.
+- **Аутентификация**: Microsoft Entra ID
+- **Авторизация**:
+    - Azure RBAC (рекомендуется)
+    - Access Policies (устаревающий подход)
+- **Шифрование**:
+    - Standard — программно защищённые ключи
+    - Premium — HSM (FIPS 140-2 Level 2)
 
-### 3. Monitor Access and Use
+| Метод авторизации | Management Plane | Data Plane |
+|------------------|------------------|------------|
+| **Azure RBAC** | ✅ Поддерживается | ✅ Поддерживается |
+| **Access Policies** | ❌ Нет | ✅ Да |
 
-✅ **Comprehensive logging**:
-- Enable logging for all vaults
-- Track who accessed what and when
-- Audit secret retrieval and modifications
-
-**Monitoring options:**
-| Destination | Purpose |
-|-------------|---------|
-| **Storage Account** | Archive logs long-term |
-| **Event Hub** | Stream logs to SIEM systems |
-| **Azure Monitor Logs** | Query and analyze with KQL |
-
-**Example metrics:**
-- Total API requests
-- Failed authentication attempts
-- Secret retrieval operations
-- Average latency
-
-### 4. Simplified Administration
-
-✅ **Eliminates complexity**:
-
-| Traditional Approach | With Key Vault |
-|---------------------|----------------|
-| Purchase and maintain HSMs | Azure manages HSMs |
-| Manual scaling | Auto-scales for usage spikes |
-| Manual replication | Automatic region replication |
-| Manual failover | Automatic failover |
-| Complex certificate lifecycle | Automated enrollment and renewal |
-
-**Key simplifications:**
-- **No HSM knowledge required**: Azure handles HSM complexities
-- **Auto-scaling**: Handles traffic spikes automatically
-- **High availability**: Automatic replication within region and to secondary region
-- **Certificate automation**: Auto-renew certificates from Public CAs
-- **Standard management**: Use Azure Portal, Azure CLI, or PowerShell
+**Best practice**: использовать Azure RBAC для единообразной модели доступа.
 
 ---
+
+### 3. Мониторинг доступа
+
+✅ **Полное логирование**
+
+- Включение логирования для всех vault
+- Аудит доступа к секретам
+- Отслеживание изменений
+
+**Варианты назначения логов:**
+
+| Назначение | Цель |
+|------------|------|
+| **Storage Account** | Долгосрочное хранение |
+| **Event Hub** | Интеграция с SIEM |
+| **Azure Monitor Logs** | Анализ через KQL |
+
+**Примеры метрик:**
+
+- Общее количество API-запросов
+- Неудачные попытки аутентификации
+- Получение секретов
+- Средняя задержка
+
+---
+
+### 4. Упрощённое администрирование
+
+✅ **Снижение операционной сложности**
+
+| Традиционный подход | С Azure Key Vault |
+|---------------------|-------------------|
+| Покупка и поддержка HSM | Azure управляет HSM |
+| Ручное масштабирование | Автомасштабирование |
+| Ручная репликация | Автоматическая региональная репликация |
+| Ручной failover | Автоматический failover |
+| Сложный lifecycle сертификатов | Автоматическое продление |
+
+**Ключевые упрощения:**
+
+- Не требуется знание HSM
+- Автоматическая обработка пиков нагрузки
+- Высокая доступность
+- Автоматическое продление сертификатов
+- Управление через Portal, CLI или PowerShell
+
+---
+
+### Дополнение от себя (что важно для AZ-204)
+
+- Никогда не хранить секреты в `appsettings.json` или в коде.
+- Использовать **Managed Identity** для доступа к Key Vault из Azure сервисов.
+- В production включать:
+    - Soft Delete
+    - Purge Protection
+- Для CI/CD лучше использовать Key Vault references или Azure App Configuration + Key Vault.
+- Вопросы на экзамене часто проверяют:
+    - RBAC vs Access Policies
+    - Managed Identity
+    - Разницу Standard vs Premium
+    - Логирование и аудит доступа
 
 ## How Key Vault Works
 
@@ -157,30 +183,43 @@ https://{vault-name}.vault.azure.net/secrets/{secret-name}/{version}
 └─────────────────────────────────────────────────────┘
 ```
 
-### Access Flow
+### Поток доступа (Access Flow)
 
-1. **Application requests access** → Uses managed identity or service principal
-2. **Microsoft Entra ID authenticates** → Verifies identity
-3. **Azure RBAC authorizes** → Checks permissions
-4. **Key Vault returns secret** → Application receives secret value
-5. **Operation logged** → Audit trail created
+1. **Приложение запрашивает доступ** → Использует Managed Identity или Service Principal
+2. **Microsoft Entra ID выполняет аутентификацию** → Проверяет личность
+3. **Azure RBAC выполняет авторизацию** → Проверяет разрешения
+4. **Key Vault возвращает секрет** → Приложение получает значение секрета
+5. **Операция логируется** → Формируется audit trail
 
 ---
 
-## What Can You Store in Key Vault?
+## Что можно хранить в Azure Key Vault?
 
-### 1. Secrets
+### 1. Secrets (Секреты)
 
-**What**: Any sensitive string data
+**Что это**: Любые чувствительные строковые данные
 
-**Examples:**
-- Database connection strings
-- API keys
-- Passwords
-- SAS tokens
-- Storage account keys
+**Примеры:**
+- Строки подключения к БД
+- API-ключи
+- Пароли
+- SAS-токены
+- Ключи Storage Account
 
-**Size limit**: 25 KB per secret
+**Ограничение размера**: до 25 KB на один секрет
+
+---
+
+### Дополнение (важно для AZ-204 и практики)
+
+- Секреты имеют версии — можно выполнять безопасную ротацию.
+- Поддерживается Soft Delete (защита от случайного удаления).
+- В production рекомендуется включать:
+    - Soft Delete
+    - Purge Protection
+- Лучше использовать Managed Identity вместо хранения client secrets.
+- Никогда не хранить секреты в коде или в репозитории.
+
 
 **Example:**
 ```bash
@@ -214,20 +253,44 @@ az keyvault key create \
   --size 2048
 ```
 
-### 3. Certificates
+### 3. Certificates (Сертификаты)
 
-**What**: X.509 certificates (SSL/TLS)
+**Что это**: Сертификаты X.509 (SSL/TLS)
 
-**Features:**
-- Automated certificate lifecycle management
-- Integration with Certificate Authorities (CAs)
-- Auto-renewal for supported CAs
-- PFX or PEM format
+Используются для:
+- HTTPS
+- Шифрования трафика
+- Аутентификации сервисов
+- Mutual TLS (mTLS)
 
-**Supported CAs:**
+---
+
+### Возможности
+
+- ✅ Автоматическое управление жизненным циклом сертификата
+- ✅ Интеграция с центрами сертификации (Certificate Authorities, CA)
+- ✅ Автоматическое продление (для поддерживаемых CA)
+- ✅ Поддержка форматов PFX и PEM
+
+---
+
+### Поддерживаемые центры сертификации (CA)
+
 - DigiCert
 - GlobalSign
-- Self-signed certificates
+- Self-signed сертификаты
+
+---
+
+### Дополнение (что важно для AZ-204)
+
+- Key Vault может автоматически запрашивать и продлевать сертификаты у поддерживаемых CA.
+- Сертификат хранится как:
+    - Certificate (метаданные)
+    - Secret (PFX/PEM содержимое)
+    - Key (закрытый ключ)
+- Частый сценарий: хранение SSL-сертификатов для App Service или Application Gateway.
+- Для production рекомендуется включать уведомления о скором истечении срока действия сертификата.
 
 **Example:**
 ```bash
@@ -239,28 +302,43 @@ az keyvault certificate create \
 
 ---
 
-## Regional Availability and Replication
+## Региональная доступность и репликация
 
-### Data Replication
+### Репликация данных
 
-| Type | Behavior |
-|------|----------|
-| **Primary region** | All data replicated within region |
-| **Secondary region** | Paired Azure region (automatic) |
-| **Failover** | Automatic (no admin action needed) |
-| **Read access** | Primary only (unless failover occurs) |
+| Тип | Поведение |
+|------|-----------|
+| **Primary region** | Все данные реплицируются внутри региона |
+| **Secondary region** | Автоматическая репликация в парный регион Azure |
+| **Failover** | Выполняется автоматически (без действий администратора) |
+| **Доступ на чтение** | Только из primary (до момента failover) |
 
-**Example paired regions:**
+**Примеры парных регионов:**
 - East US ↔ West US
 - North Europe ↔ West Europe
 - Southeast Asia ↔ East Asia
 
-### High Availability
+---
 
-- **RPO (Recovery Point Objective)**: Minutes
-- **RTO (Recovery Time Objective)**: Automatic failover
-- **Data durability**: 99.999999999% (11 nines)
-- **Service SLA**: 99.99% availability
+### Высокая доступность (High Availability)
+
+- **RPO (Recovery Point Objective)**: минуты
+- **RTO (Recovery Time Objective)**: автоматический failover
+- **Надёжность хранения (Data durability)**: 99.999999999% (11 девяток)
+- **SLA сервиса**: 99.99% доступности
+
+---
+
+### Дополнение (что важно для AZ-204)
+
+- Репликация выполняется автоматически — вручную настраивать её не нужно.
+- Secondary регион активируется только при сбое primary.
+- Key Vault обеспечивает региональную избыточность без дополнительной конфигурации.
+- В экзаменационных вопросах часто проверяют:
+    - понимание RPO vs RTO
+    - что failover автоматический
+    - что чтение выполняется только из primary до момента переключения
+    - различие SLA сервиса и durability хранения
 
 ---
 
@@ -300,73 +378,123 @@ byte[] plaintext = Encoding.UTF8.GetBytes("Sensitive data");
 var encryptResult = await cryptoClient.EncryptAsync(EncryptionAlgorithm.RsaOaep, plaintext);
 ```
 
-### 3. Certificate Lifecycle Management
+### 3. Управление жизненным циклом сертификатов (Certificate Lifecycle Management)
 
-- Deploy SSL/TLS certificates to Azure services
-- Auto-renew certificates before expiration
-- Centralized certificate inventory
-- Track certificate expiration dates
+- Развёртывание SSL/TLS сертификатов в сервисы Azure
+- Автоматическое продление сертификатов до истечения срока действия
+- Централизованный реестр всех сертификатов
+- Отслеживание сроков действия сертификатов
 
 ---
 
-## Security Features
+### Что это даёт на практике
 
-### Authentication Options
+- Исключает ручное обновление сертификатов
+- Снижает риск простоя из-за просроченного SSL
+- Позволяет управлять всеми сертификатами из одного места
+- Упрощает аудит и соответствие требованиям безопасности
 
-1. **Managed Identity** (Recommended)
-   - No credentials in code
-   - Automatic credential rotation
-   - Works with Azure services
+---
+
+### Важно для AZ-204
+
+- Key Vault может автоматически продлевать сертификаты у поддерживаемых CA.
+- Сертификаты можно привязывать к:
+    - Azure App Service
+    - Application Gateway
+    - Azure Front Door
+- Частый экзаменационный сценарий:  
+  требуется автоматическое продление SSL без хранения приватного ключа в коде → использовать Key Vault.
+
+---
+
+## Возможности безопасности (Security Features)
+
+### Варианты аутентификации (Authentication Options)
+
+1. **Managed Identity** (Рекомендуется)
+    - Нет учётных данных в коде
+    - Автоматическая ротация credential’ов
+    - Работает нативно с Azure сервисами
+    - Идеально для App Service, Azure Functions, VM, AKS
 
 2. **Service Principal**
-   - Client ID + Certificate (recommended)
-   - Client ID + Secret (less secure)
+    - Client ID + Certificate (предпочтительный вариант)
+    - Client ID + Secret (менее безопасно)
+    - Используется для внешних сервисов или CI/CD
 
 3. **User Identity**
-   - For interactive scenarios
-   - Azure CLI/PowerShell authentication
-
-### Authorization Models
-
-#### Azure RBAC (Recommended)
-
-| Role | Permissions |
-|------|-------------|
-| **Key Vault Administrator** | Full access to Key Vault and all objects |
-| **Key Vault Secrets Officer** | Full access to secrets |
-| **Key Vault Secrets User** | Read secrets only |
-| **Key Vault Crypto Officer** | Full access to keys |
-| **Key Vault Crypto User** | Use keys for crypto operations |
-| **Key Vault Certificates Officer** | Manage certificates |
-| **Key Vault Reader** | Read metadata (not secret values) |
-
-#### Access Policies (Legacy)
-
-- **Permissions**: Grant/deny per object type (secrets, keys, certificates)
-- **Granularity**: Per user/service principal
-- **Limitation**: No management plane control
+    - Для интерактивных сценариев
+    - Аутентификация через Azure CLI / PowerShell
+    - Удобно для разработки и администрирования
 
 ---
 
-## Networking and Security
+## Модели авторизации (Authorization Models)
 
-### Network Access Options
+### Azure RBAC (Рекомендуется)
 
-| Option | Description | Use Case |
-|--------|-------------|----------|
-| **Public endpoint** | Accessible from internet | Default, most applications |
-| **Service endpoints** | Restrict to Azure VNet | Internal Azure resources |
-| **Private endpoints** | Private IP in VNet | Zero internet exposure |
-| **Firewall rules** | IP allowlist/blocklist | Specific IP ranges only |
+| Роль | Разрешения |
+|------|------------|
+| **Key Vault Administrator** | Полный доступ к Key Vault и всем объектам |
+| **Key Vault Secrets Officer** | Полный доступ к секретам |
+| **Key Vault Secrets User** | Только чтение секретов |
+| **Key Vault Crypto Officer** | Полный доступ к ключам |
+| **Key Vault Crypto User** | Использование ключей для криптоопераций |
+| **Key Vault Certificates Officer** | Управление сертификатами |
+| **Key Vault Reader** | Чтение метаданных (без значений секретов) |
 
-**Best practice**: Use private endpoints for production workloads.
+---
 
-### Soft Delete and Purge Protection
+### Access Policies (Устаревающая модель)
 
-| Feature | Purpose | Default |
-|---------|---------|---------|
-| **Soft Delete** | Retain deleted objects for 7-90 days | Enabled (90 days) |
-| **Purge Protection** | Prevent permanent deletion during retention | Optional (recommended) |
+- **Permissions**: назначаются по типу объекта (secrets, keys, certificates)
+- **Гранулярность**: на пользователя / service principal
+- **Ограничение**: не управляет Management Plane
+
+> ✅ Best practice: использовать Azure RBAC для унифицированной модели безопасности.
+
+---
+
+## Сетевые возможности и защита (Networking and Security)
+
+### Варианты сетевого доступа
+
+| Опция | Описание | Сценарий |
+|--------|-----------|-----------|
+| **Public endpoint** | Доступ из интернета | По умолчанию, большинство приложений |
+| **Service endpoints** | Ограничение доступа из Azure VNet | Внутренние ресурсы Azure |
+| **Private endpoints** | Приватный IP внутри VNet | Без доступа из интернета |
+| **Firewall rules** | Разрешённые/запрещённые IP | Контроль конкретных диапазонов |
+
+**Best practice**: для production использовать Private Endpoints.
+
+---
+
+## Soft Delete и Purge Protection
+
+| Возможность | Назначение | По умолчанию |
+|-------------|------------|--------------|
+| **Soft Delete** | Хранение удалённых объектов 7–90 дней | Включено (90 дней) |
+| **Purge Protection** | Запрет окончательного удаления в период хранения | Опционально (рекомендуется) |
+
+---
+
+### Дополнение (что часто спрашивают на AZ-204)
+
+- Managed Identity — лучший вариант для Azure сервисов.
+- RBAC предпочтительнее Access Policies.
+- В production:
+    - включать Soft Delete
+    - включать Purge Protection
+    - использовать Private Endpoints
+- Разница:
+    - Authentication = кто вы?
+    - Authorization = что вам разрешено?
+- Частый сценарий вопроса:
+  > Нужно безопасно хранить connection string и не хранить секрет в коде  
+  → Использовать Key Vault + Managed Identity.
+
 
 **Recovery process:**
 ```bash
@@ -381,61 +509,100 @@ az keyvault secret recover --vault-name mykeyvault --name MySecret
 ```
 
 ---
-
-## Pricing
+## Ценообразование (Pricing)
 
 ### Standard Tier
 
-| Operation | Cost (approximate) |
-|-----------|-------------------|
-| Secret operations | $0.03 per 10,000 transactions |
-| Key operations (software) | $0.03 per 10,000 transactions |
-| Certificate operations | $3.00 per renewal |
-| Managed storage account keys | $3.00 per account per month |
+| Операция | Стоимость (примерно) |
+|-----------|----------------------|
+| Операции с секретами | $0.03 за 10 000 транзакций |
+| Операции с ключами (software) | $0.03 за 10 000 транзакций |
+| Операции с сертификатами | $3.00 за продление |
+| Управляемые ключи Storage Account | $3.00 за аккаунт в месяц |
+
+---
 
 ### Premium Tier
 
-- **All Standard costs** +
-- **HSM-protected keys**: $1.00 per key per month
-- **HSM operations**: Higher per-transaction cost
+- **Все расходы Standard** +
+- **HSM-защищённые ключи**: ~$1.00 за ключ в месяц
+- **Операции HSM**: более высокая стоимость за транзакцию
+
+---
 
 ### Managed HSM
 
-- **Pool fee**: ~$4.00 per hour (per HSM)
-- **High availability**: 3 HSM replicas minimum
-- **Monthly cost**: ~$3,000+ per month
+- **Стоимость пула**: ~$4.00 в час (за один HSM)
+- **Высокая доступность**: минимум 3 HSM-реплики
+- **Месячная стоимость**: ~$3 000+ в месяц
 
-💡 **Cost tip**: Use Standard tier for most workloads. Premium/Managed HSM only for compliance requirements.
+💡 **Совет по стоимости**:  
+Для большинства нагрузок достаточно Standard.  
+Premium и Managed HSM используются только при требованиях регуляторов и повышенной безопасности.
+
+---
+
+## Exam Tips (Советы к AZ-204)
+
+🎯 **Два типа контейнеров**:
+- Vaults (наиболее распространённый вариант)
+- Managed HSM Pools
+
+🎯 **Три типа объектов**:
+- Secrets
+- Keys
+- Certificates
+
+🎯 **Уровни сервиса**:
+- Standard — программная защита ключей
+- Premium — HSM-защита
+
+🎯 **Аутентификация**:
+- Требуется Microsoft Entra ID
+
+🎯 **Авторизация**:
+- Azure RBAC (рекомендуется)
+- Access Policies (устаревающий подход)
+
+🎯 **Managed Identity**:
+- Лучшая практика для аутентификации
+- Нет хранения credential’ов
+
+🎯 **Soft delete**:
+- Включён по умолчанию (хранение 90 дней)
+
+🎯 **Региональная репликация**:
+- Автоматическая внутри региона и в парный регион
+
+🎯 **Логирование**:
+- Поддержка Storage Account
+- Event Hub
+- Azure Monitor Logs
+
+🎯 **Формат URI**:
+```bash
+https://{vault-name}.vault.azure.net/{object-type}/{object-name}
+```
+
+🎯 **Ограничения размера**:
+- Secrets — до 25 KB
+- Keys и Certificates — без строгого лимита размера (но с ограничениями по типу ключа)
+
+🎯 **Высокая доступность**:
+- SLA 99.99%
+- Автоматический failover
 
 ---
 
-## Exam Tips
+### Что часто проверяют на экзамене
 
-🎯 **Two container types**: Vaults (most common) and Managed HSM Pools
+- Когда выбирать Standard vs Premium.
+- Разницу Vault vs Managed HSM.
+- RBAC vs Access Policies.
+- Managed Identity как лучший способ доступа.
+- Soft Delete + Purge Protection в production.
+- Формат URI и ограничения размера секрета.
 
-🎯 **Three object types**: Secrets, Keys, Certificates
-
-🎯 **Service tiers**: Standard (software-protected) vs Premium (HSM-protected)
-
-🎯 **Authentication**: Microsoft Entra ID required
-
-🎯 **Authorization**: Azure RBAC (recommended) or Access Policies (legacy)
-
-🎯 **Managed Identity**: Best practice for authentication (no credential management)
-
-🎯 **Soft delete**: Enabled by default (90-day retention)
-
-🎯 **Regional replication**: Automatic within region and to paired region
-
-🎯 **Logging**: Support for Storage Account, Event Hub, and Azure Monitor
-
-🎯 **URI format**: `https://{vault-name}.vault.azure.net/{object-type}/{object-name}`
-
-🎯 **Size limits**: 25 KB for secrets, no limit for keys/certificates
-
-🎯 **High availability**: 99.99% SLA, automatic failover
-
----
 
 ## Quick Reference Commands
 
