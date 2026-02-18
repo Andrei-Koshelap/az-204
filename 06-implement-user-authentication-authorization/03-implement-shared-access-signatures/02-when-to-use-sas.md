@@ -1,26 +1,79 @@
 # When to Use Shared Access Signatures
 
-## Key Concepts
-- **Delegated access** - Grant access without sharing account keys
-- **Time-limited** - Temporary access to storage resources
-- **Two design patterns** - Front-end proxy vs SAS provider service
-- **Copy operations** - Required for cross-account resource copying
+## Ключевые понятия
 
-## Common Scenarios for SAS
+- **Delegated access** — предоставление доступа без передачи ключей аккаунта
+- **Time-limited** — временный доступ к ресурсам хранения
+- **Два архитектурных подхода** — Front-end proxy и SAS provider service
+- **Copy operations** — SAS требуется для копирования между аккаунтами
 
-### Primary Use Case
+---
 
-**Use a SAS when you want to provide secure access to resources in your storage account to any client who doesn't otherwise have permissions to those resources.**
+# Основные сценарии использования SAS
 
-### Typical Scenarios
+## Главный сценарий
 
-| Scenario | Why SAS? | Alternative |
-|----------|----------|-------------|
-| **User data storage** | Users read/write their own data | Service authenticates, generates SAS | Front-end proxy (all traffic routed) |
-| **Third-party access** | External app needs temporary access | Time-limited SAS with specific permissions | Share account keys (risky) |
-| **Mobile/desktop apps** | Client apps need direct storage access | SAS avoids embedding keys in app | Proxy all requests (slower) |
-| **Cross-account copy** | Copy blobs/files between accounts | SAS authorizes source access | Manual download/upload |
-| **Public file sharing** | Share specific files temporarily | Generate SAS link | Make entire container public (less secure) |
+Используйте **SAS**, когда необходимо предоставить безопасный доступ к ресурсам Storage клиенту, который не имеет прямых прав доступа.
+
+> 💡 SAS позволяет делегировать доступ без раскрытия account key.
+
+---
+
+# Типовые сценарии
+
+| Сценарий | Почему SAS? | Альтернатива |
+|------------|------------|--------------|
+| **Хранение пользовательских данных** | Пользователь читает/записывает только свои данные | Сервис аутентифицирует пользователя и генерирует SAS | Front-end proxy (весь трафик через сервер) |
+| **Доступ третьей стороны** | Временный доступ для внешнего приложения | Ограниченный по времени SAS с конкретными правами | Передача account key (небезопасно) |
+| **Mobile/desktop приложения** | Клиенту нужен прямой доступ к Storage | SAS позволяет избежать хранения ключей в приложении | Проксирование всех запросов (медленнее) |
+| **Копирование между аккаунтами** | Требуется доступ к исходному ресурсу | SAS авторизует чтение источника | Ручное скачивание и загрузка |
+| **Временное публичное предоставление файла** | Предоставить доступ к конкретному файлу | Генерация SAS-ссылки | Сделать контейнер публичным (менее безопасно) |
+
+---
+
+# Два архитектурных подхода
+
+## 1️⃣ Front-End Proxy
+
+- Клиент отправляет запрос серверу.
+- Сервер обращается к Storage.
+- Контроль полностью на сервере.
+- Повышенная безопасность, но большая нагрузка.
+
+## 2️⃣ SAS Provider Service
+
+- Клиент аутентифицируется.
+- Сервер проверяет права.
+- Сервер генерирует короткоживущий SAS.
+- Клиент обращается к Storage напрямую.
+
+> 💡 SAS provider снижает нагрузку на сервер и сохраняет контроль.
+
+---
+
+## Когда SAS особенно полезен
+
+- Нужен временный доступ.
+- Необходимо ограничить операции.
+- Нельзя раскрывать ключи Storage Account.
+- Требуется доступ без создания полноценной RBAC-модели.
+
+---
+
+## Важно для AZ-204
+
+- SAS используется для делегированного доступа.
+- Часто применяется в мобильных и SPA приложениях.
+- Обязателен для копирования между Storage Account.
+- Предпочтителен для временного доступа к отдельным объектам.
+- User Delegation SAS — самый безопасный вариант.
+
+---
+
+> 🎯 Частый экзаменационный вопрос:  
+Как предоставить мобильному приложению доступ к Blob Storage без передачи account key?  
+Ответ — использовать SAS.
+
 
 ## Design Patterns
 
@@ -43,16 +96,52 @@ Client → Front-End Proxy → Authenticate → Storage Account
 └─────────┘      └──────────────────┘      └─────────────┘
 ```
 
-**Characteristics**:
+## Характеристики подхода Front-End Proxy
 
-| Aspect | Details |
-|--------|---------|
-| **Authentication** | Proxy handles all auth |
-| **Data flow** | All data routes through proxy |
-| **Business logic** | Validation, transformation, logging |
-| **Performance** | Can be bottleneck for large data |
-| **Scaling** | Expensive to scale for high volume |
-| **Control** | Full control over requests |
+| Аспект | Детали |
+|--------|--------|
+| **Аутентификация** | Прокси-сервис полностью обрабатывает аутентификацию |
+| **Поток данных** | Весь трафик проходит через прокси |
+| **Бизнес-логика** | Возможна валидация, трансформация, логирование |
+| **Производительность** | Может стать узким местом при больших объёмах данных |
+| **Масштабирование** | Дорого масштабируется при высокой нагрузке |
+| **Контроль** | Полный контроль над входящими и исходящими запросами |
+
+---
+
+## Когда использовать
+
+- Требуется строгий контроль доступа.
+- Необходима сложная бизнес-логика.
+- Нужно централизованное логирование и аудит.
+- Работа с чувствительными данными.
+
+---
+
+## Плюсы
+
+- Максимальный контроль.
+- Простота реализации правил безопасности.
+- Централизованная точка проверки.
+
+## Минусы
+
+- Повышенная нагрузка на сервер.
+- Потенциальные проблемы с производительностью.
+- Более высокая стоимость масштабирования.
+
+---
+
+## Важно для AZ-204
+
+- Front-end proxy подходит для high-security сценариев.
+- Может быть альтернативой прямому использованию SAS.
+- Неэффективен для больших файлов и массовых загрузок.
+- Используется, когда SAS-подход неприемлем по рискам.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как обеспечить полный контроль и аудит всех запросов к Storage?  
+Ответ — использовать Front-End Proxy.
 
 **Example implementation**:
 
@@ -110,19 +199,46 @@ public class FilesController : ControllerBase
 }
 ```
 
-**Pros**:
-- ✅ Complete control over business logic
-- ✅ Centralized authentication and authorization
-- ✅ Easy to validate, transform, and log data
-- ✅ Can enforce complex rules
-- ✅ Hide storage structure from clients
+## Преимущества и недостатки подхода Front-End Proxy
 
-**Cons**:
-- ❌ All data passes through proxy (bandwidth cost)
-- ❌ Scaling can be expensive
-- ❌ Single point of failure
-- ❌ Higher latency for large files
-- ❌ Infrastructure overhead
+### ✅ Плюсы
+
+- Полный контроль над бизнес-логикой
+- Централизованная аутентификация и авторизация
+- Возможность валидации, трансформации и логирования данных
+- Поддержка сложных правил доступа
+- Сокрытие внутренней структуры Storage от клиентов
+
+---
+
+### ❌ Минусы
+
+- Весь трафик проходит через прокси (затраты на пропускную способность)
+- Дорогое масштабирование при высокой нагрузке
+- Единая точка отказа
+- Повышенная задержка при работе с крупными файлами
+- Дополнительные инфраструктурные расходы
+
+---
+
+## Когда оправдано использование
+
+- Требуется строгий контроль доступа
+- Необходим аудит и централизованная проверка
+- Работа с чувствительными или регулируемыми данными
+- Нужна сложная логика авторизации
+
+---
+
+## Важно для AZ-204
+
+- Front-End Proxy даёт максимальный контроль, но увеличивает нагрузку.
+- Не подходит для сценариев с большими файлами и высокой пропускной способностью.
+- Альтернатива — SAS provider service для снижения нагрузки.
+- Часто применяется в high-security архитектурах.
+
+> 🎯 Ключевая идея:  
+> Больше контроля — больше нагрузки и затрат.
 
 ### Pattern 2: SAS Provider Service
 
@@ -151,16 +267,63 @@ Client → SAS Provider → Authenticate → Generate SAS
 └─────────────┘
 ```
 
-**Characteristics**:
+## Характеристики подхода SAS Provider Service
 
-| Aspect | Details |
-|--------|---------|
-| **Authentication** | Service authenticates, generates SAS |
-| **Data flow** | Direct client-to-storage after SAS issued |
-| **Business logic** | Limited to SAS generation |
-| **Performance** | Fast, direct storage access |
-| **Scaling** | Easier to scale, less traffic |
-| **Control** | Limited after SAS issued |
+| Аспект | Детали |
+|--------|--------|
+| **Аутентификация** | Сервис аутентифицирует клиента и генерирует SAS |
+| **Поток данных** | После выдачи SAS клиент обращается к Storage напрямую |
+| **Бизнес-логика** | Ограничена проверкой и генерацией SAS |
+| **Производительность** | Высокая — прямой доступ к Storage |
+| **Масштабирование** | Проще масштабировать, меньше серверного трафика |
+| **Контроль** | Ограничен после выдачи SAS |
+
+---
+
+## Как работает
+
+1. Клиент проходит аутентификацию в сервисе.
+2. Сервис проверяет права доступа.
+3. Сервис генерирует короткоживущий SAS.
+4. Клиент напрямую взаимодействует с Azure Storage.
+
+---
+
+## Преимущества
+
+- Минимальная нагрузка на сервер.
+- Высокая производительность.
+- Подходит для больших файлов.
+- Легче масштабировать при высоком трафике.
+
+## Ограничения
+
+- После выдачи SAS контроль ограничен.
+- Невозможно отозвать SAS мгновенно без stored access policy.
+- Требуется строгий контроль срока действия и разрешений.
+
+---
+
+## Когда использовать
+
+- Загрузка и скачивание больших файлов.
+- Mobile/SPA приложения.
+- Высоконагруженные сценарии.
+- Временный делегированный доступ.
+
+---
+
+## Важно для AZ-204
+
+- SAS Provider Service — компромисс между безопасностью и производительностью.
+- Предпочтителен для high-volume сценариев.
+- Необходим короткий срок действия SAS.
+- User Delegation SAS — наиболее безопасный вариант.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как уменьшить нагрузку на backend при загрузке больших файлов?  
+Ответ — использовать SAS Provider Service.
+
 
 **Example implementation**:
 
@@ -300,20 +463,46 @@ async function uploadFile(file) {
     console.log('File uploaded successfully');
 }
 ```
+## Преимущества и недостатки SAS Provider Service
 
-**Pros**:
-- ✅ Direct storage access (faster, lower latency)
-- ✅ Reduced bandwidth costs for proxy
-- ✅ Easier to scale (less traffic through service)
-- ✅ Lower infrastructure costs
-- ✅ Client can retry uploads/downloads
+### ✅ Плюсы
 
-**Cons**:
-- ❌ Limited control after SAS issued
-- ❌ Cannot modify data in transit
-- ❌ Less detailed access logging
-- ❌ Business logic limited to SAS generation
-- ❌ Client must handle storage APIs
+- Прямой доступ к Storage (выше скорость, ниже задержка)
+- Снижение затрат на пропускную способность прокси
+- Проще масштабировать (меньше трафика через сервис)
+- Более низкие инфраструктурные расходы
+- Клиент может самостоятельно повторять загрузки/скачивания
+
+---
+
+### ❌ Минусы
+
+- Ограниченный контроль после выдачи SAS
+- Невозможно изменять данные «на лету»
+- Менее детализированное логирование на уровне бизнес-логики
+- Бизнес-логика ограничена этапом генерации SAS
+- Клиент должен работать напрямую с API Storage
+
+---
+
+## Когда выбирать этот подход
+
+- Большие файлы и массовые загрузки
+- Высокая нагрузка
+- Mobile/SPA клиенты
+- Не требуется сложная серверная обработка данных
+
+---
+
+## Важно для AZ-204
+
+- SAS Provider снижает нагрузку на backend.
+- Контроль доступа ограничен временем действия SAS.
+- Требуется минимальный срок жизни и минимальные разрешения.
+- Предпочтительно использовать User Delegation SAS.
+
+> 🎯 Ключевая идея:  
+> Максимальная производительность — при ограниченном контроле после выдачи SAS.
 
 ### Pattern 3: Hybrid Approach
 
@@ -355,25 +544,52 @@ public class HybridController : ControllerBase
 }
 ```
 
-**Use cases**:
-- Small files through proxy for processing
-- Large files via SAS for performance
-- Sensitive data through proxy for encryption
-- Public data via SAS for cost savings
+## Типовые сценарии комбинированного подхода
 
-## Copy Operations with SAS
+- **Малые файлы через proxy** — требуется обработка или валидация
+- **Крупные файлы через SAS** — приоритет производительности
+- **Чувствительные данные через proxy** — дополнительное шифрование и контроль
+- **Публичные данные через SAS** — снижение затрат и нагрузки
 
-### Cross-Account Copy Requirements
+> 💡 Часто используется гибридная архитектура: proxy для контроля + SAS для масштабируемости.
 
-**SAS required** when copying between different storage accounts:
+---
 
-| Copy Operation | SAS Required For | Optional SAS For |
-|----------------|------------------|------------------|
-| **Blob → Blob (different account)** | Source blob | Destination blob |
-| **File → File (different account)** | Source file | Destination file |
-| **Blob → File** | Source object | Destination object |
-| **File → Blob** | Source object | Destination object |
-| **Same account copies** | Not required | Not required |
+# Copy Operations с использованием SAS
+
+## Требования для копирования между аккаунтами
+
+При копировании данных между разными Storage Account **требуется SAS** для доступа к источнику.
+
+| Операция копирования | SAS обязателен для | SAS опционален для |
+|----------------------|--------------------|---------------------|
+| **Blob → Blob (разные аккаунты)** | Исходный blob | Целевой blob |
+| **File → File (разные аккаунты)** | Исходный файл | Целевой файл |
+| **Blob → File** | Исходный объект | Целевой объект |
+| **File → Blob** | Исходный объект | Целевой объект |
+| **Копирование внутри одного аккаунта** | Не требуется | Не требуется |
+
+---
+
+## Что важно понимать
+
+- SAS используется для авторизации чтения из источника.
+- Если у клиента уже есть права на целевой ресурс — SAS для назначения может быть не нужен.
+- Для cross-account копирования SAS почти всегда необходим.
+
+---
+
+## Важно для AZ-204
+
+- Копирование между разными Storage Account требует SAS.
+- SAS чаще всего требуется для исходного объекта.
+- Внутри одного аккаунта SAS не обязателен.
+- Copy operations — частый экзаменационный сценарий.
+
+> 🎯 Частый экзаменационный вопрос:  
+Нужно ли SAS при копировании blob внутри одного Storage Account?  
+Ответ — нет.
+
 
 ### Example: Cross-Account Blob Copy
 
@@ -589,34 +805,93 @@ public IActionResult GrantPartnerAccess(string partnerId, string fileId)
     });
 }
 ```
+# Critical Notes
 
-## Critical Notes
-- 💡 **Primary use** - Delegate access without sharing account keys
-- 🎯 **Two patterns** - Front-end proxy (all traffic) vs SAS provider (direct access)
-- ✅ **Front-end proxy** - Full control, validation, but expensive to scale
-- ⚠️ **SAS provider** - Fast, scalable, but limited control after SAS issued
-- 🔄 **Hybrid approach** - Small files via proxy, large files via SAS
-- 📊 **Copy operations** - SAS required for cross-account blob/file copying
-- 💡 **Real-world** - User uploads, report downloads, mobile apps, partner access
-- ✅ **Decision factors** - Data volume, business logic needs, security requirements
-- ⚠️ **Trade-offs** - Control vs performance, security vs cost
-- 🔒 **Best for** - Temporary access, external clients, mobile/desktop apps
+- 💡 **Основное назначение** — делегировать доступ без передачи account key
+- 🎯 **Два архитектурных паттерна** — Front-end proxy (весь трафик через сервис) и SAS provider (прямой доступ)
+- ✅ **Front-end proxy** — полный контроль и валидация, но дорого масштабируется
+- ⚠️ **SAS provider** — быстро и масштабируемо, но контроль ограничен после выдачи SAS
+- 🔄 **Гибридный подход** — малые файлы через proxy, большие через SAS
+- 📊 **Copy operations** — SAS требуется при копировании между разными аккаунтами
+- 💡 **Реальные сценарии** — загрузка файлов пользователями, скачивание отчётов, mobile-приложения, партнёрский доступ
+- ✅ **Факторы выбора** — объём данных, требования к бизнес-логике, безопасность
+- ⚠️ **Компромиссы** — контроль vs производительность, безопасность vs стоимость
+- 🔒 **Лучше всего подходит** — для временного доступа, внешних клиентов, mobile/desktop приложений
 
-## Exam Tips
-- Use SAS: Provide secure access without sharing account keys
-- Front-end proxy: All data routed through service, validation, expensive to scale
-- SAS provider: Lightweight service generates SAS, clients access storage directly
-- Hybrid approach: Combine both patterns based on file size or security needs
-- Copy operations: SAS required when copying blob/file to different storage account
-- Cross-account copy: Must use SAS to authorize access to source object
-- Same-account copy: SAS not required (can use account credentials)
-- Design choice: Front-end proxy for control, SAS provider for performance
-- SAS provider pros: Faster, cheaper, scalable (direct client-to-storage)
-- Front-end proxy pros: Full control, validation, transformation, centralized logging
-- Real-world scenarios: User file uploads, report downloads, mobile apps, third-party access
-- Decision factors: Data volume, business logic requirements, security needs, cost
-- Short-lived SAS: Generate SAS with short expiration (15-60 minutes typical)
-- Validation before SAS: Authenticate user, check permissions before generating SAS
-- Middle-tier service: Consider when SAS risk is unacceptable
+---
+
+# Exam Tips (AZ-204)
+
+## Когда использовать SAS
+
+- Предоставить временный и ограниченный доступ.
+- Избежать передачи ключей Storage Account.
+- Делегировать доступ внешним клиентам.
+
+---
+
+## Архитектурные паттерны
+
+### Front-End Proxy
+- Весь трафик проходит через сервис.
+- Поддержка валидации, трансформации, логирования.
+- Дорого масштабируется.
+- Подходит для high-security сценариев.
+
+### SAS Provider
+- Лёгкий сервис, генерирующий SAS.
+- Клиент обращается к Storage напрямую.
+- Быстрее и дешевле.
+- Контроль ограничен временем действия SAS.
+
+### Hybrid
+- Комбинация двух подходов.
+- Выбор зависит от размера файла или требований безопасности.
+
+---
+
+## Copy Operations
+
+- При копировании между разными Storage Account требуется SAS.
+- SAS нужен для авторизации доступа к исходному объекту.
+- Внутри одного аккаунта SAS не обязателен.
+
+---
+
+## Преимущества SAS Provider
+
+- Более высокая производительность.
+- Меньше затрат.
+- Легче масштабировать.
+
+## Преимущества Front-End Proxy
+
+- Полный контроль.
+- Централизованное логирование.
+- Поддержка сложной бизнес-логики.
+
+---
+
+## Реальные сценарии
+
+- Загрузка пользовательских файлов.
+- Скачивание отчётов.
+- Доступ мобильных приложений к Storage.
+- Временный доступ партнёрам.
+
+---
+
+## Важные моменты
+
+- Генерировать SAS с коротким сроком действия (часто 15–60 минут).
+- Проверять права пользователя перед генерацией SAS.
+- Рассматривать middle-tier сервис при повышенных требованиях безопасности.
+
+---
+
+> 🎯 Ключевая идея:  
+> SAS — это инструмент для временного делегирования доступа.  
+> Выбор архитектуры зависит от баланса между контролем, производительностью и стоимостью.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-shared-access-signatures/3-shared-access-signatures)

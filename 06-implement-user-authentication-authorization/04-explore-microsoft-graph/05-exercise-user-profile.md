@@ -1,62 +1,74 @@
-# Exercise: Retrieve User Profile Information using Microsoft Graph
+# Упражнение: Получение информации профиля пользователя через Microsoft Graph
 
-## Overview
-Hands-on exercise to create a .NET console application that retrieves user profile information from Microsoft Graph using interactive authentication.
+## Обзор
+Практическое упражнение: создать .NET console-приложение, которое получает данные профиля пользователя из Microsoft Graph, используя интерактивную аутентификацию.
 
-## Prerequisites
-- ✅ Azure subscription
+## Предварительные требования
+- ✅ Подписка Azure
 - ✅ Visual Studio Code
-- ✅ .NET 8.0 SDK or later
-- ✅ C# Dev Kit extension for VS Code
-- ✅ Azure account with ability to register applications
+- ✅ .NET 8.0 SDK или новее
+- ✅ Расширение C# Dev Kit для VS Code
+- ✅ Аккаунт Azure с правами на регистрацию приложений
 
-## Exercise Duration
-⏱️ **Approximately 15 minutes**
+## Длительность упражнения
+⏱️ **Около 15 минут**
 
-## Learning Objectives
-- Register an application with Microsoft identity platform
-- Configure authentication for public client
-- Create console application with Microsoft Graph SDK
-- Authenticate users interactively
-- Retrieve user profile from Microsoft Graph API
-- Handle authentication consent flow
+## Цели обучения
+- Зарегистрировать приложение в Microsoft identity platform
+- Настроить аутентификацию для public client
+- Создать консольное приложение с Microsoft Graph SDK
+- Выполнять интерактивную аутентификацию пользователя
+- Получить профиль пользователя через Microsoft Graph API
+- Обработать flow согласия (consent)
 
-## Task 1: Register Application in Azure Portal
+---
 
-### Step 1: Navigate to App Registrations
+## Задача 1: Регистрация приложения в Azure Portal
 
-1. Sign in to [Azure Portal](https://portal.azure.com)
-2. Search for **Microsoft Entra ID** (formerly Azure Active Directory)
-3. Select **App registrations** from left menu
-4. Click **+ New registration**
+### Шаг 1: Перейти в App Registrations
 
-### Step 2: Configure Application Registration
+1. Войдите в [Azure Portal](https://portal.azure.com)
+2. В поиске найдите **Microsoft Entra ID** (ранее Azure Active Directory)
+3. В левом меню выберите **App registrations**
+4. Нажмите **+ New registration**
 
-**Application details**:
+### Шаг 2: Настроить регистрацию приложения
 
-| Field | Value |
-|-------|-------|
+**Параметры приложения**:
+
+| Поле | Значение |
+|------|----------|
 | Name | `myGraphApplication` |
 | Supported account types | **Accounts in this organizational directory only (Single tenant)** |
-| Redirect URI | Select **Public client/native (mobile & desktop)** |
+| Redirect URI | Выбрать **Public client/native (mobile & desktop)** |
 | Redirect URI value | `http://localhost` |
 
-Click **Register**
+Нажмите **Register**
 
-### Step 3: Record Application IDs
+### Шаг 3: Сохранить идентификаторы приложения
 
-From the **Overview** page, copy and save:
+На странице **Overview** скопируйте и сохраните:
 
-- **Application (client) ID** - Example: `11111111-1111-1111-1111-111111111111`
-- **Directory (tenant) ID** - Example: `22222222-2222-2222-2222-222222222222`
+- **Application (client) ID** — пример: `11111111-1111-1111-1111-111111111111`
+- **Directory (tenant) ID** — пример: `22222222-2222-2222-2222-222222222222`
 
-💡 You'll need these values to configure your application.
+💡 Эти значения понадобятся для конфигурации приложения.
 
-### Why These Settings?
+---
 
-- **Single tenant**: App only for users in your organization
-- **Public client**: No client secret needed (interactive auth)
-- **http://localhost**: Redirect for local development
+### Зачем такие настройки?
+
+- **Single tenant**: приложение доступно только пользователям вашей организации
+- **Public client**: не требуется client secret (интерактивная аутентификация)
+- **http://localhost**: redirect для локальной разработки
+
+---
+
+### Дополнение от себя (полезно в реальной жизни и для AZ-204)
+
+- Если в организации включены политики безопасности (Conditional Access), интерактивный вход может потребовать MFA — это нормально.
+- Для console-app чаще всего хватает делегированных разрешений `User.Read` для чтения собственного профиля.
+- Если позже понадобится работа без пользователя (daemon) — тогда уже будет другой flow (client credentials) и **Application permissions**.
 
 ## Task 2: Create Console Application
 
@@ -455,51 +467,91 @@ sequenceDiagram
     Graph API->>App: User profile
 ```
 
-### Scopes vs Permissions
+### Scopes vs Permissions (Scopes и Permissions)
 
-| In App Registration | In Code | Purpose |
-|---------------------|---------|---------|
-| API Permissions | Scopes array | What app can access |
-| User.Read | "User.Read" | Basic profile |
-| Mail.Read | "Mail.Read" | Read email |
-| Calendars.Read | "Calendars.Read" | Read calendar |
+| В регистрации приложения | В коде | Назначение |
+|--------------------------|--------|-----------|
+| API Permissions | массив Scopes | К чему приложение может получить доступ |
+| User.Read | "User.Read" | Базовый профиль пользователя |
+| Mail.Read | "Mail.Read" | Чтение почты |
+| Calendars.Read | "Calendars.Read" | Чтение календаря |
 
-### Authentication Types
+> 💡 Практически: *permissions* настраиваются в Entra ID (App Registration), а *scopes* — это то, что приложение **запрашивает** при получении токена.
 
-| Type | Use Case | User Interaction |
-|------|----------|------------------|
-| InteractiveBrowserCredential | Desktop apps | Yes - Browser |
-| DeviceCodeCredential | Headless/CLI | Yes - Code entry |
-| ClientSecretCredential | Daemon/Service | No |
-| ManagedIdentityCredential | Azure resources | No |
+---
 
-## Critical Notes
-- 💡 **Single tenant** - App registered for one organization
-- 🔒 **Public client** - Interactive auth, no secrets
-- ✅ **User.Read** - Minimum scope for profile access
-- 🎯 **InteractiveBrowserCredential** - Opens browser automatically
-- ⚠️ **First run** - Requires user consent
-- 🔄 **Token caching** - Subsequent runs use cached token
-- 📊 **/.me endpoint** - Returns current authenticated user
-- 💡 **$select** - Request specific properties only
-- ✅ **$expand** - Include related entities (manager)
-- ⚠️ **Redirect URI** - Must match registration exactly
+### Типы аутентификации (Authentication Types)
 
-## Exam Tips
-- App registration: Record Application (client) ID and Directory (tenant) ID
-- Supported account types: Single tenant (one org), Multi-tenant (any org), Personal accounts
-- Redirect URI: Public client for desktop/mobile, Web for web apps
-- Required packages: Azure.Identity (auth), Microsoft.Graph (SDK)
-- InteractiveBrowserCredential: Opens browser for authentication
-- Credential options: ClientId, TenantId, AuthorityHost, RedirectUri
-- Scopes: Array of permissions like ["User.Read", "Mail.Read"]
-- GraphServiceClient: new GraphServiceClient(credential, scopes)
-- Get current user: await graphClient.Me.GetAsync()
-- First-run consent: User must accept permissions in browser
-- Token caching: Subsequent runs use cached token from .IdentityService/msal.cache
-- Query parameters: Select (properties), Expand (related entities), Filter, Top, Orderby
-- Error handling: Catch exceptions for auth failures, permission issues
-- Clean up: Delete app registration, remove token cache, delete project
-- Troubleshooting: Verify CLIENT_ID, check redirect URI, ensure API permissions granted
+| Тип | Сценарий | Взаимодействие с пользователем |
+|------|----------|-------------------------------|
+| InteractiveBrowserCredential | Desktop-приложения | Да — через браузер |
+| DeviceCodeCredential | Headless/CLI | Да — ввод кода |
+| ClientSecretCredential | Daemon/Service | Нет |
+| ManagedIdentityCredential | Azure ресурсы | Нет |
+
+---
+
+## Critical Notes (Ключевые моменты)
+
+- 💡 **Single tenant** — приложение зарегистрировано для одной организации
+- 🔒 **Public client** — интерактивная аутентификация, без secret’ов
+- ✅ **User.Read** — минимальный scope для доступа к профилю
+- 🎯 **InteractiveBrowserCredential** — автоматически открывает браузер для входа
+- ⚠️ **Первый запуск** — требуется согласие пользователя (consent)
+- 🔄 **Token caching** — последующие запуски используют кэш токена
+- 📊 **Endpoint `/.me`** — возвращает текущего аутентифицированного пользователя
+- 💡 **$select** — запрашивать только нужные свойства
+- ✅ **$expand** — включить связанные сущности (например, manager)
+- ⚠️ **Redirect URI** — должен *точно* совпадать с тем, что в регистрации приложения
+
+---
+
+## Exam Tips (Советы к AZ-204)
+
+- При регистрации приложения сохранить:
+   - Application (client) ID
+   - Directory (tenant) ID
+- Supported account types:
+   - Single tenant (одна организация)
+   - Multi-tenant (любая организация)
+   - Personal accounts (личные Microsoft аккаунты)
+- Redirect URI:
+   - Public client — для desktop/mobile
+   - Web — для веб-приложений
+- Нужные пакеты:
+   - Azure.Identity (аутентификация)
+   - Microsoft.Graph (SDK)
+- InteractiveBrowserCredential:
+   - открывает браузер для аутентификации
+- Параметры credential (часто встречаются в примерах):
+   - ClientId, TenantId, AuthorityHost, RedirectUri
+- Scopes:
+   - массив строк вроде `["User.Read", "Mail.Read"]`
+- GraphServiceClient:
+   - `new GraphServiceClient(credential, scopes)`
+- Получить текущего пользователя:
+   - `await graphClient.Me.GetAsync()`
+- Consent при первом запуске:
+   - пользователь подтверждает запрашиваемые права в браузере
+- Token caching:
+   - при повторных запусках берётся токен из кэша (пример: `.IdentityService/msal.cache`)
+- Query parameters:
+   - Select (properties), Expand (related entities), Filter, Top, Orderby
+- Error handling:
+   - ловить исключения для auth/permissions проблем
+- Cleanup:
+   - удалить app registration, удалить token cache, удалить проект
+- Troubleshooting:
+   - проверить CLIENT_ID
+   - проверить Redirect URI
+   - убедиться, что API permissions выданы/подтверждены (consent)
+
+---
+
+### Дополнение от себя (частые ловушки)
+
+- **Scopes в коде должны соответствовать разрешениям**, которые реально доступны (и выдано согласие). Если нет — получите 403/consent prompt.
+- Для интерактивного сценария удобнее начинать с **Delegated permissions** (`User.Read`), а потом расширять.
+- Если приложение запускается в Azure (Functions/App Service/VM) — часто лучший вариант **ManagedIdentityCredential** вместо secret’ов.
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/microsoft-graph/5a-exercise-microsoft-graph-user-profile)

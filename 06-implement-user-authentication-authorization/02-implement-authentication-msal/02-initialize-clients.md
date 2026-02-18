@@ -1,31 +1,135 @@
 # Initialize Client Applications with MSAL
 
-## Key Concepts
-- **Application Builders** - PublicClientApplicationBuilder and ConfidentialClientApplicationBuilder
-- **Required info** - Client ID, tenant ID, authority
-- **Modifiers** - `.With` methods for configuration
-- **Registration first** - Register app in Azure Portal before initialization
+## Ключевые понятия
 
-## Prerequisites for Initialization
+- **Application Builders** — `PublicClientApplicationBuilder` и `ConfidentialClientApplicationBuilder`
+- **Обязательные данные** — Client ID, Tenant ID, Authority
+- **Модификаторы** — методы `.With...` для настройки
+- **Сначала регистрация** — приложение должно быть зарегистрировано в Azure Portal
 
-### Registration Requirements
+---
 
-**Before initializing, register your app**:
+# Prerequisites for Initialization
+
+## Требования к регистрации
+
+**Перед инициализацией MSAL необходимо зарегистрировать приложение в Microsoft Entra ID.**
+
+### Что нужно выполнить
+
+1. Создать **App Registration** в Azure Portal.
+2. Определить:
+    - Тип поддерживаемых аккаунтов (Single / Multi-tenant)
+    - Redirect URI
+3. Сохранить:
+    - **Application (Client) ID**
+    - **Directory (Tenant) ID**
+4. При необходимости:
+    - Создать **Client secret** или загрузить сертификат (для confidential client).
+
+---
+
+## Какие данные понадобятся для инициализации
+
+| Параметр | Назначение |
+|----------|------------|
+| **Client ID** | Уникальный идентификатор приложения |
+| **Tenant ID** | Идентификатор каталога |
+| **Authority** | URL endpoint для аутентификации |
+| **Client Secret / Certificate** | Только для confidential client |
+
+> 💡 Public client не использует client secret.
+
+---
+
+## Authority
+
+Authority определяет:
+
+- Tenant
+- Endpoint аутентификации
+- Тип аудитории
+
+Может быть:
+
+- Конкретный tenant
+- `common`
+- `organizations`
+- `consumers`
+
+---
+
+## Важно для AZ-204
+
+- Инициализация MSAL невозможна без App Registration.
+- Confidential client требует client secret или сертификат.
+- Authority влияет на то, кто может выполнить вход.
+- Tenant ID и Client ID используются при создании builder.
+
+> 🎯 Частый экзаменационный вопрос:  
+Что необходимо сделать перед использованием MSAL?  
+Ответ — зарегистрировать приложение в Microsoft Entra ID.
+
 
 ```
 Azure Portal → Microsoft Entra ID → App registrations → New registration
 ```
 
-### Information Needed
+## Необходимая информация для инициализации MSAL
 
-| Property | Description | Example |
-|----------|-------------|---------|
-| **Application (Client) ID** | Unique GUID identifier | `00001111-aaaa-2222-bbbb-3333cccc4444` |
-| **Directory (Tenant) ID** | Tenant GUID | `22222222-2222-2222-2222-222222222222` |
-| **Authority URL** | Identity provider URL + tenant | `https://login.microsoftonline.com/{tenant}` |
-| **Redirect URI** | Where identity provider returns response | `http://localhost` or `https://myapp.com` |
-| **Client Secret** | Secret string (confidential clients only) | `abc123...` |
-| **Certificate** | X509 certificate (confidential clients only) | `X509Certificate2` object |
+Перед созданием клиента MSAL нужно подготовить параметры из App Registration.
+
+| Параметр | Описание | Пример |
+|-----------|----------|--------|
+| **Application (Client) ID** | Уникальный GUID приложения | `00001111-aaaa-2222-bbbb-3333cccc4444` |
+| **Directory (Tenant) ID** | GUID каталога (tenant) | `22222222-2222-2222-2222-222222222222` |
+| **Authority URL** | URL провайдера идентификации + tenant | `https://login.microsoftonline.com/{tenant}` |
+| **Redirect URI** | Адрес возврата после аутентификации | `http://localhost` или `https://myapp.com` |
+| **Client Secret** | Секрет приложения (только для confidential clients) | `abc123...` |
+| **Certificate** | Сертификат X509 (только для confidential clients) | `X509Certificate2` |
+
+---
+
+## Разбор параметров
+
+### Application (Client) ID
+- Идентифицирует приложение.
+- Используется во всех запросах к identity platform.
+- Публичен, не является секретом.
+
+### Directory (Tenant) ID
+- Определяет каталог, где зарегистрировано приложение.
+- Используется для формирования authority.
+
+### Authority URL
+- Указывает, куда отправлять запросы аутентификации.
+- Содержит tenant или общий endpoint.
+
+### Redirect URI
+- Должен точно совпадать с зарегистрированным в портале.
+- Используется для возврата authorization code.
+
+### Client Secret
+- Используется только в confidential client.
+- Должен храниться безопасно (например, в Key Vault).
+- Имеет срок действия.
+
+### Certificate
+- Более безопасная альтернатива client secret.
+- Рекомендуется для production-сценариев.
+
+---
+
+## Важно для AZ-204
+
+- Public client не использует client secret или сертификат.
+- Confidential client обязан использовать secret или сертификат.
+- Authority определяет тип поддерживаемых аккаунтов.
+- Redirect URI должен точно совпадать с настройкой в App Registration.
+
+> 🎯 Частый экзаменационный вопрос:  
+Какие параметры обязательны для инициализации confidential client?  
+Ответ — Client ID, Authority и Client Secret (или сертификат).
 
 ### Finding Information in Azure Portal
 
@@ -768,37 +872,39 @@ public class DaemonAuthService
 }
 ```
 
-## Critical Notes
-- 💡 **Two builders** - PublicClientApplicationBuilder and ConfidentialClientApplicationBuilder
-- 🎯 **Register first** - Register app in Azure Portal before initialization
-- ✅ **Required info** - Client ID, tenant ID, authority
-- ⚠️ **Modifiers** - Use `.With` methods for configuration
-- 🔄 **Singleton** - Create once, reuse application instance
-- 📊 **Public client** - No secret/certificate (desktop, mobile)
-- 💡 **Confidential client** - With secret or certificate (web, daemon)
-- ✅ **Secure secrets** - Use Key Vault or environment variables
-- ⚠️ **Mutually exclusive** - Cannot use both secret and certificate
-- 🔒 **Best practice** - Use certificates over secrets in production
+# Critical Notes
 
-## Exam Tips
-- PublicClientApplicationBuilder: For public clients (desktop, mobile, SPA)
-- ConfidentialClientApplicationBuilder: For confidential clients (web, daemon)
-- Required information: Client ID, tenant ID (from Azure Portal app registration)
-- WithAuthority: Set authentication authority (cloud instance + tenant)
-- WithRedirectUri: Override default redirect URI
-- WithClientSecret: Add client secret (confidential clients only)
-- WithCertificate: Add certificate (confidential clients, more secure)
-- WithDefaultRedirectUri: Use platform-appropriate default
-- Builder modifiers: .With methods for configuration (WithAuthority, WithTenantId, etc.)
-- Mutually exclusive: Cannot use both WithClientSecret and WithCertificate
-- Singleton pattern: Create MSAL app instance once, reuse throughout application
-- Configuration: Can load from appsettings.json or environment variables
-- Authority URL: https://login.microsoftonline.com/{tenantId}
-- AzureCloudInstance: AzurePublic (most common), AzureChina, AzureGermany, AzureUsGovernment
-- Logging: WithLogging or WithDebugLoggingCallback for debugging
-- Best practice: Use certificates over secrets, store secrets securely (Key Vault)
-- Desktop redirect: http://localhost
-- Mobile redirect: msal{clientId}://auth
-- Web redirect: https://yourapp.com/signin-oidc
+- 💡 **Два builder-класса** — `PublicClientApplicationBuilder` и `ConfidentialClientApplicationBuilder`
+- 🎯 **Сначала регистрация** — приложение должно быть зарегистрировано в Azure Portal
+- ✅ **Обязательные данные** — Client ID, Tenant ID, Authority
+- ⚠️ **Модификаторы** — конфигурация через методы `.With...`
+- 🔄 **Singleton** — создавать экземпляр MSAL один раз и переиспользовать
+- 📊 **Public client** — без secret/сертификата (desktop, mobile, SPA)
+- 💡 **Confidential client** — с secret или сертификатом (web, daemon)
+- ✅ **Безопасность секретов** — хранить в Key Vault или переменных окружения
+- ⚠️ **Взаимоисключающие параметры** — нельзя использовать secret и сертификат одновременно
+- 🔒 **Best practice** — в production использовать сертификаты вместо секретов
+
+---
+
+# Exam Tips (AZ-204)
+
+## Выбор Builder
+
+- **PublicClientApplicationBuilder**  
+  Используется для desktop, mobile, SPA.
+
+- **ConfidentialClientApplicationBuilder**  
+  Используется для web-приложений, API и daemon-сервисов.
+
+---
+
+## Обязательная информация
+
+- Client ID
+- Tenant ID
+- Authority
+
+Authority формируется как:
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-authentication-by-using-microsoft-authentication-library/3-initialize-client-applications)

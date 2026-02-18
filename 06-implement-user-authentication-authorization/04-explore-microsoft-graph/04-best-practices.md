@@ -1,22 +1,79 @@
-# Apply Microsoft Graph Best Practices
+# Применение лучших практик Microsoft Graph
 
-## Key Concepts
-- **Authentication** - Use MSAL for token acquisition
-- **Permissions** - Request least privilege
-- **Consent** - Understand delegated vs application
-- **Pagination** - Handle large result sets
-- **Throttling** - Respect rate limits
-- **Evolvable Enums** - Handle new enum values
+## Ключевые концепции
+- **Аутентификация** — использовать MSAL для получения токенов
+- **Разрешения (Permissions)** — запрашивать минимально необходимые права (least privilege)
+- **Consent (согласие)** — понимать разницу между delegated и application permissions
+- **Пагинация** — корректно обрабатывать большие наборы данных
+- **Throttling** — учитывать ограничения по количеству запросов
+- **Evolvable Enums** — предусматривать появление новых значений enum
 
-## Authentication and Authorization
+---
 
-### Use Microsoft Authentication Library (MSAL)
+## Аутентификация и авторизация
 
-**MSAL advantages**:
-- **Token acquisition** - Handles OAuth 2.0 flow
-- **Token caching** - Reduces authentication prompts
-- **Token refresh** - Automatic renewal
-- **Multiple accounts** - Support for multiple identities
+### Использование Microsoft Authentication Library (MSAL)
+
+**Преимущества MSAL**:
+
+- **Получение токена** — реализует OAuth 2.0 flow
+- **Кэширование токенов** — снижает количество повторных аутентификаций
+- **Автоматическое обновление токена** — refresh выполняется прозрачно
+- **Поддержка нескольких аккаунтов** — работа с несколькими идентификациями
+
+---
+
+### Delegated vs Application Permissions
+
+- **Delegated permissions**
+    - Используются от имени пользователя
+    - Требуют входа пользователя
+    - Права ограничены разрешениями пользователя
+
+- **Application permissions**
+    - Работают без пользователя (daemon/service)
+    - Требуют admin consent
+    - Часто используются для background-процессов
+
+---
+
+## Пагинация
+
+- Microsoft Graph возвращает частичные результаты при больших выборках.
+- Использовать `@odata.nextLink` для получения следующей страницы.
+- В SDK — применять `PageIterator`.
+
+---
+
+## Throttling (ограничение запросов)
+
+- При превышении лимита возвращается `429 Too Many Requests`.
+- Обязательно обрабатывать заголовок `Retry-After`.
+- Использовать экспоненциальную стратегию повторов (exponential backoff).
+- Минимизировать количество запросов через:
+    - `$select`
+    - серверную фильтрацию (`$filter`)
+    - batching
+
+---
+
+## Evolvable Enums
+
+- Значения enum могут расширяться со временем.
+- Нельзя полагаться на фиксированный набор значений.
+- Всегда предусматривать обработку неизвестных значений (default case).
+- Это часто встречается в beta-версии API.
+
+---
+
+### Дополнение от себя (что важно для AZ-204)
+
+- Всегда использовать **принцип минимальных привилегий**.
+- Проверять, нужен ли admin consent.
+- Использовать Managed Identity при работе в Azure.
+- Не хранить client secrets в коде — применять Azure Key Vault.
+- Для production использовать `v1.0`, а не `beta`.
+
 
 **Integrate with Graph SDK**:
 
@@ -99,50 +156,120 @@ var scopes = new[] { "User.Read", "Calendars.Read" };
 var scopes = new[] { "User.ReadWrite.All", "Calendars.ReadWrite" };
 ```
 
-**Common permission patterns**:
+**Распространённые шаблоны разрешений (Common permission patterns)**
 
-| Scenario | Permission | Why |
-|----------|-----------|-----|
-| Read user profile | `User.Read` | Minimum for basic profile |
-| Read all users | `User.Read.All` | Organization data |
-| Send email as user | `Mail.Send` | Specific action |
-| Read all mail | `Mail.Read.All` | Admin scenarios |
-| Manage calendar | `Calendars.ReadWrite` | User calendar only |
-| Access files | `Files.Read.All` | All files access |
+| Сценарий | Разрешение | Почему |
+|-----------|------------|--------|
+| Чтение профиля пользователя | `User.Read` | Минимально необходимое для базовой информации профиля |
+| Чтение всех пользователей | `User.Read.All` | Доступ к данным всей организации |
+| Отправка email от имени пользователя | `Mail.Send` | Конкретное действие — отправка почты |
+| Чтение всей почты | `Mail.Read.All` | Административные сценарии |
+| Управление календарём | `Calendars.ReadWrite` | Работа с календарём пользователя |
+| Доступ к файлам | `Files.Read.All` | Доступ ко всем файлам |
 
-### Choose Correct Permission Type
+---
 
-**Delegated permissions** (user present):
-- User signs in
-- App acts on behalf of user
-- User's permissions apply
-- Consent: User or admin
+### Выбор правильного типа разрешений
+
+#### Delegated permissions (присутствует пользователь)
+
+- Пользователь выполняет вход (sign-in)
+- Приложение действует **от имени пользователя**
+- Применяются права самого пользователя
+- Consent может дать:
+    - сам пользователь (для низкоуровневых прав)
+    - администратор (для расширенных прав)
+
+---
+
+### Дополнение (важно для AZ-204)
+
+- Если приложение работает в фоне (daemon, background service) → нужны **Application permissions**.
+- Если приложение — веб/мобильное и пользователь вошёл в систему → чаще используются **Delegated permissions**.
+- Всегда выбирать **наименее привилегированное** разрешение:
+    - `User.Read` лучше, чем `User.ReadWrite.All`
+    - `Mail.Send` лучше, чем `Mail.ReadWrite`
+- Некоторые разрешения требуют **admin consent** — это часто фигурирует в экзаменационных вопросах.
+- При проектировании учитывать принцип least privilege и аудит безопасности.
 
 ```csharp
 // Delegated - user context
 var scopes = new[] { "User.Read", "Mail.Send" };
 ```
 
-**Application permissions** (daemon/service):
-- No user sign-in
-- App acts as itself
-- Full access to resource
-- Consent: Admin only
+#### Application permissions (daemon / service)
+
+- ❌ Нет входа пользователя (no user sign-in)
+- 🤖 Приложение действует **от своего имени**
+- 🔓 Обычно предоставляется широкий доступ к ресурсу
+- 🛡 Consent может дать только администратор (Admin consent)
+
+---
+
+### Когда использовать Application permissions
+
+- Фоновые сервисы (background jobs)
+- Интеграции между сервисами
+- ETL / синхронизация данных
+- Автоматические процессы без участия пользователя
+
+---
+
+### Важно для AZ-204
+
+- Application permissions требуют **admin consent**.
+- Используются вместе с:
+    - Client credentials flow
+    - Managed Identity (в Azure — предпочтительный вариант)
+- Права не ограничиваются пользователем — нужно особенно строго соблюдать принцип least privilege.
+- Частая экзаменационная ловушка:  
+  если нет пользователя → Delegated permissions не подойдут.
+
 
 ```csharp
 // Application - app-only context
 var scopes = new[] { "https://graph.microsoft.com/.default" };
 ```
+### Матрица выбора (Decision matrix)
 
-**Decision matrix**:
+| Вопрос | Ответ | Тип разрешения |
+|--------|--------|----------------|
+| Есть интерактивный пользователь? | Да | Delegated |
+| Есть интерактивный пользователь? | Нет | Application |
+| Это фоновый сервис? | Да | Application |
+| Веб-приложение с авторизованным пользователем? | Да | Delegated |
+| Запланированная задача (Scheduled task)? | Да | Application |
 
-| Question | Answer | Permission Type |
-|----------|--------|-----------------|
-| User interactive? | Yes | Delegated |
-| User interactive? | No | Application |
-| Background service? | Yes | Application |
-| Web app with user? | Yes | Delegated |
-| Scheduled task? | Yes | Application |
+---
+
+### Как быстро принять решение на экзамене
+
+1. 🔎 Есть ли вход пользователя (sign-in)?  
+   → Да → **Delegated**
+
+2. 🤖 Работает ли приложение без пользователя (daemon / background)?  
+   → Да → **Application**
+
+3. 🛡 Нужен ли доступ ко всем данным организации независимо от конкретного пользователя?  
+   → Обычно **Application**
+
+---
+
+### Важно для AZ-204
+
+- **Delegated** = действует от имени пользователя.
+- **Application** = действует от имени приложения.
+- Если в вопросе указано:
+    - background job
+    - daemon service
+    - scheduled task
+    - server-to-server integration  
+      → почти всегда правильный ответ — **Application permissions**.
+- Если указано:
+    - пользователь вошёл в систему
+    - веб-приложение
+    - мобильное приложение  
+      → чаще всего — **Delegated permissions**.
 
 ### Consider End-User Experience
 
@@ -178,12 +305,35 @@ public async Task<MessageCollectionResponse> GetMail()
 }
 ```
 
-### Admin Consent
+### Admin Consent (Согласие администратора)
 
-**Required for**:
-- Application permissions
-- High-privilege delegated permissions
-- Organization-wide access
+**Требуется для**:
+
+- 🔐 **Application permissions**
+- ⚠️ **Delegated permissions с повышенными привилегиями**
+- 🏢 **Доступа ко всей организации (organization-wide access)**
+
+---
+
+### Что это означает
+
+- Обычный пользователь **не может** выдать такие разрешения.
+- Только администратор Azure AD / Entra ID может подтвердить (grant consent).
+- После admin consent приложение получает доступ в рамках запрошенных scopes.
+
+---
+
+### Важно для AZ-204
+
+- Если используется **Application permissions** → всегда нужен admin consent.
+- Некоторые delegated-разрешения (например `User.ReadWrite.All`) тоже требуют admin consent.
+- В сценариях enterprise-приложений часто фигурирует:
+    - “requires admin approval”
+    - “needs organization-wide access”
+      → это явный индикатор admin consent.
+
+- Если в вопросе указано, что пользователи не могут предоставить согласие самостоятельно → правильный ответ будет связан с **admin consent workflow**.
+
 
 **Admin consent URL**:
 
@@ -415,19 +565,38 @@ public async Task<User> GetUserProfile(string userId)
 }
 ```
 
-### When Caching Is Acceptable
+### Когда допустимо кэширование (When Caching Is Acceptable)
 
-**Scenarios**:
-- **Performance** - Reduce latency for frequently accessed data
-- **Offline** - Support disconnected scenarios
-- **Cost** - Reduce API calls
+#### Сценарии
 
-**Requirements**:
-- ✅ Comply with [Microsoft API Terms of Use](https://docs.microsoft.com/legal/microsoft-apis/terms-of-use)
-- ✅ Follow [Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement)
-- ✅ Respect data retention policies
-- ✅ Implement cache invalidation
-- ✅ Honor user data deletion requests
+- **Производительность (Performance)** — снижение задержек при частом доступе к данным
+- **Оффлайн-режим (Offline)** — поддержка работы без постоянного соединения
+- **Снижение стоимости (Cost)** — уменьшение количества API-запросов
+
+---
+
+#### Требования
+
+- ✅ Соответствовать Microsoft API Terms of Use  
+  https://docs.microsoft.com/legal/microsoft-apis/terms-of-use
+- ✅ Соблюдать Microsoft Privacy Statement  
+  https://privacy.microsoft.com/privacystatement
+- ✅ Учитывать политики хранения данных (data retention policies)
+- ✅ Реализовать корректную стратегию инвалидации кэша
+- ✅ Обрабатывать запросы на удаление пользовательских данных
+
+---
+
+### Важно для AZ-204
+
+- Нельзя кэшировать данные бесконтрольно — особенно персональные.
+- Кэш должен:
+    - иметь TTL (time-to-live),
+    - корректно обновляться,
+    - очищаться при удалении пользователя.
+- При работе с Microsoft Graph необходимо соблюдать требования по защите персональных данных (GDPR и аналогичные нормы).
+- Если в вопросе фигурирует хранение данных пользователя — всегда учитывать privacy и retention требования.
+
 
 **Caching pattern**:
 
@@ -467,7 +636,55 @@ public class GraphCacheService
 | /me | 1,000 per user |
 | /users | 1,000 per user |
 | /groups | 500 per app |
-| /applications | 500 per app |
+| /applications | 500 per app |## Rate Limiting и Throttling
+
+### Понимание throttling
+
+Microsoft Graph ограничивает количество запросов, чтобы защитить сервис и обеспечить стабильную работу для всех клиентов.
+
+**Типовые лимиты Microsoft Graph**:
+
+| Ресурс | Запросов в секунду |
+|----------|-------------------|
+| Любой API | 2 000 на приложение |
+| /me | 1 000 на пользователя |
+| /users | 1 000 на пользователя |
+| /groups | 500 на приложение |
+| /applications | 500 на приложение |
+
+> ⚠️ Лимиты могут изменяться и зависят от типа tenant, сценария и нагрузки.
+
+---
+
+### Что происходит при превышении лимита
+
+- Возвращается статус: **429 Too Many Requests**
+- В ответе присутствует заголовок: `Retry-After`
+- Запрос необходимо повторить **после указанного времени**
+
+---
+
+### Best Practices
+
+- ✅ Использовать экспоненциальный backoff
+- ✅ Учитывать заголовок `Retry-After`
+- ✅ Минимизировать количество запросов через:
+    - `$select`
+    - `$filter`
+    - batching
+- ✅ Кэшировать данные, если это допустимо
+- ❌ Не выполнять агрессивные повторные запросы без задержки
+
+---
+
+### Важно для AZ-204
+
+- Если в вопросе фигурирует ошибка 429 → правильный ответ связан с:
+    - обработкой `Retry-After`
+    - retry-политикой
+- SDK уже включает базовую поддержку retry, но логику нужно понимать.
+- Throttling — это не ошибка сервера, а механизм защ
+
 
 **Throttling response**:
 
@@ -562,18 +779,38 @@ var changesRequest = new Uri(deltaLink);
 var changes = await graphClient.Users.Delta.GetAsync();  // Only changed users
 ```
 
-## Error Handling
+## Обработка ошибок (Error Handling)
 
-### Common Error Codes
+### Частые коды ошибок
 
-| Code | Status | Meaning |
-|------|--------|---------|
-| `InvalidAuthenticationToken` | 401 | Token expired or invalid |
-| `AccessDenied` | 403 | Insufficient permissions |
-| `ResourceNotFound` | 404 | Resource doesn't exist |
-| `TooManyRequests` | 429 | Rate limit exceeded |
-| `ServiceNotAvailable` | 503 | Service temporarily unavailable |
-| `GatewayTimeout` | 504 | Request timeout |
+| Код | HTTP статус | Значение |
+|------|------------|----------|
+| `InvalidAuthenticationToken` | 401 | Токен истёк или недействителен |
+| `AccessDenied` | 403 | Недостаточно прав (permissions) |
+| `ResourceNotFound` | 404 | Ресурс не существует |
+| `TooManyRequests` | 429 | Превышен лимит запросов (throttling) |
+| `ServiceNotAvailable` | 503 | Сервис временно недоступен |
+| `GatewayTimeout` | 504 | Таймаут запроса (шлюз/прокси) |
+
+---
+
+### Дополнение от себя (практика + AZ-204)
+
+- **401**: чаще всего проблема с токеном
+    - получить новый токен (MSAL / Azure.Identity),
+    - проверить audience/scopes.
+- **403**: токен есть, но прав не хватает
+    - проверить scopes/roles,
+    - delegated vs application permissions,
+    - нужен ли admin consent.
+- **404**: неверный id/endpoint или ресурс действительно удалён/не создан.
+- **429**: обязательно учитывать `Retry-After` и делать retry с backoff.
+- **503/504**: временные сбои
+    - повторить запрос (retry),
+    - добавить таймауты и circuit breaker (в проде).
+
+Также Microsoft Graph часто возвращает объект `error` с `code`, `message`, `innerError` — это помогает быстро диагностировать причину.
+
 
 ### Comprehensive Error Handling
 
@@ -676,39 +913,72 @@ var userWithManager = await graphClient.Me.GetAsync(config =>
 Console.WriteLine($"User: {userWithManager.DisplayName}");
 Console.WriteLine($"Manager: {userWithManager.Manager?.DisplayName}");
 ```
+## Critical Notes (Ключевые моменты)
 
-## Critical Notes
-- 💡 **MSAL** - Use for token acquisition, caching, refresh
-- 🔒 **Least privilege** - Request minimum permissions needed
-- 🎯 **Permission types** - Delegated (user present), Application (daemon)
-- ✅ **Consent** - Dynamic/incremental for better UX
-- ⚠️ **Pagination** - Use PageIterator for large collections
-- 📊 **Evolvable enums** - Use Prefer header for unknown enum values
-- 💡 **Real-time calls** - Prefer direct Graph calls over caching
-- 🔄 **Throttling** - Handle 429, respect Retry-After header
-- ✅ **Batching** - Combine requests to reduce API calls
-- ⚠️ **Delta query** - Get only changes since last request
-- 🔒 **Error handling** - Catch ODataError for specific codes
-- 📊 **Optimization** - Use $select, $filter, $top, $expand
+- 💡 **MSAL** — использовать для получения токена, кэширования и автоматического обновления
+- 🔒 **Least privilege** — запрашивать минимально необходимые разрешения
+- 🎯 **Типы разрешений** — Delegated (есть пользователь), Application (daemon/service)
+- ✅ **Consent** — использовать динамический / инкрементальный запрос прав для лучшего UX
+- ⚠️ **Пагинация** — применять PageIterator для больших коллекций
+- 📊 **Evolvable enums** — использовать заголовок `Prefer` для обработки неизвестных enum-значений
+- 💡 **Реальные вызовы** — по возможности выполнять прямые запросы к Graph вместо избыточного кэширования
+- 🔄 **Throttling** — обрабатывать 429 и учитывать заголовок `Retry-After`
+- ✅ **Batching** — объединять несколько запросов в один HTTP-вызов
+- ⚠️ **Delta query** — получать только изменения с момента последнего запроса
+- 🔒 **Обработка ошибок** — перехватывать `ODataError` для точной диагностики
+- 📊 **Оптимизация** — использовать `$select`, `$filter`, `$top`, `$expand`
 
-## Exam Tips
-- Authentication: Use MSAL for token acquisition and caching
-- Least privilege: Request minimum permissions (User.Read vs User.ReadWrite.All)
-- Permission types: Delegated (user present), Application (daemon/service)
-- Consent: Dynamic (add permissions as needed), Incremental (progressive)
-- Admin consent: Required for application permissions and high-privilege delegated
-- Multi-tenant: Use "common" authority, resources from user's tenant
-- Pagination: Use PageIterator to iterate through all pages automatically
-- Evolvable enumerations: Use Prefer header "graph.microsoft.com-unknown-enum-members"
-- Data storage: Prefer real-time Graph calls, cache only if necessary
-- Caching requirements: Comply with terms, respect retention, implement invalidation
-- Throttling: HTTP 429, Retry-After header, exponential backoff
-- Rate limits: 2,000 requests/second per app, 1,000 per user
-- Batching: Combine multiple requests in single HTTP call
-- Delta query: OdataDeltaLink for incremental changes
-- Error handling: Catch ODataError, check ResponseStatusCode
-- Common errors: 401 (auth), 403 (permissions), 404 (not found), 429 (throttled)
-- Optimization: Use $select (reduce payload), $filter (server-side), $expand (reduce round trips)
-- SDK automatic retry: Built-in retry for 429, 503, 504 errors
+---
+
+## Exam Tips (Советы к AZ-204)
+
+- **Аутентификация** — использовать MSAL для получения и кэширования токенов
+- **Least privilege** — `User.Read` лучше, чем `User.ReadWrite.All`
+- **Типы разрешений**:
+    - Delegated — есть пользователь
+    - Application — daemon/service
+- **Consent**:
+    - Dynamic — запрашивать права по мере необходимости
+    - Incremental — постепенно расширять доступ
+- **Admin consent** — обязателен для Application permissions и высокопривилегированных delegated
+- **Multi-tenant** — использовать authority `common`, ресурсы из tenant пользователя
+- **Пагинация** — использовать PageIterator для автоматического обхода страниц
+- **Evolvable enums** — заголовок  
+  `Prefer: graph.microsoft.com-unknown-enum-members`
+- **Хранение данных** — предпочитать real-time вызовы Graph; кэшировать только при необходимости
+- **Требования к кэшированию** — соблюдать terms, retention policies, реализовать инвалидацию
+- **Throttling**:
+    - HTTP 429
+    - учитывать `Retry-After`
+    - использовать exponential backoff
+- **Лимиты**:
+    - 2 000 запросов/сек на приложение
+    - 1 000 на пользователя
+- **Batching** — объединять несколько операций в один HTTP-запрос
+- **Delta query** — использовать `@odata.deltaLink` для получения инкрементальных изменений
+- **Обработка ошибок**:
+    - перехватывать `ODataError`
+    - проверять `ResponseStatusCode`
+- **Типичные ошибки**:
+    - 401 — проблемы с аутентификацией
+    - 403 — недостаточно прав
+    - 404 — ресурс не найден
+    - 429 — превышен лимит
+- **Оптимизация**:
+    - `$select` — уменьшить payload
+    - `$filter` — фильтрация на сервере
+    - `$expand` — уменьшить количество round trips
+- **Автоматические retry в SDK** — встроены для 429, 503, 504
+
+---
+
+### Что часто проверяют в вопросах
+
+- Правильный выбор между Delegated и Application.
+- Нужно ли admin consent.
+- Как обработать 429.
+- Как получить только изменения (delta query).
+- Как уменьшить количество запросов и объём данных.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/microsoft-graph/5-microsoft-graph-best-practices)

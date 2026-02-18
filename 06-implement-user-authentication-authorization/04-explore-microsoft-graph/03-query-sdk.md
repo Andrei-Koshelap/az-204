@@ -1,35 +1,42 @@
-# Query Microsoft Graph by using SDKs
+# Запросы к Microsoft Graph через SDK
 
-## Key Concepts
-- **Microsoft Graph SDK** - Simplifies API calls with strongly-typed models
-- **Two components** - Service library (models/builders) + Core library (features)
-- **Benefits** - Retry handling, authentication, batching, paging support
-- **Available for** - .NET, JavaScript, Java, Python, PowerShell, PHP, Ruby, Go
+## Ключевые концепции
+- **Microsoft Graph SDK** — упрощает вызовы API за счёт строго типизированных моделей и удобных билдера запросов
+- **Два компонента** — Service library (модели/билдеры) + Core library (общие возможности)
+- **Преимущества** — ретраи, аутентификация, батчинг, поддержка пагинации
+- **Доступно для** — .NET, JavaScript, Java, Python, PowerShell, PHP, Ruby, Go
 
-## Microsoft Graph SDK Components
+## Компоненты Microsoft Graph SDK
 
-### 1. Service Library
+### 1. Service Library (сервисная библиотека)
 
-**Generated from Microsoft Graph metadata**:
-- **Models** - Strongly-typed classes for entities
-- **Request builders** - Fluent API for constructing requests
-- **Disc
+**Генерируется из метаданных Microsoft Graph**:
+- **Models (модели)** — строго типизированные классы сущностей
+- **Request builders (билдеры запросов)** — fluent API для построения запросов
+- **Discoverable (обнаруживаемость)** — поддержка IntelliSense / автодополнения
 
-overable** - IntelliSense support
+**Пакеты**:
+- `Microsoft.Graph` — доступ к endpoint `v1.0`
+- `Microsoft.Graph.Beta` — доступ к endpoint `beta`
 
-**Packages**:
-- `Microsoft.Graph` - v1.0 endpoint access
-- `Microsoft.Graph.Beta` - beta endpoint access
+### 2. Core Library (ядро)
 
-### 2. Core Library
+**Общая функциональность** для всех SDK:
+- **Retry handling (ретраи)** — автоматические повторы при временных сбоях
+- **Secure redirects (безопасные редиректы)** — корректная обработка перенаправлений
+- **Transparent authentication (прозрачная аутентификация)** — получение токена берёт на себя SDK
+- **Payload compression (сжатие payload)** — уменьшение трафика
+- **Paging (пагинация)** — удобная итерация по большим коллекциям
+- **Batching (батчинг)** — объединение нескольких запросов в один
 
-**Common functionality** across all SDKs:
-- **Retry handling** - Automatic retry on transient failures
-- **Secure redirects** - Follow redirects safely
-- **Transparent authentication** - Token acquisition handled
-- **Payload compression** - Reduce bandwidth
-- **Paging** - Iterate through large collections
-- **Batching** - Combine multiple requests
+---
+
+### Дополнение от себя (полезно для AZ-204)
+
+- Даже при использовании SDK важно понимать базовые вещи Graph: **версии (`v1.0` vs `beta`)**, **OData-параметры**, **пагинацию** и **обработку 429**.
+- SDK помогает, но не отменяет best practices: **экспоненциальный backoff**, уважение `Retry-After`, минимизация payload через `$select`.
+- На практике часто удобнее начинать с Graph Explorer (проверить запрос), а затем переносить логику в SDK-код.
+
 
 **Package**:
 - `Microsoft.Graph.Core` - Core functionality
@@ -642,36 +649,78 @@ var user = await graphClient.Me.GetAsync(config =>
 var user = await graphClient.Me.GetAsync();  // Returns all properties
 ```
 
-## Critical Notes
-- 💡 **Two components** - Service library (models/builders) + Core library (features)
-- 🎯 **Three packages** - Microsoft.Graph (v1.0), Microsoft.Graph.Beta, Microsoft.Graph.Core
-- ✅ **Benefits** - Retry handling, authentication, batching, paging, compression
-- ⚠️ **Graph client** - Create once, reuse for application lifetime
-- 🔄 **Authentication** - Use Azure.Identity (DeviceCodeCredential, ClientSecretCredential, etc.)
-- 📊 **Fluent API** - Request configuration with lambda expressions
-- 💡 **Query options** - Select, Filter, Orderby, Expand, Top via QueryParameters
-- ✅ **Operations** - Get (read), Post (create), Patch (update), Delete (remove)
-- ⚠️ **Pagination** - Use PageIterator for large collections
-- 🔒 **Error handling** - Catch ODataError for Graph-specific errors
+## Critical Notes (Ключевые моменты)
 
-## Exam Tips
-- Microsoft Graph SDK: Simplifies Graph API calls with strongly-typed models
-- Two components: Service library (models/builders), Core library (common features)
-- NuGet packages: Microsoft.Graph (v1.0), Microsoft.Graph.Beta (preview), Microsoft.Graph.Core
-- Create client: new GraphServiceClient(credential, scopes)
-- Azure.Identity: DeviceCodeCredential, ClientSecretCredential, InteractiveBrowserCredential, ManagedIdentityCredential
-- Get entity: await graphClient.Me.GetAsync()
-- Get collection: await graphClient.Users.GetAsync()
-- Create entity: await graphClient.Me.Events.PostAsync(newEvent)
-- Update entity: await graphClient.Me.PatchAsync(updateUser)
-- Delete entity: await graphClient.Me.Messages[id].DeleteAsync()
-- Query configuration: Use requestConfig lambda with QueryParameters
-- QueryParameters: Select, Filter, Orderby, Expand, Top, Skip
-- Pagination: Use PageIterator to iterate through all pages
-- Batch requests: BatchRequestContent to combine multiple requests
-- Best practice: Create GraphServiceClient once, reuse throughout application
-- Error handling: Catch ODataError for Graph-specific exceptions
-- Request minimum scopes: User.Read instead of User.ReadWrite.All
-- Use $select: Request only needed properties to reduce payload
+- 💡 **Два компонента** — Service library (модели/билдеры) + Core library (общая функциональность)
+- 🎯 **Три пакета** — Microsoft.Graph (v1.0), Microsoft.Graph.Beta, Microsoft.Graph.Core
+- ✅ **Преимущества** — автоматические ретраи, аутентификация, батчинг, пагинация, сжатие данных
+- ⚠️ **Graph client** — создаётся один раз и переиспользуется в течение всего жизненного цикла приложения
+- 🔄 **Аутентификация** — использовать Azure.Identity (DeviceCodeCredential, ClientSecretCredential и др.)
+- 📊 **Fluent API** — конфигурация запроса через lambda-выражения
+- 💡 **Query options** — Select, Filter, Orderby, Expand, Top через QueryParameters
+- ✅ **Операции** — Get (чтение), Post (создание), Patch (обновление), Delete (удаление)
+- ⚠️ **Пагинация** — использовать PageIterator для больших коллекций
+- 🔒 **Обработка ошибок** — перехватывать ODataError для Graph-специфичных ошибок
+
+---
+
+## Exam Tips (Советы к AZ-204)
+
+- Microsoft Graph SDK упрощает работу с Graph API за счёт строго типизированных моделей.
+- Два компонента:
+    - Service library — модели и билдеры запросов
+    - Core library — общие возможности (retry, auth, batching и др.)
+- NuGet-пакеты:
+    - Microsoft.Graph — стабильный v1.0
+    - Microsoft.Graph.Beta — preview
+    - Microsoft.Graph.Core — базовая функциональность
+- Создание клиента:
+    - `new GraphServiceClient(credential, scopes)`
+- Azure.Identity:
+    - DeviceCodeCredential
+    - ClientSecretCredential
+    - InteractiveBrowserCredential
+    - ManagedIdentityCredential
+- Получить сущность:
+    - `await graphClient.Me.GetAsync()`
+- Получить коллекцию:
+    - `await graphClient.Users.GetAsync()`
+- Создать сущность:
+    - `await graphClient.Me.Events.PostAsync(newEvent)`
+- Обновить сущность:
+    - `await graphClient.Me.PatchAsync(updateUser)`
+- Удалить сущность:
+    - `await graphClient.Me.Messages[id].DeleteAsync()`
+- Конфигурация запроса:
+    - использовать lambda `requestConfig => { ... }`
+- QueryParameters:
+    - Select
+    - Filter
+    - Orderby
+    - Expand
+    - Top
+    - Skip
+- Пагинация:
+    - использовать `PageIterator` для прохода по всем страницам
+- Batch-запросы:
+    - `BatchRequestContent` для объединения нескольких операций
+- Best practice:
+    - создавать `GraphServiceClient` один раз и переиспользовать
+- Обработка ошибок:
+    - перехватывать `ODataError`
+- Принцип минимальных привилегий:
+    - запрашивать `User.Read` вместо `User.ReadWrite.All`
+- Использовать `$select`:
+    - запрашивать только необходимые свойства для уменьшения payload
+
+---
+
+### Дополнение от себя (что любят проверять)
+
+- Разница между delegated permissions и application permissions.
+- Правильный выбор credential (Managed Identity в Azure, ClientSecret — для daemon-приложений).
+- Обработка 429 + уважение `Retry-After`.
+- Минимизация payload через Select и фильтрацию на сервере.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/microsoft-graph/4-microsoft-graph-sdk)

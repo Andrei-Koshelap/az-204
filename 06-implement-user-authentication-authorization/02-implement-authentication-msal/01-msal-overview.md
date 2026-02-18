@@ -1,56 +1,93 @@
 # Microsoft Authentication Library (MSAL) Overview
 
-## Key Concepts
-- **MSAL** - Microsoft Authentication Library
-- **Cross-platform** - Supports .NET, JavaScript, Java, Python, Android, iOS
-- **Token management** - Automatic caching and refresh
-- **Two client types** - Public and confidential
+## Ключевые понятия
 
-## What is MSAL?
+- **MSAL** — Microsoft Authentication Library
+- **Кроссплатформенность** — поддержка .NET, JavaScript, Java, Python, Android, iOS
+- **Управление токенами** — автоматическое кеширование и обновление
+- **Два типа клиентов** — Public и Confidential
 
-**Microsoft Authentication Library** for acquiring security tokens:
+---
 
-- **Purpose** - Authenticate users and access secured web APIs
-- **Platform** - Microsoft identity platform integration
-- **APIs supported** - Microsoft Graph, Microsoft APIs, third-party APIs, your own APIs
-- **Multi-platform** - Many languages and frameworks
+# Что такое MSAL?
 
-### Benefits of Using MSAL
+**Microsoft Authentication Library** — библиотека для получения токенов безопасности.
 
-| Benefit | Description |
-|---------|-------------|
-| **No manual OAuth** | No need to code directly against OAuth protocol |
-| **Token acquisition** | Acquire tokens for users or applications |
-| **Token caching** | Maintains cache, refreshes automatically |
-| **Token refresh** | Handles expiration automatically |
-| **Audience configuration** | Specify sign-in audience easily |
-| **Configuration-based** | Set up from config files |
-| **Troubleshooting** | Actionable exceptions, logging, telemetry |
+### Назначение
 
-### Why Use MSAL?
+- Аутентификация пользователей
+- Получение токенов для доступа к защищённым Web API
+- Интеграция с Microsoft identity platform
 
-✅ **Simplified development** - Abstracts OAuth complexity
-✅ **Automatic refresh** - Don't handle token expiration manually
-✅ **Consistent API** - Same patterns across platforms
-✅ **Best practices** - Built-in security best practices
-✅ **Production-ready** - Microsoft-supported libraries
+### Поддерживаемые API
 
-## Supported Platforms
+- Microsoft Graph
+- Microsoft API
+- Сторонние API
+- Собственные API
 
-### MSAL Libraries
+### Поддержка платформ
 
-| Library | Platform/Framework | Use Case |
-|---------|-------------------|----------|
-| **MSAL.NET** | .NET, .NET Framework, .NET MAUI, Xamarin, UWP, WinUI | Desktop, mobile, web apps |
-| **MSAL.js** | JavaScript/TypeScript, Vue.js, Ember.js, Durandal.js | Browser-based apps |
-| **MSAL Angular** | Angular, Angular.js | Single-page apps |
-| **MSAL React** | React, Next.js, Gatsby.js | React-based SPAs |
-| **MSAL Node** | Express (web apps), Electron (desktop), console apps | Server-side Node.js |
-| **MSAL Java** | Windows, macOS, Linux | Java applications |
-| **MSAL Python** | Windows, macOS, Linux | Python applications |
-| **MSAL Android** | Android | Android mobile apps |
-| **MSAL iOS/macOS** | iOS, macOS | Apple platform apps |
-| **MSAL Go** | Windows, macOS, Linux | Go applications (Preview) |
+Работает на различных языках и фреймворках.
+
+---
+
+# Преимущества использования MSAL
+
+| Преимущество | Описание |
+|--------------|----------|
+| **Без ручной реализации OAuth** | Нет необходимости напрямую реализовывать протокол OAuth |
+| **Получение токенов** | Для пользователей или приложений |
+| **Кеширование токенов** | Хранение токенов и автоматическое обновление |
+| **Автоматическое обновление** | Обработка истечения срока действия |
+| **Настройка аудитории** | Простая конфигурация tenant и audience |
+| **Конфигурационный подход** | Настройка через параметры и конфиги |
+| **Диагностика** | Поддержка логирования и понятные исключения |
+
+---
+
+# Почему использовать MSAL?
+
+✅ Упрощает разработку и абстрагирует сложность OAuth  
+✅ Автоматически обрабатывает истечение токенов  
+✅ Обеспечивает единый API-подход на разных платформах  
+✅ Реализует лучшие практики безопасности  
+✅ Поддерживается Microsoft и готова к production
+
+> 💡 MSAL — рекомендуемый способ работы с Microsoft identity platform.
+
+---
+
+# Поддерживаемые платформы
+
+## Библиотеки MSAL
+
+| Библиотека | Платформа / Фреймворк | Типовой сценарий |
+|------------|------------------------|------------------|
+| **MSAL.NET** | .NET, .NET Framework, .NET MAUI, Xamarin, UWP, WinUI | Desktop, mobile, web |
+| **MSAL.js** | JavaScript/TypeScript, Vue, Ember, др. | Browser-приложения |
+| **MSAL Angular** | Angular | Single-page apps |
+| **MSAL React** | React, Next.js, Gatsby | React SPA |
+| **MSAL Node** | Express, Electron, console apps | Server-side Node.js |
+| **MSAL Java** | Windows, macOS, Linux | Java-приложения |
+| **MSAL Python** | Windows, macOS, Linux | Python-приложения |
+| **MSAL Android** | Android | Мобильные приложения |
+| **MSAL iOS/macOS** | iOS, macOS | Apple-приложения |
+| **MSAL Go** | Windows, macOS, Linux | Go-приложения (Preview) |
+
+---
+
+## Важно для AZ-204
+
+- MSAL — основной инструмент для работы с токенами.
+- Поддерживает public и confidential клиенты.
+- Автоматически обрабатывает кеширование и refresh.
+- Используется для получения access и ID токенов.
+- Рекомендуется вместо ручной реализации OAuth.
+
+> 🎯 Частый экзаменационный вопрос:  
+Нужно ли вручную реализовывать OAuth 2.0 flow?  
+Ответ — нет, используйте MSAL.
 
 ### Installation
 
@@ -219,24 +256,64 @@ var result = await app.AcquireTokenForClient(scopes)
     .ExecuteAsync();
 ```
 
-**Use cases**:
-- Scheduled jobs
-- Background services
-- Automated scripts
-- Server-to-server communication
+## Типовые сценарии использования (App-Only)
 
-## Authentication Flows
+Используются в сценариях без пользователя:
 
-### 1. Authorization Code Flow
+- Плановые задачи (Scheduled jobs)
+- Фоновые сервисы (Background services)
+- Автоматизированные скрипты
+- Взаимодействие server-to-server
 
-**Most common** - User signs in, app gets code, exchanges for token:
+> 💡 В таких случаях обычно применяются Application permissions и confidential client.
 
-| Property | Value |
-|----------|-------|
-| **Flow** | User redirected → Signs in → App receives code → Exchanges for token |
-| **Used in** | Desktop, Mobile, SPA (with PKCE), Web apps |
-| **Security** | PKCE recommended for public clients |
-| **User present** | Yes |
+---
+
+# Authentication Flows
+
+## 1️⃣ Authorization Code Flow
+
+**Самый распространённый flow** — пользователь входит в систему, приложение получает authorization code и обменивает его на токен.
+
+| Свойство | Значение |
+|-----------|----------|
+| **Flow** | Редирект пользователя → Вход → Получение кода → Обмен кода на токен |
+| **Используется в** | Desktop, Mobile, SPA (с PKCE), Web-приложениях |
+| **Безопасность** | Для public clients рекомендуется PKCE |
+| **Пользователь присутствует** | Да |
+
+---
+
+## Как работает
+
+1. Пользователь перенаправляется на страницу входа.
+2. После успешной аутентификации приложение получает authorization code.
+3. Приложение обменивает код на access token (и ID token).
+4. При необходимости получает refresh token.
+
+---
+
+## Почему это основной flow
+
+- Наиболее безопасный для приложений с пользователем.
+- Поддерживает delegated permissions.
+- Совместим с MFA и Conditional Access.
+- Рекомендуется вместо implicit flow.
+
+---
+
+## Важно для AZ-204
+
+- Authorization Code Flow используется для интерактивных приложений.
+- PKCE обязателен для public clients.
+- ID token используется для аутентификации.
+- Access token используется для вызова API.
+- Может возвращать refresh token при запросе соответствующего scope.
+
+> 🎯 Частый экзаменационный вопрос:  
+Какой flow рекомендуется для SPA вместо implicit?  
+Ответ — Authorization Code Flow с PKCE.
+
 
 **Example**:
 
@@ -246,16 +323,60 @@ var result = await app.AcquireTokenInteractive(scopes)
     .ExecuteAsync();
 ```
 
-### 2. Client Credentials Flow
+## 2️⃣ Client Credentials Flow
 
-**App acts as itself** - No user:
+**Приложение действует от своего имени (без пользователя)**
 
-| Property | Value |
-|----------|-------|
-| **Flow** | App authenticates with secret/certificate → Gets token |
-| **Used in** | Daemon, background services |
-| **Security** | Requires confidential client |
-| **User present** | No |
+| Свойство | Значение |
+|-----------|----------|
+| **Flow** | Приложение аутентифицируется с помощью секрета или сертификата → Получает токен |
+| **Используется в** | Daemon-приложениях, фоновых сервисах |
+| **Безопасность** | Требуется confidential client |
+| **Пользователь присутствует** | Нет |
+
+---
+
+## Как работает
+
+1. Приложение отправляет запрос в identity platform.
+2. Аутентифицируется с использованием:
+    - Client secret
+    - Сертификата
+3. Получает access token.
+4. Использует токен для вызова защищённого API.
+
+---
+
+## Особенности
+
+- Используются **Application permissions**.
+- Требуется **admin consent**.
+- Токен содержит только claims приложения (без пользователя).
+- Refresh token обычно не используется — приложение просто запрашивает новый access token.
+
+---
+
+## Когда использовать
+
+- Фоновые задачи
+- Интеграционные сервисы
+- Server-to-server взаимодействие
+- Автоматизированные процессы
+
+---
+
+## Важно для AZ-204
+
+- Нет пользователя — значит нет delegated permissions.
+- Используется confidential client.
+- Требуется client secret или сертификат.
+- Подходит для daemon-сценариев.
+- Не поддерживает интерактивную аутентификацию.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как реализовать доступ к API без пользователя?  
+Ответ — использовать Client Credentials Flow.
+
 
 **Example**:
 
@@ -267,14 +388,48 @@ var result = await app.AcquireTokenForClient(scopes)
 
 ### 3. On-Behalf-Of (OBO) Flow
 
-**Middle-tier service** calls downstream API on behalf of user:
+## 3️⃣ On-Behalf-Of (OBO) Flow
 
-| Property | Value |
-|----------|-------|
-| **Flow** | API receives user token → Exchanges for downstream API token |
-| **Used in** | Web API calling another API |
-| **Security** | Delegates user permissions |
-| **User present** | Yes (original context) |
+**Промежуточный сервис (middle-tier)** вызывает downstream API от имени пользователя.
+
+| Свойство | Значение |
+|-----------|----------|
+| **Flow** | API получает пользовательский токен → Обменивает его на токен для downstream API |
+| **Используется в** | Web API, вызывающем другое API |
+| **Безопасность** | Делегирует права пользователя |
+| **Пользователь присутствует** | Да (в исходном контексте) |
+
+---
+
+## Как работает
+
+1. Клиент (web/SPA/mobile) получает access token.
+2. Отправляет его в Web API.
+3. Web API использует этот токен для получения нового токена для downstream API.
+4. Downstream API получает токен с делегированными правами пользователя.
+
+---
+
+## Ключевые особенности
+
+- Используются **delegated permissions**.
+- Права ограничены правами пользователя.
+- Требуется confidential client на уровне middle-tier.
+- Часто используется в микросервисной архитектуре.
+
+---
+
+## Важно для AZ-204
+
+- OBO применяется, когда API вызывает другой API.
+- Middle-tier не использует client credentials flow.
+- Токен обменивается через специальный grant type.
+- Conditional Access может потребовать обработки claims challenge.
+- Пользователь физически не взаимодействует со вторым API, но его права делегируются.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как Web API может вызвать Microsoft Graph от имени пользователя?  
+Ответ — использовать On-Behalf-Of flow.
 
 **Example**:
 
@@ -288,14 +443,58 @@ var result = await app.AcquireTokenOnBehalfOf(scopes, userAssertion)
 
 ### 4. Device Code Flow
 
-**Input-constrained devices** - Smart TVs, IoT:
+## 4️⃣ Device Code Flow
 
-| Property | Value |
-|----------|-------|
-| **Flow** | Device shows code → User enters code on another device |
-| **Used in** | Smart TVs, IoT devices, CLI tools |
-| **Security** | User authenticates on separate device |
-| **User present** | Yes (on different device) |
+**Для устройств с ограниченным вводом данных** (input-constrained devices)
+
+| Свойство | Значение |
+|-----------|----------|
+| **Flow** | Устройство отображает код → Пользователь вводит код на другом устройстве |
+| **Используется в** | Smart TV, IoT-устройства, CLI-инструменты |
+| **Безопасность** | Аутентификация происходит на отдельном устройстве |
+| **Пользователь присутствует** | Да (на другом устройстве) |
+
+---
+
+## Как работает
+
+1. Устройство запрашивает device code у identity platform.
+2. Пользователю отображается код и URL для входа.
+3. Пользователь открывает URL на телефоне или компьютере.
+4. Вводит код и проходит аутентификацию.
+5. Устройство получает access token после подтверждения.
+
+---
+
+## Когда использовать
+
+- Устройства без браузера
+- Консольные утилиты
+- IoT-оборудование
+- Smart TV
+
+---
+
+## Особенности
+
+- Поддерживает delegated permissions.
+- Пользователь аутентифицируется на другом устройстве.
+- Подходит для публичных клиентов (public clients).
+- Может использоваться вместе с MFA и Conditional Access.
+
+---
+
+## Важно для AZ-204
+
+- Используется для устройств с ограниченным вводом.
+- Пользователь присутствует, но на другом устройстве.
+- Не требует client secret.
+- Применяется в CLI и IoT-сценариях.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как реализовать вход на устройстве без браузера?  
+Ответ — использовать Device Code Flow.
+
 
 **Example**:
 
@@ -312,14 +511,56 @@ var result = await app.AcquireTokenWithDeviceCode(scopes, callback =>
 
 ### 5. Integrated Windows Authentication (IWA)
 
-**Domain-joined machines** - Silent authentication:
+## 5️⃣ Integrated Windows Authentication (IWA)
 
-| Property | Value |
-|----------|-------|
-| **Flow** | App uses Windows credentials silently |
-| **Used in** | Domain-joined Windows machines |
-| **Security** | Windows Kerberos authentication |
-| **User present** | Yes (Windows logged-in user) |
+**Для доменно-присоединённых машин** с поддержкой тихой (silent) аутентификации.
+
+| Свойство | Значение |
+|-----------|----------|
+| **Flow** | Приложение использует учётные данные Windows без ввода пароля |
+| **Используется в** | Domain-joined Windows устройствах |
+| **Безопасность** | Основано на Kerberos |
+| **Пользователь присутствует** | Да (вошедший в Windows пользователь) |
+
+---
+
+## Как работает
+
+1. Пользователь уже вошёл в Windows под доменной учётной записью.
+2. Приложение использует текущие Windows-учётные данные.
+3. Аутентификация происходит автоматически без отображения UI.
+4. Приложение получает токен без дополнительного ввода данных.
+
+---
+
+## Когда использовать
+
+- Внутренние корпоративные приложения
+- Desktop-приложения в доменной среде
+- Интранет-сценарии
+
+---
+
+## Особенности
+
+- Работает только в доменной инфраструктуре.
+- Не подходит для публичных интернет-приложений.
+- Основано на существующей сессии Windows.
+- Часто используется в enterprise-среде.
+
+---
+
+## Важно для AZ-204
+
+- Пользователь физически присутствует, но повторный вход не требуется.
+- Используется для silent authentication.
+- Поддерживается только в Windows-доменной среде.
+- Не применяется для мобильных или cloud-only сценариев.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как реализовать бесшовный вход в корпоративной сети Windows?  
+Ответ — использовать Integrated Windows Authentication.
+
 
 **Example**:
 
@@ -331,14 +572,56 @@ var result = await app.AcquireTokenByIntegratedWindowsAuth(scopes)
 
 ### 6. Username/Password (ROPC) - **NOT RECOMMENDED**
 
-**Direct password handling** - Legacy only:
+## 6️⃣ Resource Owner Password Credentials (ROPC)
 
-| Property | Value |
-|----------|-------|
-| **Flow** | App collects username/password → Authenticates |
-| **Used in** | Legacy apps only |
-| **Security** | ❌ Low - exposes password to app |
-| **User present** | Yes |
+**Прямой ввод логина и пароля в приложении** — устаревший подход.
+
+| Свойство | Значение |
+|-----------|----------|
+| **Flow** | Приложение получает имя пользователя и пароль → Отправляет их для аутентификации |
+| **Используется в** | Только legacy-приложениях |
+| **Безопасность** | ❌ Низкая — пароль передаётся приложению |
+| **Пользователь присутствует** | Да |
+
+---
+
+## Как работает
+
+1. Пользователь вводит логин и пароль прямо в приложении.
+2. Приложение отправляет учётные данные в identity platform.
+3. При успешной проверке возвращается access token.
+
+---
+
+## Почему считается небезопасным
+
+- Приложение получает пароль пользователя.
+- Повышенный риск утечки учётных данных.
+- Не поддерживает современные механизмы безопасности:
+    - MFA
+    - Conditional Access
+    - Passwordless authentication
+
+---
+
+## Когда может использоваться
+
+- Старые системы, которые невозможно модернизировать.
+- Ограниченные сценарии автоматизации (с осторожностью).
+
+---
+
+## Важно для AZ-204
+
+- ROPC считается устаревшим и не рекомендуется.
+- Не поддерживает современные политики безопасности.
+- Не следует использовать в новых приложениях.
+- Предпочтение отдаётся Authorization Code Flow.
+
+> 🎯 Частый экзаменационный вопрос:  
+Какой flow не рекомендуется для новых приложений из-за рисков безопасности?  
+Ответ — Resource Owner Password Credentials (ROPC).
+
 
 **Example (not recommended)**:
 
@@ -351,37 +634,105 @@ var result = await app.AcquireTokenByUsernamePassword(
 ).ExecuteAsync();
 ```
 
-### 7. Implicit Grant Flow - **DEPRECATED**
+## 7️⃣ Implicit Grant Flow — **DEPRECATED**
 
-**Legacy SPA flow** - Use Authorization Code with PKCE instead:
+**Устаревший flow для SPA** — рекомендуется использовать Authorization Code Flow с PKCE.
 
-| Property | Value |
-|----------|-------|
-| **Flow** | Token returned directly in URL fragment |
-| **Used in** | Legacy SPAs |
-| **Security** | ❌ Less secure than authorization code |
-| **Status** | Deprecated - use auth code + PKCE |
+| Свойство | Значение |
+|-----------|----------|
+| **Flow** | Токен возвращается напрямую в URL fragment |
+| **Используется в** | Legacy SPA |
+| **Безопасность** | ❌ Менее безопасен, чем authorization code |
+| **Статус** | Устарел — использовать auth code + PKCE |
 
-## Public vs Confidential Client Applications
+---
 
-### Public Client Applications
+## Как работал
 
-**Cannot keep secrets secure**:
+1. Пользователь проходил аутентификацию.
+2. Access token возвращался напрямую в URL.
+3. Приложение извлекало токен из URL fragment.
 
-| Aspect | Description |
-|--------|-------------|
-| **Runs on** | User's device (desktop, mobile, browser) |
-| **Trust level** | Cannot be trusted with secrets |
-| **Secrets** | No client secrets or certificates |
-| **Source code** | Can be inspected/decompiled |
-| **Examples** | Desktop apps, mobile apps, SPAs |
-| **Flows** | Authorization code (PKCE), device code, IWA |
+---
 
-**Why public?**
-- Source code can be read by users
-- Compiled code can be decompiled
-- No secure storage for secrets on client device
-- User can access file system
+## Почему deprecated
+
+- Токен передаётся через браузер.
+- Повышенный риск утечки токена.
+- Не соответствует современным требованиям безопасности.
+- Не поддерживает современные сценарии (PKCE, усиленные политики).
+
+---
+
+## Современная альтернатива
+
+**Authorization Code Flow с PKCE**:
+
+- Более безопасен для public clients.
+- Не возвращает токен напрямую в URL.
+- Поддерживает современные механизмы защиты.
+
+---
+
+## Важно для AZ-204
+
+- Implicit Flow не рекомендуется для новых приложений.
+- Для SPA следует использовать Authorization Code + PKCE.
+- PKCE обязателен для public clients.
+- Может встречаться в legacy-сценариях.
+
+> 🎯 Частый экзаменационный вопрос:  
+Какой flow следует использовать для SPA вместо implicit?  
+Ответ — Authorization Code Flow с PKCE.
+
+
+# Public vs Confidential Client Applications
+
+## Public Client Applications
+
+**Не могут безопасно хранить секреты**
+
+| Аспект | Описание |
+|--------|----------|
+| **Где выполняются** | На устройстве пользователя (desktop, mobile, браузер) |
+| **Уровень доверия** | Нельзя доверять хранение секретов |
+| **Секреты** | Не используют client secrets или сертификаты |
+| **Исходный код** | Может быть просмотрен или декомпилирован |
+| **Примеры** | Desktop-приложения, мобильные приложения, SPA |
+| **Поддерживаемые flow** | Authorization Code (с PKCE), Device Code, IWA |
+
+---
+
+## Почему называются Public?
+
+- Пользователь имеет доступ к исходному или скомпилированному коду.
+- Приложение работает в неконтролируемой среде.
+- Нет гарантированно защищённого хранилища для client secret.
+- Пользователь может получить доступ к файловой системе или памяти приложения.
+
+> 💡 Любой секрет, встроенный в public client, считается скомпрометированным.
+
+---
+
+## Особенности
+
+- Используют PKCE для повышения безопасности.
+- Не применяют client secret.
+- Часто используют delegated permissions.
+- Поддерживают интерактивные сценарии аутентификации.
+
+---
+
+## Важно для AZ-204
+
+- SPA и мобильные приложения — это public clients.
+- PKCE обязателен для Authorization Code Flow в public clients.
+- Client secret нельзя использовать в public client.
+- Confidential client применяется для серверных сценариев.
+
+> 🎯 Частый экзаменационный вопрос:  
+Почему SPA не может использовать client secret?  
+Ответ — потому что это public client и секрет нельзя защитить.
 
 **Example**:
 
@@ -398,24 +749,61 @@ var result = await app.AcquireTokenInteractive(scopes)
     .ExecuteAsync();
 ```
 
-### Confidential Client Applications
+## Confidential Client Applications
 
-**Can keep secrets secure**:
+**Могут безопасно хранить секреты**
 
-| Aspect | Description |
-|--------|-------------|
-| **Runs on** | Server (web apps, web APIs, daemons) |
-| **Trust level** | Can be trusted with secrets |
-| **Secrets** | Has client secret or certificate |
-| **Source code** | Not accessible to users |
-| **Examples** | Web apps, Web APIs, daemon services |
-| **Flows** | Authorization code, client credentials, OBO |
+| Аспект | Описание |
+|--------|----------|
+| **Где выполняются** | На сервере (web apps, web APIs, daemon-сервисы) |
+| **Уровень доверия** | Можно доверять хранение секретов |
+| **Секреты** | Используют client secret или сертификат |
+| **Исходный код** | Недоступен конечным пользователям |
+| **Примеры** | Web-приложения, Web API, фоновые сервисы |
+| **Поддерживаемые flow** | Authorization Code, Client Credentials, OBO |
 
-**Why confidential?**
-- Runs on server (not user device)
-- Code not accessible to users
-- Can securely store secrets in configuration
-- Back-channel communication with identity provider
+---
+
+## Почему называются Confidential?
+
+- Работают на сервере, а не на устройстве пользователя.
+- Код и конфигурация недоступны пользователю.
+- Возможность безопасного хранения:
+    - Client secret
+    - Сертификата
+- Используют защищённый back-channel для обмена кодов на токены.
+
+> 💡 Confidential client — это доверенная серверная среда.
+
+---
+
+## Особенности
+
+- Обязателен для Client Credentials Flow.
+- Используется в On-Behalf-Of Flow.
+- Может безопасно использовать сертификаты вместо секретов.
+- Часто применяется с application permissions.
+
+---
+
+## Важно для AZ-204
+
+- Confidential client требуется для server-to-server сценариев.
+- Использует client secret или сертификат.
+- Не подходит для SPA и мобильных приложений.
+- Может выполнять обмен authorization code на токен безопасно.
+
+---
+
+## Ключевое различие
+
+- **Public client** — выполняется на устройстве пользователя, без секретов.
+- **Confidential client** — выполняется на сервере, может хранить секреты.
+
+> 🎯 Частый экзаменационный вопрос:  
+Какой тип клиента требуется для Client Credentials Flow?  
+Ответ — Confidential client.
+
 
 **Example**:
 
@@ -433,17 +821,47 @@ var result = await app.AcquireTokenForClient(scopes)
     .ExecuteAsync();
 ```
 
-### Comparison
+## Сравнение Public и Confidential Client
 
-| Feature | Public Client | Confidential Client |
-|---------|--------------|---------------------|
-| **Location** | User device | Server |
-| **Client secret** | ❌ No | ✅ Yes |
-| **Certificate** | ❌ No | ✅ Yes |
-| **User interaction** | Usually required | Optional |
-| **Token acquisition** | On behalf of user | User or application |
-| **Examples** | Desktop, mobile, SPA | Web app, API, daemon |
-| **Builder** | `PublicClientApplicationBuilder` | `ConfidentialClientApplicationBuilder` |
+| Характеристика | Public Client | Confidential Client |
+|----------------|--------------|---------------------|
+| **Местоположение** | Устройство пользователя | Сервер |
+| **Client secret** | ❌ Нет | ✅ Да |
+| **Сертификат** | ❌ Нет | ✅ Да |
+| **Взаимодействие с пользователем** | Обычно требуется | Необязательно |
+| **Получение токена** | От имени пользователя | От имени пользователя или приложения |
+| **Примеры** | Desktop, mobile, SPA | Web app, API, daemon |
+| **Builder (MSAL)** | `PublicClientApplicationBuilder` | `ConfidentialClientApplicationBuilder` |
+
+---
+
+## Ключевые различия
+
+- **Public Client**
+    - Работает в недоверенной среде.
+    - Не может безопасно хранить секреты.
+    - Использует PKCE вместо client secret.
+    - Подходит для приложений с пользователем.
+
+- **Confidential Client**
+    - Работает на сервере.
+    - Может безопасно хранить client secret или сертификат.
+    - Используется для server-side сценариев.
+    - Поддерживает application permissions.
+
+---
+
+## Важно для AZ-204
+
+- Client Credentials Flow требует Confidential Client.
+- SPA и мобильные приложения — это Public Client.
+- On-Behalf-Of Flow выполняется Confidential Client.
+- Builder зависит от типа приложения.
+
+> 🎯 Запомнить просто:  
+> Public = устройство пользователя, без секретов.  
+> Confidential = сервер, с секретами.
+
 
 ## Token Caching and Refresh
 
@@ -632,38 +1050,105 @@ public static IPublicClientApplication GetApp()
 }
 ```
 
-## Critical Notes
-- 💡 **MSAL** - Microsoft Authentication Library for token acquisition
-- 🎯 **Cross-platform** - .NET, JavaScript, Java, Python, Android, iOS
-- ✅ **Automatic caching** - Token cache and refresh handled automatically
-- ⚠️ **Two types** - Public (desktop, mobile, SPA) vs Confidential (server)
-- 🔄 **Token refresh** - Automatic, no manual expiration handling
-- 📊 **Multiple flows** - Authorization code, client credentials, OBO, device code
-- 💡 **Best practice** - Use appropriate client type and flow
-- ✅ **Try silent first** - AcquireTokenSilent before interactive
-- ⚠️ **Avoid ROPC** - Username/password flow not recommended
-- 🔒 **Singleton** - Reuse MSAL application instance
+# Critical Notes
 
-## Exam Tips
-- MSAL: Microsoft Authentication Library for acquiring security tokens
-- Benefits: No manual OAuth, automatic token caching/refresh, consistent API
-- Platforms: .NET, JavaScript, Java, Python, Android, iOS, Node.js
-- Public client: Desktop, mobile, SPA - cannot keep secrets (no client secret)
-- Confidential client: Web apps, APIs, daemons - can keep secrets (has client secret/certificate)
-- Authorization code flow: Most common, user signs in (desktop, mobile, SPA, web)
-- Client credentials flow: Daemon/service, no user (application permissions)
-- On-Behalf-Of (OBO): Middle-tier API calls downstream API on behalf of user
-- Device code flow: Input-constrained devices (TV, IoT, CLI)
-- IWA: Integrated Windows Authentication for domain-joined machines
-- ROPC: Username/password flow - NOT recommended (security risk)
-- Implicit flow: Deprecated - use authorization code with PKCE instead
-- Token caching: MSAL handles automatically, stores and refreshes
-- AcquireTokenInteractive: User sign-in with UI (public client)
-- AcquireTokenSilent: Get token from cache without UI (try first)
-- AcquireTokenForClient: App-only authentication (confidential client)
-- PublicClientApplicationBuilder: For public clients (desktop, mobile)
-- ConfidentialClientApplicationBuilder: For confidential clients (server)
-- Best practice: Try AcquireTokenSilent first, fall back to interactive
-- Singleton pattern: Reuse MSAL application instance for better performance
+- 💡 **MSAL** — библиотека Microsoft для получения токенов безопасности
+- 🎯 **Кроссплатформенность** — поддержка .NET, JavaScript, Java, Python, Android, iOS
+- ✅ **Автоматическое кеширование** — токены сохраняются и обновляются автоматически
+- ⚠️ **Два типа клиентов** — Public (desktop, mobile, SPA) и Confidential (server)
+- 🔄 **Автоматическое обновление токенов** — не требуется вручную обрабатывать expiration
+- 📊 **Поддержка нескольких flow** — Authorization Code, Client Credentials, OBO, Device Code
+- 💡 **Best practice** — выбирать правильный тип клиента и подходящий flow
+- ✅ **Silent сначала** — сначала пытаться получить токен без UI
+- ⚠️ **Избегать ROPC** — небезопасный и устаревший подход
+- 🔒 **Singleton** — использовать один экземпляр MSAL-приложения
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы MSAL
+
+- MSAL используется для получения access и ID токенов.
+- Упрощает работу с OAuth 2.0.
+- Автоматически управляет кешем и обновлением токенов.
+- Предоставляет единый API для разных платформ.
+
+---
+
+## Типы клиентов
+
+### Public Client
+- Desktop, mobile, SPA.
+- Не может хранить client secret.
+- Использует PKCE.
+- Работает от имени пользователя.
+
+### Confidential Client
+- Web apps, Web APIs, daemon-сервисы.
+- Может хранить client secret или сертификат.
+- Используется для server-side сценариев.
+
+---
+
+## Основные Authentication Flows
+
+- **Authorization Code Flow**  
+  Самый распространённый, используется с пользователем.
+
+- **Client Credentials Flow**  
+  Для daemon-приложений, без пользователя.
+
+- **On-Behalf-Of (OBO)**  
+  Middle-tier API вызывает downstream API от имени пользователя.
+
+- **Device Code Flow**  
+  Для устройств с ограниченным вводом.
+
+- **IWA**  
+  Для доменно-присоединённых Windows машин.
+
+- **ROPC**  
+  Не рекомендуется.
+
+- **Implicit Flow**  
+  Устарел — использовать Authorization Code + PKCE.
+
+---
+
+## Работа с токенами
+
+- MSAL автоматически:
+    - Кеширует токены
+    - Обновляет их
+    - Обрабатывает истечение срока действия
+
+- Сначала всегда пытаться получить токен без интерактивного входа.
+- Если silent-получение не удалось — выполнить интерактивный вход.
+
+---
+
+## Важно помнить
+
+- Client Credentials Flow требует Confidential Client.
+- SPA и мобильные приложения — Public Client.
+- OBO используется в микросервисной архитектуре.
+- Singleton-паттерн повышает производительность.
+
+---
+
+## Часто проверяется
+
+- Различие Public vs Confidential client.
+- Какой flow использовать в конкретном сценарии.
+- Почему не следует использовать ROPC.
+- Почему Implicit Flow deprecated.
+- Когда использовать OBO.
+- Почему важно сначала пробовать silent acquisition.
+
+---
+
+> 🎯 Ключевая идея:  
+> MSAL абстрагирует OAuth, управляет токенами автоматически и требует правильного выбора типа клиента и authentication flow.
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-authentication-by-using-microsoft-authentication-library/2-microsoft-authentication-library-overview)

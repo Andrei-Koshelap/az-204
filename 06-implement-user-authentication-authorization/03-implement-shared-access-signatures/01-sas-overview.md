@@ -1,32 +1,84 @@
 # Shared Access Signatures (SAS) Overview
 
-## Key Concepts
-- **SAS** - Signed URI granting delegated access to Azure Storage resources
-- **Token** - Query parameters including signature for authorization
-- **Three types** - User delegation, Service, Account
-- **Secure** - Time-limited, permission-scoped access without sharing account keys
+## Ключевые понятия
 
-## What is a Shared Access Signature?
+- **SAS (Shared Access Signature)** — подписанный URI, предоставляющий делегированный доступ к ресурсам Azure Storage
+- **Токен** — набор query-параметров с подписью для авторизации
+- **Три типа** — User Delegation, Service, Account
+- **Безопасность** — ограничение по времени и правам без передачи ключа аккаунта
 
-A **shared access signature (SAS)** is a signed URI that points to one or more storage resources and includes a token containing query parameters. The token indicates how resources can be accessed by the client.
+---
 
-### Purpose
+# Что такое Shared Access Signature?
 
-**Delegate access** to storage resources without sharing account keys:
-- Grant specific permissions (read, write, delete, list)
-- Time-limited access (start and expiry times)
-- Secure authorization with cryptographic signature
-- Revocable access through stored access policies
+**SAS** — это подписанный URI, который указывает на один или несколько ресурсов хранения и содержит токен с query-параметрами.
 
-## Types of Shared Access Signatures
+Токен определяет:
 
-### Comparison Table
+- Какие операции разрешены
+- На какой срок предоставляется доступ
+- К какому ресурсу разрешён доступ
+- Кем подписан доступ
 
-| Type | Secured With | Scope | Services | Best For |
-|------|--------------|-------|----------|----------|
-| **User Delegation SAS** | Microsoft Entra ID credentials | Service-level | Blob Storage, Data Lake Storage | **Most secure** - Recommended |
-| **Service SAS** | Storage account key | Service-level | Blob, Queue, Table, Files | Service-specific access |
-| **Account SAS** | Storage account key | Account-level | All storage services | Cross-service operations |
+> 💡 SAS позволяет предоставить временный и ограниченный доступ без раскрытия ключей Storage Account.
+
+---
+
+# Назначение
+
+SAS используется для **делегирования доступа** к ресурсам Azure Storage без передачи account key.
+
+Позволяет:
+
+- Выдавать конкретные разрешения (read, write, delete, list)
+- Ограничивать доступ по времени (start time, expiry time)
+- Обеспечивать криптографическую подпись
+- Отзывать доступ через stored access policy
+
+---
+
+# Типы Shared Access Signatures
+
+## Сравнительная таблица
+
+| Тип | Чем защищён | Уровень доступа | Поддерживаемые сервисы | Когда использовать |
+|------|------------|----------------|------------------------|--------------------|
+| **User Delegation SAS** | Учётные данные Microsoft Entra ID | Уровень сервиса | Blob Storage, Data Lake Storage | **Наиболее безопасный**, рекомендуется |
+| **Service SAS** | Ключ Storage Account | Уровень сервиса | Blob, Queue, Table, Files | Доступ к конкретному сервису |
+| **Account SAS** | Ключ Storage Account | Уровень аккаунта | Все сервисы хранения | Кросс-сервисные операции |
+
+---
+
+## Кратко о каждом типе
+
+### User Delegation SAS
+- Основан на Azure AD (Microsoft Entra ID).
+- Не использует account key.
+- Рекомендуется как наиболее безопасный вариант.
+- Поддерживается для Blob и Data Lake.
+
+### Service SAS
+- Подписывается с использованием account key.
+- Ограничен одним сервисом.
+- Подходит для сценариев с конкретным типом хранилища.
+
+### Account SAS
+- Подписывается account key.
+- Позволяет доступ ко всем сервисам аккаунта.
+- Используется для операций на уровне всего аккаунта.
+
+---
+
+## Важно для AZ-204
+
+- SAS предоставляет временный доступ.
+- Не требуется передавать account key.
+- User Delegation SAS — наиболее безопасный вариант.
+- Service и Account SAS используют account key.
+- Доступ можно ограничить по времени и операциям.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как безопасно предоставить временный досту
 
 ### 1. User Delegation SAS (Recommended)
 
@@ -63,15 +115,40 @@ BlobUriBuilder uriBuilder = new BlobUriBuilder(blobClient.Uri)
 Uri sasUri = uriBuilder.ToUri();
 ```
 
-**Benefits**:
-- ✅ **No account key exposure** - Uses Microsoft Entra ID
-- ✅ **Auditable** - User actions tracked
-- ✅ **Revocable** - Disable user account to revoke all SAS
-- ✅ **Best practice** - Recommended by Microsoft
+## Преимущества User Delegation SAS
 
-**Applies to**:
-- Blob Storage
-- Data Lake Storage Gen2
+✅ **Без передачи ключа аккаунта**  
+Использует аутентификацию через Microsoft Entra ID вместо account key.
+
+✅ **Аудируемость**  
+Действия пользователя можно отслеживать через журналы входа и аудит.
+
+✅ **Отзыв доступа**  
+Достаточно отключить или удалить учётную запись пользователя, чтобы аннулировать выданные SAS.
+
+✅ **Рекомендуемый подход**  
+Microsoft рекомендует использовать именно User Delegation SAS как наиболее безопасный вариант.
+
+---
+
+## Применяется к
+
+- **Blob Storage**
+- **Data Lake Storage Gen2**
+
+---
+
+## Важно для AZ-204
+
+- User Delegation SAS основан на Entra ID, а не на account key.
+- Обеспечивает более высокий уровень безопасности.
+- Позволяет централизованно управлять доступом.
+- Поддерживается только для Blob и Data Lake Gen2.
+
+> 🎯 Частый экзаменационный вопрос:  
+Какой тип SAS наиболее безопасен?  
+Ответ — User Delegation SAS.
+
 
 ### 2. Service SAS
 
@@ -99,16 +176,52 @@ BlobClient blobClient = new BlobClient(
 Uri sasUri = blobClient.GenerateSasUri(sasBuilder);
 ```
 
-**Use cases**:
-- Single service access (Blob, Queue, Table, or Files)
-- When Microsoft Entra ID not available
-- Legacy applications
+## Service SAS — сценарии использования
 
-**Applies to**:
-- Blob Storage
-- Queue Storage
-- Table Storage
-- Azure Files
+### Когда применяется
+
+- Доступ к одному конкретному сервису хранения  
+  (Blob, Queue, Table или Files)
+
+- Когда Microsoft Entra ID недоступен  
+  или не используется в архитектуре
+
+- В legacy-приложениях  
+  где аутентификация построена на account key
+
+---
+
+## Поддерживаемые сервисы
+
+- **Blob Storage**
+- **Queue Storage**
+- **Table Storage**
+- **Azure Files**
+
+---
+
+## Особенности
+
+- Подписывается с использованием **Storage Account Key**.
+- Ограничивается конкретным сервисом.
+- Позволяет задать:
+    - Разрешения (read, write, delete и др.)
+    - Временные рамки
+    - Ограничения по IP (при необходимости)
+
+---
+
+## Важно для AZ-204
+
+- Service SAS использует account key.
+- Менее безопасен по сравнению с User Delegation SAS.
+- Подходит для сценариев без Entra ID.
+- Доступ ограничивается одним сервисом хранения.
+
+> 🎯 Частый экзаменационный вопрос:  
+Какой тип SAS использовать для доступа только к Blob Storage без Entra ID?  
+Ответ — Service SAS.
+
 
 ### 3. Account SAS
 
@@ -132,42 +245,126 @@ string sasToken = sasBuilder.ToSasQueryParameters(credential).ToString();
 string sasUrl = $"https://{accountName}.blob.core.windows.net?{sasToken}";
 ```
 
-**Use cases**:
-- Access to multiple services
-- Operations across services
-- Copy operations between storage accounts
+## Account SAS — сценарии использования
 
-**Applies to**:
-- All storage services (Blob, Queue, Table, Files)
+### Когда применяется
 
-## How Shared Access Signatures Work
+- Доступ сразу к нескольким сервисам хранения
+- Операции между разными сервисами
+- Копирование данных между Storage Account
+- Массовые операции на уровне аккаунта
 
-### SAS URI Structure
+---
 
-**Complete URI with SAS token**:
+## Поддерживаемые сервисы
+
+- Blob Storage
+- Queue Storage
+- Table Storage
+- Azure Files
+
+> 💡 Account SAS работает на уровне всего Storage Account.
+
+---
+
+# Как работает Shared Access Signature
+
+## Структура SAS URI
+
+**Полный URI с SAS-токеном** состоит из:
+
+1. Базового URL ресурса хранения
+2. Набора query-параметров (SAS token)
+3. Криптографической подписи
+
+### Общая структура
+https://<storage-account>.blob.core.windows.net/<container>/<blob>?<SAS-token>
+
+
+---
+
+## Что включает SAS-токен
+
+SAS-токен содержит параметры, определяющие:
+
+- Разрешения (sp)
+- Время начала и окончания действия (st, se)
+- Версию API (sv)
+- Тип ресурса (sr)
+- Подпись (sig)
+
+> 💡 Подпись (sig) создаётся на основе ключа аккаунта или user delegation key.
+
+---
+
+## Важно для AZ-204
+
+- SAS передаётся как query-параметры в URL.
+- Доступ возможен только в пределах заданных разрешений и времени.
+- Account SAS даёт доступ ко всем сервисам хранения.
+- Копирование между аккаунтами часто требует SAS.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как предоставить временный доступ к нескольким сервисам хранения одновременно?  
+Ответ — использовать Account SAS.
+
+
 
 ```
 https://storageaccount.blob.core.windows.net/container/blob.jpg?sp=r&st=2020-01-20T11:42:32Z&se=2020-01-20T19:42:32Z&spr=https&sv=2019-02-02&sr=b&sig=SrW1HZ5Nb6MbRzTbXCaPm%2BJiSEn15tC91Y4umMPwVZs%3D
 ```
 
-**Breaking it down**:
 
-| Component | Value |
-|-----------|-------|
-| **Resource URI** | `https://storageaccount.blob.core.windows.net/container/blob.jpg` |
-| **SAS Token** | `sp=r&st=...&sig=...` |
+---
 
-### SAS Token Components
+# Компоненты SAS-токена
 
-| Parameter | Description | Example | Values |
-|-----------|-------------|---------|--------|
-| **sp** | **Permissions** | `sp=r` | `r` (read), `w` (write), `d` (delete), `l` (list), `a` (add), `c` (create) |
-| **st** | **Start time** (UTC) | `st=2020-01-20T11:42:32Z` | ISO 8601 datetime |
-| **se** | **Expiry time** (UTC) | `se=2020-01-20T19:42:32Z` | ISO 8601 datetime |
+| Параметр | Описание | Пример | Возможные значения |
+|------------|----------|---------|--------------------|
+| **sp** | **Permissions (разрешения)** | `sp=r` | `r` (read), `w` (write), `d` (delete), `l` (list), `a` (add), `c` (create) |
+| **st** | **Start time** (UTC) | `st=2020-01-20T11:42:32Z` | Формат ISO 8601 |
+| **se** | **Expiry time** (UTC) | `se=2020-01-20T19:42:32Z` | Формат ISO 8601 |
 | **spr** | **Protocol** | `spr=https` | `https`, `http,https` |
-| **sv** | **Storage API version** | `sv=2019-02-02` | Version string |
+| **sv** | **Storage API version** | `sv=2019-02-02` | Строка версии API |
 | **sr** | **Resource type** | `sr=b` | `b` (blob), `c` (container), `bs` (blob service) |
-| **sig** | **Signature** | `sig=SrW1HZ5...` | Base64-encoded HMAC-SHA256 signature |
+| **sig** | **Signature** | `sig=SrW1HZ5...` | Base64-кодированная HMAC-SHA256 подпись |
+
+---
+
+## Что важно понимать
+
+### `sp` — Permissions
+Определяет, какие операции разрешены.  
+Можно комбинировать, например: `sp=rw`.
+
+### `st` и `se` — Временные ограничения
+Определяют период действия SAS.  
+Если текущее время вне диапазона — доступ запрещён.
+
+### `spr` — Протокол
+Рекомендуется использовать только `https`.
+
+### `sig` — Подпись
+Криптографическая подпись, подтверждающая подлинность токена.  
+Создаётся с использованием:
+
+- Account key  
+  или
+- User delegation key
+
+---
+
+## Важно для AZ-204
+
+- SAS-токен передаётся в query-параметрах URL.
+- Разрешения и срок действия строго ограничены.
+- `sig` обеспечивает безопасность.
+- Без корректной подписи SAS недействителен.
+- Использование только `https` — best practice.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как ограничить SAS только чтением и сроком на 1 час?  
+Ответ — задать `sp=r` и корректно настроить `se`.
 
 ### Permissions Values
 
@@ -370,21 +567,63 @@ BlobSasBuilder sasBuilder = new BlobSasBuilder()
 };
 ```
 
-**Why**: Allows revoking SAS without regenerating storage account keys.
+## Почему использовать Stored Access Policy
 
-### 6. Consider Using Middle-Tier Service
+**Позволяет отозвать SAS без регенерации ключей Storage Account.**
 
-**When NOT to use SAS directly**:
-- High-security requirements
-- Need for business logic validation
-- Complex permission rules
-- Sensitive data access
+Если SAS связан со Stored Access Policy:
 
-**Alternative**: Create middle-tier service that:
-- Authenticates users
-- Validates business rules
-- Generates short-lived SAS tokens
-- Logs access for audit
+- Можно изменить срок действия
+- Можно изменить разрешения
+- Можно полностью отозвать доступ
+- Не требуется регенерация account key
+
+> 💡 Без stored access policy отозвать уже выданный SAS невозможно, пока не истечёт срок его действия или не будет регенерирован ключ.
+
+---
+
+# 6️⃣ Рассмотрите использование Middle-Tier Service
+
+## Когда НЕ стоит использовать SAS напрямую
+
+- Высокие требования к безопасности
+- Необходима валидация бизнес-логики
+- Сложные правила доступа
+- Работа с чувствительными данными
+
+---
+
+## Альтернатива: Middle-Tier Service
+
+Создайте промежуточный сервис, который:
+
+- Аутентифицирует пользователей
+- Проверяет бизнес-правила
+- Генерирует краткоживущие SAS-токены
+- Логирует действия для аудита
+
+---
+
+## Преимущества такого подхода
+
+- Централизованный контроль доступа
+- Возможность применять сложные правила
+- Полный аудит операций
+- Минимизация времени жизни SAS
+
+---
+
+## Важно для AZ-204
+
+- SAS удобен, но не всегда подходит для high-security сценариев.
+- Stored Access Policy позволяет отзывать SAS.
+- Middle-tier обеспечивает дополнительный уровень контроля.
+- Для чувствительных данных предпочтителен серверный контроль доступа.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как обеспечить дополнительную валидацию перед доступом к Blob Storage?  
+Ответ — использовать middle-tier сервис вместо прямого SAS.
+
 
 ### 7. IP Address Restrictions (When Possible)
 
@@ -398,14 +637,62 @@ sasBuilder.IPRange = new SasIPRange(
     IPAddress.Parse("203.0.113.255")
 );
 ```
+## 8️⃣ Мониторинг использования SAS
 
-### 8. Monitor SAS Usage
+### Используйте Azure Monitor для отслеживания:
 
-**Use Azure Monitor** to track:
-- SAS authentication failures
-- Unusual access patterns
-- Geographic anomalies
-- Excessive read/write operations
+- Ошибок аутентификации через SAS
+- Нетипичных шаблонов доступа
+- Географических аномалий
+- Чрезмерных операций чтения или записи
+
+---
+
+## Что рекомендуется контролировать
+
+### 🔎 Authentication failures
+- Повторяющиеся неудачные попытки доступа
+- Возможные попытки подбора или использования истёкшего SAS
+
+### 🌍 Географические аномалии
+- Доступ из неожиданных регионов
+- Резкая смена географии запросов
+
+### 📈 Аномальная активность
+- Необычно большое количество операций
+- Массовые скачивания или загрузки
+
+---
+
+## Инструменты мониторинга
+
+- Azure Monitor
+- Diagnostic logs Storage Account
+- Log Analytics
+- Azure Alerts
+
+---
+
+## Best Practices
+
+- Настроить оповещения (Alerts) на подозрительную активность
+- Анализировать журналы входа и операций
+- Ограничивать SAS по IP, если возможно
+- Использовать короткие сроки действия
+
+---
+
+## Важно для AZ-204
+
+- SAS сам по себе не логирует бизнес-контекст — нужен мониторинг.
+- Необходимо включить диагностические логи.
+- Аномальная активность может указывать на компрометацию SAS.
+- Мониторинг — часть общей стратегии безопасности.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как обнаружить злоупотребление SAS?  
+Ответ — использовать Azure Monitor и диагностические логи.
+
 
 ```kusto
 // Azure Monitor query for SAS usage
@@ -416,71 +703,135 @@ StorageBlobLogs
 | render timechart
 ```
 
-## Security Considerations
+# Security Considerations
 
-### Risks of Using SAS
+## Риски использования SAS
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| **Token interception** | Unauthorized access | Use HTTPS only |
-| **Token sharing** | Uncontrolled distribution | Short expiration times |
-| **Excessive permissions** | Data modification/deletion | Minimum required permissions |
-| **Long-lived tokens** | Extended exposure | Regular rotation |
-| **Compromised account key** | All SAS invalid | Use user delegation SAS |
+| Риск | Последствия | Меры снижения |
+|------|------------|--------------|
+| **Перехват токена** | Неавторизованный доступ | Использовать только HTTPS |
+| **Распространение токена** | Неконтролируемый доступ | Короткий срок действия |
+| **Избыточные разрешения** | Изменение или удаление данных | Принцип минимальных привилегий |
+| **Долгоживущие токены** | Увеличенная зона риска | Регулярная ротация |
+| **Компрометация account key** | Недействительность всех SAS | Использовать User Delegation SAS |
 
-### When NOT to Use SAS
+---
 
-**Consider alternatives when**:
-- Unacceptable risk of token exposure
-- Need for real-time access revocation
-- Complex authorization logic required
-- High-security data (PHI, PCI, etc.)
+## Когда НЕ стоит использовать SAS
 
-**Alternatives**:
-- **Managed Identity** - For Azure services
-- **Microsoft Entra ID** - For user authentication
-- **Middle-tier service** - For complex logic
-- **Azure AD B2C** - For customer identity
+Рассмотрите альтернативы, если:
 
-## SAS vs Other Authentication Methods
+- Недопустим риск утечки токена
+- Требуется немедленный отзыв доступа
+- Нужна сложная логика авторизации
+- Работа с высокочувствительными данными (PHI, PCI и др.)
 
-| Method | Use Case | Pros | Cons |
-|--------|----------|------|------|
-| **SAS** | Time-limited delegated access | No credentials needed, fine-grained | Can be intercepted |
-| **Storage Account Key** | Full administrative access | Complete control | High security risk |
-| **Microsoft Entra ID** | User/app authentication | Most secure, revocable | Requires Azure AD setup |
-| **Managed Identity** | Azure service-to-service | No credentials in code | Only for Azure services |
-| **Anonymous Access** | Public data | Simple, no auth | No security |
+---
 
-## Critical Notes
-- 💡 **Three types** - User delegation (best), Service, Account
-- 🎯 **User delegation SAS** - Most secure, uses Microsoft Entra ID
-- ✅ **Service SAS** - Single service access with storage key
-- ⚠️ **Account SAS** - Cross-service access with storage key
-- 🔄 **Components** - Permissions (sp), start time (st), expiry (se), signature (sig)
-- 📊 **HTTPS required** - Always use HTTPS to prevent interception
-- 💡 **Short-lived** - Set shortest useful expiration time
-- ✅ **Minimum permissions** - Grant only what's required (r, w, d, l, a, c)
-- ⚠️ **Revocation** - Use stored access policies for service SAS
-- 🔒 **Best practice** - User delegation SAS > Service SAS > Account SAS
+## Альтернативы
 
-## Exam Tips
-- SAS: Shared Access Signature - signed URI for delegated storage access
-- Three types: User delegation (Microsoft Entra ID), Service (storage key), Account (storage key)
-- User delegation SAS: Most secure, recommended, Blob/Data Lake only
-- Service SAS: Single service access (Blob, Queue, Table, Files)
-- Account SAS: Cross-service access, all storage services
-- SAS token parameters: sp (permissions), st (start), se (expiry), sr (resource), sig (signature)
-- Permissions: r (read), w (write), d (delete), l (list), a (add), c (create)
-- Best practices: HTTPS only, user delegation when possible, minimum permissions, short expiration
-- Security: Use HTTPS, shortest expiration, minimum permissions
-- Stored access policies: Enable revocation without key rotation
-- Protocol: Always use HTTPS (spr=https) to prevent interception
-- Resource types: b (blob), c (container), bs (blob service)
-- Signature: HMAC-SHA256 cryptographic signature
-- Middle-tier service: Consider when SAS risk is unacceptable
-- Copy operations: SAS required for cross-account blob/file copy
-- When to use: Delegate access without sharing account keys
-- Microsoft recommendation: User delegation SAS preferred over key-based SAS
+- **Managed Identity** — для взаимодействия Azure-сервисов
+- **Microsoft Entra ID** — для аутентификации пользователей и приложений
+- **Middle-tier сервис** — для реализации бизнес-логики
+- **Azure AD B2C** — для сценариев с внешними пользователями
+
+---
+
+# SAS vs Другие методы аутентификации
+
+| Метод | Когда использовать | Плюсы | Минусы |
+|--------|-------------------|--------|--------|
+| **SAS** | Временный делегированный доступ | Нет передачи ключей, гибкие права | Возможен перехват |
+| **Storage Account Key** | Полный административный доступ | Максимальный контроль | Высокий риск безопасности |
+| **Microsoft Entra ID** | Аутентификация пользователей/приложений | Наиболее безопасный, отзыв доступа | Требует настройки Azure AD |
+| **Managed Identity** | Azure service-to-service | Нет секретов в коде | Только для Azure-сервисов |
+| **Anonymous Access** | Публичные данные | Простота | Отсутствие защиты |
+
+---
+
+# Critical Notes
+
+- 💡 **Три типа SAS** — User Delegation (лучший), Service, Account
+- 🎯 **User Delegation SAS** — самый безопасный, использует Entra ID
+- ✅ **Service SAS** — доступ к одному сервису через account key
+- ⚠️ **Account SAS** — доступ к нескольким сервисам через account key
+- 🔄 **Компоненты токена** — `sp`, `st`, `se`, `sig`
+- 📊 **HTTPS обязателен** — предотвращает перехват
+- 💡 **Короткий срок действия** — минимизирует риск
+- ✅ **Минимальные разрешения** — только необходимые операции
+- ⚠️ **Отзыв доступа** — использовать stored access policies
+- 🔒 **Рекомендация** — User Delegation > Service > Account
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- SAS — подписанный URI для делегированного доступа к Azure Storage.
+- Не требует передачи account key клиенту.
+- Ограничивается временем и разрешениями.
+
+---
+
+## Типы SAS
+
+- **User Delegation SAS**
+    - Основан на Entra ID
+    - Самый безопасный
+    - Только Blob и Data Lake
+
+- **Service SAS**
+    - Использует account key
+    - Один сервис
+
+- **Account SAS**
+    - Использует account key
+    - Несколько сервисов
+
+---
+
+## Параметры токена
+
+- `sp` — разрешения
+- `st` — время начала
+- `se` — время окончания
+- `sr` — тип ресурса
+- `sig` — криптографическая подпись
+
+Разрешения:
+- `r` — read
+- `w` — write
+- `d` — delete
+- `l` — list
+- `a` — add
+- `c` — create
+
+---
+
+## Best Practices
+
+- Использовать только HTTPS (`spr=https`)
+- Минимальные разрешения
+- Минимально возможный срок действия
+- Использовать User Delegation SAS
+- Применять stored access policies для отзыва
+
+---
+
+## Часто проверяется
+
+- Какой тип SAS наиболее безопасен.
+- Различие между Service и Account SAS.
+- Какие параметры управляют сроком действия.
+- Как отозвать SAS без регенерации ключа.
+- Когда использовать middle-tier вместо прямого SAS.
+
+---
+
+> 🎯 Ключевая идея:  
+> Делегировать доступ безопасно, минимально и на короткий срок.  
+> Предпочитать User Delegation SAS.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-shared-access-signatures/2-shared-access-signatures-overview)

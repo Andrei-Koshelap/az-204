@@ -1,31 +1,66 @@
 # Permissions and Consent
 
-## Key Concepts
-- **Delegated permissions** - User present, app acts on behalf of user
-- **Application permissions** - No user, app acts as itself
-- **Static consent** - All permissions upfront
-- **Dynamic consent** - Request permissions incrementally
-- **Admin consent** - Required for high-privilege permissions
+## Ключевые понятия
 
-## Overview
+- **Delegated permissions** — пользователь присутствует, приложение действует от его имени
+- **Application permissions** — пользователь отсутствует, приложение действует от своего имени
+- **Static consent** — все разрешения запрашиваются заранее
+- **Dynamic consent** — разрешения запрашиваются по мере необходимости
+- **Admin consent** — требуется для разрешений с повышенными привилегиями
 
-**Authorization model** for Microsoft identity platform:
+---
 
-- **OAuth 2.0** - Industry-standard authorization protocol
-- **Scopes** - Granular permissions (permission sets)
-- **Consent** - User/admin approval for permissions
-- **Control** - Users and admins control data access
+# Обзор
 
-## Permission Types
+**Модель авторизации** Microsoft Identity Platform основана на OAuth 2.0.
 
-### 1. Delegated Permissions (Delegated Access)
+Основные элементы:
 
-**App acts on behalf of signed-in user**:
+- **OAuth 2.0** — стандартный протокол авторизации
+- **Scopes** — детализированные разрешения
+- **Consent** — согласие пользователя или администратора
+- **Контроль доступа** — пользователи и администраторы управляют доступом к данным
 
-- **User present** - User must be signed in
-- **Who consents** - User or administrator
-- **Effective permissions** - Intersection of app permissions and user permissions
-- **Use cases** - Web apps, mobile apps, SPAs
+> 💡 Приложение не получает доступ к данным без явного согласия.
+
+---
+
+# Типы разрешений
+
+## 1️⃣ Delegated Permissions (Delegated Access)
+
+**Приложение действует от имени вошедшего пользователя**
+
+### Характеристики
+
+- **Пользователь должен быть авторизован**
+- **Согласие может дать пользователь или администратор**
+- **Эффективные права** = пересечение прав пользователя и разрешений приложения
+- Используется в интерактивных приложениях
+
+> 💡 Приложение не может получить больше прав, чем есть у пользователя.
+
+---
+
+### Когда используется
+
+- Web-приложения
+- SPA
+- Мобильные приложения
+- Клиентские приложения с входом пользователя
+
+---
+
+## Важно для AZ-204
+
+- Delegated permissions требуют присутствия пользователя.
+- Токен содержит scopes, отражающие разрешения.
+- Даже если приложение запрашивает разрешение, оно ограничено правами пользователя.
+- Администратор может выдать согласие сразу для всей организации.
+
+> 🎯 Частый вопрос:  
+Если пользователь не имеет доступа к ресурсу, сможет ли приложение получить доступ через delegated permission?  
+Ответ — нет.
 
 **How it works**:
 
@@ -66,24 +101,62 @@ var result = await app.AcquireTokenInteractive(scopes)
 // App can only access data user has access to
 ```
 
-**Common delegated permissions**:
+## Часто используемые Delegated Permissions
 
-| Permission | Description |
-|------------|-------------|
-| `User.Read` | Read signed-in user's profile |
-| `Mail.Read` | Read user's mail |
-| `Mail.Send` | Send mail as user |
-| `Calendars.Read` | Read user's calendars |
-| `Files.ReadWrite` | Read and write user's files |
+| Permission | Описание |
+|------------|----------|
+| `User.Read` | Чтение профиля вошедшего пользователя |
+| `Mail.Read` | Чтение почты пользователя |
+| `Mail.Send` | Отправка почты от имени пользователя |
+| `Calendars.Read` | Чтение календарей пользователя |
+| `Files.ReadWrite` | Чтение и запись файлов пользователя |
 
-### 2. Application Permissions (App-Only Access)
+> 💡 Эти разрешения работают только при наличии вошедшего пользователя и ограничены его правами.
 
-**App acts as itself, no user**:
+---
 
-- **No user** - Background services, daemons
-- **Who consents** - Administrator only (never user)
-- **Effective permissions** - Full permission granted
-- **Use cases** - Background services, batch jobs, automated tasks
+# 2️⃣ Application Permissions (App-Only Access)
+
+**Приложение действует от своего имени, без пользователя**
+
+### Характеристики
+
+- **Пользователь отсутствует**  
+  Используется в фоновом режиме или автоматизированных процессах.
+
+- **Согласие даёт только администратор**  
+  Пользователь не может предоставить consent для application permissions.
+
+- **Эффективные права**  
+  Приложение получает полный объём разрешений, который был предоставлен администратором.
+
+- **Типовые сценарии**  
+  Фоновые сервисы, daemon-приложения, batch-задачи, автоматизированные процессы.
+
+---
+
+## Отличие от Delegated Permissions
+
+| Delegated | Application |
+|------------|------------|
+| Требуется пользователь | Пользователь не требуется |
+| Ограничены правами пользователя | Работают с выданными правами напрямую |
+| Consent может дать пользователь | Consent даёт только администратор |
+| Используются в интерактивных приложениях | Используются в сервисах и daemon |
+
+---
+
+## Важно для AZ-204
+
+- Application permissions требуют admin consent.
+- Используются с confidential client.
+- Часто применяются в client credentials flow.
+- Предоставляют более высокий уровень доступа.
+
+> 🎯 Частый вопрос:  
+Как реализовать фоновый сервис без пользователя?  
+Ответ — использовать Application permissions.
+
 
 **How it works**:
 
@@ -112,37 +185,61 @@ var result = await app.AcquireTokenForClient(scopes)
 // App can access data across entire organization
 ```
 
-**Common application permissions**:
+## Часто используемые Application Permissions
 
-| Permission | Description |
-|------------|-------------|
-| `User.Read.All` | Read all users' profiles |
-| `Mail.Read` | Read all mailboxes |
-| `Mail.Send` | Send mail as any user |
-| `Group.ReadWrite.All` | Read and write all groups |
-| `Directory.ReadWrite.All` | Read and write directory data |
+| Permission | Описание |
+|------------|----------|
+| `User.Read.All` | Чтение профилей всех пользователей |
+| `Mail.Read` | Чтение всех почтовых ящиков |
+| `Mail.Send` | Отправка почты от имени любого пользователя |
+| `Group.ReadWrite.All` | Чтение и изменение всех групп |
+| `Directory.ReadWrite.All` | Чтение и изменение данных каталога |
 
-### Comparison
+> ⚠️ Эти разрешения предоставляют доступ на уровне организации и требуют согласия администратора.
 
-| Aspect | Delegated | Application |
-|--------|-----------|-------------|
-| **User present** | Yes | No |
-| **Who consents** | User or admin | Admin only |
-| **App acts as** | Signed-in user | Itself |
-| **Effective permissions** | User ∩ App | Full app permission |
-| **Use case** | Interactive apps | Background services |
-| **Token type** | User + app claims | App claims only |
+---
 
-## Scopes and Permissions
+# Сравнение типов разрешений
 
-### Understanding Scopes
+| Аспект | Delegated | Application |
+|--------|------------|-------------|
+| **Пользователь присутствует** | Да | Нет |
+| **Кто даёт согласие** | Пользователь или администратор | Только администратор |
+| **Приложение действует как** | Вошедший пользователь | Само приложение |
+| **Эффективные права** | Пересечение прав пользователя и приложения | Полный объём выданных прав |
+| **Типовой сценарий** | Интерактивные приложения | Фоновые сервисы |
+| **Тип токена** | Claims пользователя + приложения | Только claims приложения |
 
-**Scopes** (also called permissions):
+---
 
-- **OAuth 2.0 term** - Permission sets
-- **Granular** - Divide functionality into small chunks
-- **String format** - `resource/permission` or full URI
-- **Requested** - In `scope` query parameter
+# Scopes и Permissions
+
+## Понимание Scopes
+
+**Scopes** — это разрешения, определяющие доступ к ресурсам.
+
+### Основные характеристики
+
+- Термин из OAuth 2.0
+- Позволяют разделять доступ на мелкие функциональные части
+- Представляются строкой
+- Передаются в параметре `scope` при запросе токена
+
+> 💡 Scopes реализуют принцип наименьших привилегий — приложение запрашивает только то, что действительно необходимо.
+
+---
+
+## Важно для AZ-204
+
+- Delegated permissions реализуются через scopes.
+- Application permissions выдаются через admin consent.
+- Scopes определяют, какие операции разрешены.
+- Чем выше привилегия — тем чаще требуется согласие администратора.
+
+> 🎯 Частый вопрос:  
+Почему приложение не может получить доступ к ресурсу?  
+Ответ — не запрошен или не выдан соответствующий scope.
+
 
 ### Scope Format
 
@@ -165,14 +262,52 @@ https://vault.azure.net/user_impersonation
 
 ### OpenID Connect Scopes
 
-**Standard OIDC scopes**:
+## Стандартные OIDC Scopes
 
-| Scope | Description |
-|-------|-------------|
-| `openid` | Basic sign-in, required for OpenID Connect |
-| `profile` | User's profile information (name, picture, etc.) |
-| `email` | User's email address |
-| `offline_access` | Refresh token (long-lived access) |
+Эти scopes используются в протоколе OpenID Connect для аутентификации пользователя.
+
+| Scope | Описание |
+|--------|----------|
+| `openid` | Базовый вход пользователя, обязателен для OpenID Connect |
+| `profile` | Доступ к информации профиля пользователя |
+| `email` | Доступ к email пользователя |
+| `offline_access` | Позволяет получить refresh token |
+
+---
+
+## Разбор каждого scope
+
+### `openid`
+- Обязателен для получения ID token.
+- Активирует использование OpenID Connect поверх OAuth 2.0.
+- Без него ID token выдан не будет.
+
+### `profile`
+- Добавляет стандартные claims в ID token.
+- Позволяет получить базовые данные профиля пользователя.
+
+### `email`
+- Позволяет получить email пользователя.
+- Используется, если приложению требуется контактная информация.
+
+### `offline_access`
+- Позволяет получить refresh token.
+- Используется для долгосрочного доступа без повторного входа пользователя.
+- Особенно важен для мобильных и desktop-приложений.
+
+---
+
+## Важно для AZ-204
+
+- `openid` обязателен для аутентификации через OpenID Connect.
+- `offline_access` нужен для получения refresh token.
+- OIDC scopes относятся к аутентификации, а не к доступу к API.
+- Access к API определяется другими scopes (например, ресурсными).
+
+> 🎯 Частый вопрос:  
+Как получить refresh token?  
+Ответ — запросить scope `offline_access`.
+
 
 **Example**:
 
@@ -220,16 +355,53 @@ var scopes = new[] { "https://graph.microsoft.com/.default" };
 // configured in Azure Portal for the app
 ```
 
-## Consent Types
+# Consent Types
 
-### 1. Static User Consent
+## 1️⃣ Static User Consent
 
-**All permissions defined upfront**:
+**Все разрешения определяются заранее**
 
-- **Where** - Configured in Azure Portal
-- **When** - User consents on first sign-in
-- **Advantage** - Simple, predictable
-- **Disadvantage** - Long permission list may discourage users
+### Характеристики
+
+- **Где настраивается**  
+  Разрешения конфигурируются заранее в Azure Portal (в разделе API permissions).
+
+- **Когда происходит согласие**  
+  Пользователь подтверждает все запрошенные разрешения при первом входе в приложение.
+
+- **Преимущество**  
+  Простая и предсказуемая модель — все права известны заранее.
+
+- **Недостаток**  
+  Длинный список разрешений может насторожить пользователя и снизить доверие.
+
+---
+
+## Как это работает
+
+- Приложение запрашивает полный набор scopes при первом входе.
+- Пользователь видит список разрешений.
+- После согласия повторный запрос не требуется (если не добавлены новые scopes).
+
+---
+
+## Когда использовать
+
+- Приложение изначально требует фиксированный набор разрешений.
+- Нет необходимости запрашивать права поэтапно.
+- Корпоративные сценарии с централизованным управлением.
+
+---
+
+## Важно для AZ-204
+
+- Static consent означает, что все разрешения запрашиваются сразу.
+- Изменение списка разрешений требует нового согласия.
+- Администратор может выдать согласие сразу для всей организации.
+
+> 🎯 Частый экзаменационный вопрос:  
+Когда пользователь видит окно согласия?  
+Ответ — при первом входе, если используется static consent.
 
 **Configuration**:
 
@@ -239,11 +411,34 @@ Azure Portal → App registrations → Your app → API permissions
 → User sees all permissions on first sign-in
 ```
 
-**Challenges**:
+## Проблемы Static User Consent
 
-❌ **Long list** - Overwhelming for users on first sign-in
-❌ **All resources** - Must know all resources upfront
-❌ **No flexibility** - Can't adapt to user needs
+❌ **Длинный список разрешений**  
+При первом входе пользователь видит полный перечень запрашиваемых прав, что может вызвать недоверие или отказ.
+
+❌ **Необходимость заранее знать все ресурсы**  
+Приложение должно заранее определить полный набор необходимых разрешений, даже если часть из них понадобится позже.
+
+❌ **Отсутствие гибкости**  
+Невозможно адаптировать запрос разрешений под конкретные действия пользователя в момент использования.
+
+---
+
+## Почему это важно
+
+- Большое количество прав увеличивает риск отказа от использования приложения.
+- Нарушается принцип наименьших привилегий.
+- Пользователь может не понимать, зачем приложению все эти разрешения.
+
+---
+
+## Важно для AZ-204
+
+- Static consent удобен, но менее гибок.
+- Может быть проблемой в пользовательских (consumer) сценариях.
+- Для более гибкой модели используется Dynamic Consent.
+
+> 🎯 Часто проверяется понимание различий между static и dynamic consent.
 
 **Example**:
 
@@ -259,15 +454,55 @@ Your app requests:
 User sees this overwhelming list and may decline
 ```
 
-### 2. Incremental and Dynamic Consent
+## 2️⃣ Incremental and Dynamic Consent
 
-**Request permissions as needed**:
+**Разрешения запрашиваются по мере необходимости**
 
-- **Where** - In code (scope parameter)
-- **When** - When feature is used
-- **Advantage** - Better UX, progressive disclosure
-- **Disadvantage** - Requires dynamic consent support
-- **Only for** - Delegated permissions (not application)
+### Характеристики
+
+- **Где задаётся**  
+  Запрос scopes происходит в коде приложения (через параметр `scope`).
+
+- **Когда запрашивается**  
+  В момент использования конкретной функции, требующей дополнительного доступа.
+
+- **Преимущество**  
+  Улучшенный пользовательский опыт — пользователь видит только те разрешения, которые действительно нужны в данный момент.
+
+- **Недостаток**  
+  Требуется поддержка динамического consent и дополнительная логика в приложении.
+
+- **Применяется только к**  
+  Delegated permissions (не работает с application permissions).
+
+---
+
+## Как это работает
+
+- При первом входе запрашивается минимальный набор scopes.
+- Когда пользователь пытается использовать функцию, требующую новых прав, приложение запрашивает дополнительный scope.
+- Пользователь подтверждает только новые разрешения.
+
+---
+
+## Почему это важно
+
+- Соответствует принципу наименьших привилегий.
+- Снижает вероятность отказа на этапе первого входа.
+- Позволяет гибко управлять доступом.
+
+---
+
+## Важно для AZ-204
+
+- Dynamic consent работает только для delegated permissions.
+- Application permissions требуют admin consent и не поддерживают поэтапный запрос.
+- Приложение должно корректно обрабатывать необходимость повторного запроса токена.
+- Может потребоваться интерактивный вход при добавлении нового scope.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как улучшить UX при большом количестве разрешений?  
+Ответ — использовать Incremental/Dynamic Consent.
 
 **How it works**:
 
@@ -302,16 +537,43 @@ var emailResult = await app.AcquireTokenSilent(emailScopes, account)
    ✅ Progressive, just-in-time
 ```
 
-**Benefits**:
+## Преимущества Dynamic / Incremental Consent
 
-✅ **Better UX** - Smaller, contextual permission requests
-✅ **Progressive** - Request when feature is used
-✅ **Higher acceptance** - Users understand why permissions are needed
+✅ **Лучший пользовательский опыт**  
+Запрашиваются только необходимые разрешения в конкретный момент времени.
 
-**Important caveat**:
+✅ **Постепенное раскрытие доступа**  
+Дополнительные scopes запрашиваются при использовании соответствующей функции.
 
-⚠️ **Admin consent** - Dynamic consent doesn't show permissions that require admin consent
-⚠️ **Must register** - Still need to register ALL permissions in portal (for admin consent)
+✅ **Более высокая вероятность согласия**  
+Пользователь понимает, зачем приложению требуется конкретное разрешение.
+
+---
+
+## Важные ограничения
+
+⚠️ **Admin consent**  
+Dynamic consent не может автоматически запросить разрешения, требующие согласия администратора.  
+Если разрешение относится к категории повышенных привилегий, потребуется предварительное администраторское согласие.
+
+⚠️ **Регистрация разрешений обязательна**  
+Даже при использовании dynamic consent все возможные разрешения должны быть заранее зарегистрированы в Azure Portal (в разделе API permissions).
+
+> 💡 Dynamic consent управляет моментом запроса разрешений, но не отменяет необходимость их предварительной регистрации.
+
+---
+
+## Важно для AZ-204
+
+- Dynamic consent работает только для delegated permissions.
+- Разрешения с высоким уровнем доступа требуют admin consent.
+- Все scopes должны быть добавлены в App Registration заранее.
+- Приложение должно корректно обрабатывать повторный запрос токена.
+
+> 🎯 Частый вопрос:  
+Можно ли запросить разрешение, которое не зарегистрировано в приложении?  
+Ответ — нет.
+
 
 ```csharp
 // Good: Register all in portal (for admin visibility)
@@ -321,14 +583,57 @@ var emailResult = await app.AcquireTokenSilent(emailScopes, account)
 // Admin can't consent to permissions they can't see
 ```
 
-### 3. Admin Consent
+## 3️⃣ Admin Consent
 
-**Required for high-privilege permissions**:
+**Требуется для разрешений с повышенными привилегиями**
 
-- **Who** - Administrator only (not regular users)
-- **When** - High-privilege permissions (e.g., read all users)
-- **How** - Admin consent flow or portal
-- **Scope** - Entire organization (all users)
+### Основные характеристики
+
+- **Кто может предоставить согласие**  
+  Только администратор tenant (обычные пользователи не могут).
+
+- **Когда требуется**  
+  При запросе разрешений с высоким уровнем доступа, например:
+    - доступ ко всем пользователям
+    - доступ ко всем группам
+    - изменение данных каталога
+
+- **Как предоставляется**
+    - Через специальный admin consent flow
+    - Через Azure Portal (Grant admin consent)
+
+- **Область действия**  
+  Применяется ко всей организации (для всех пользователей tenant).
+
+---
+
+## Почему это важно
+
+- Предотвращает выдачу критических разрешений обычными пользователями.
+- Защищает данные организации.
+- Обеспечивает централизованный контроль доступа.
+
+---
+
+## Когда используется
+
+- Application permissions
+- Delegated permissions с высоким уровнем доступа
+- Multi-tenant SaaS-приложения
+
+---
+
+## Важно для AZ-204
+
+- Application permissions всегда требуют admin consent.
+- Некоторые delegated permissions также требуют admin consent.
+- После выдачи согласия пользователи больше не видят окно запроса.
+- Admin consent может быть выдан заранее до первого входа пользователя.
+
+> 🎯 Частый экзаменационный вопрос:  
+Кто может выдать разрешение на чтение всех пользователей в tenant?  
+Ответ — только администратор.
+
 
 **Permissions requiring admin consent**:
 
@@ -487,17 +792,51 @@ foreach (var scope in grantedScopes)
 }
 ```
 
-## Resource Identifiers
+# Resource Identifiers
 
-### Common Resources
+## Основные ресурсы
 
-| Resource | Identifier (Application ID URI) |
-|----------|--------------------------------|
+В Microsoft Identity Platform доступ к API определяется через **Application ID URI** — уникальный идентификатор ресурса.
+
+| Ресурс | Identifier (Application ID URI) |
+|---------|--------------------------------|
 | **Microsoft Graph** | `https://graph.microsoft.com` |
 | **Microsoft 365 Mail API** | `https://outlook.office.com` |
 | **Azure Key Vault** | `https://vault.azure.net` |
 | **Azure Storage** | `https://storage.azure.com` |
 | **Azure Management** | `https://management.azure.com` |
+
+---
+
+## Что важно понимать
+
+- Identifier указывает, к какому ресурсу запрашивается access token.
+- Access token выдается **для конкретного ресурса**.
+- Нельзя использовать токен для одного ресурса при обращении к другому.
+
+> 💡 Один токен = один ресурс.
+
+---
+
+## Как используется
+
+- В запросе токена указывается scope, связанный с конкретным ресурсом.
+- В access token поле `aud` (audience) содержит идентификатор ресурса.
+- API проверяет, что токен выдан именно для него.
+
+---
+
+## Важно для AZ-204
+
+- Каждый API имеет свой уникальный identifier.
+- Microsoft Graph — самый часто используемый ресурс.
+- Неверный resource identifier приведёт к ошибке авторизации.
+- Токены не являются универсальными между сервисами.
+
+> 🎯 Частый вопрос:  
+Можно ли использовать токен, полученный для Microsoft Graph, для вызова Azure Management API?  
+Ответ — нет.
+
 
 ### Permission String Format
 
@@ -651,41 +990,101 @@ var result = await app.AcquireTokenForClient(
 5. Users automatically have access (no prompt)
 ```
 
-## Critical Notes
-- 💡 **OAuth 2.0** - Authorization protocol for permission control
-- 🎯 **Two types** - Delegated (user present) vs Application (no user)
-- ✅ **Delegated** - App acts on behalf of signed-in user
-- ⚠️ **Application** - App acts as itself, admin consent only
-- 🔄 **Scopes** - Granular permissions (User.Read, Mail.Send)
-- 📊 **Static consent** - All permissions upfront (in portal)
-- 💡 **Dynamic consent** - Request incrementally (in code)
-- ✅ **Admin consent** - Required for high-privilege permissions
-- ⚠️ **Effective permissions** - Intersection of user and app permissions (delegated)
-- 🔒 **.default scope** - All pre-configured application permissions
-- 🎯 **Incremental** - Better UX, progressive disclosure
-- 💡 **Resource identifier** - graph.microsoft.com, outlook.office.com, etc.
-- ⚠️ **Best practice** - Request minimum permissions, use incremental consent
+# Critical Notes
 
-## Exam Tips
-- Permission types: Delegated (user present) and Application (no user)
-- Delegated permissions: App acts on behalf of user, user or admin consents
-- Application permissions: App acts as itself, admin consent only
-- Effective permissions (delegated): Intersection of user and app permissions
-- OAuth 2.0: Authorization protocol used by Microsoft identity platform
-- Scopes: Granular permission sets (User.Read, Mail.Send, Calendars.Read)
-- scope parameter: Space-separated list of permissions in authorization request
-- Static consent: All permissions defined in portal, shown on first sign-in
-- Dynamic/Incremental consent: Request permissions in code as needed (delegated only)
-- Admin consent: Required for high-privilege permissions (User.Read.All, Directory.ReadWrite.All)
-- .default scope: Requests all pre-configured application permissions
-- Resource identifier: Application ID URI (https://graph.microsoft.com)
-- OpenID Connect scopes: openid, profile, email, offline_access
-- Short form: User.Read (equivalent to https://graph.microsoft.com/User.Read)
-- Admin consent URL: /adminconsent endpoint
-- Grant admin consent: Portal → API permissions → Grant admin consent
-- MsalUiRequiredException: Thrown when user consent required
-- Best practice: Request minimum permissions, use incremental consent
-- Consent prompt: Shows list of requested permissions for user approval
-- Multi-tenant: Service principal created when admin/user consents in their tenant
+- 💡 **OAuth 2.0** — протокол авторизации для управления доступом
+- 🎯 **Два типа разрешений** — Delegated (есть пользователь) и Application (без пользователя)
+- ✅ **Delegated** — приложение действует от имени вошедшего пользователя
+- ⚠️ **Application** — приложение действует от своего имени, требуется admin consent
+- 🔄 **Scopes** — детализированные разрешения
+- 📊 **Static consent** — все разрешения запрашиваются заранее (через портал)
+- 💡 **Dynamic consent** — разрешения запрашиваются поэтапно (в коде)
+- ✅ **Admin consent** — обязателен для высокопривилегированных разрешений
+- ⚠️ **Effective permissions (delegated)** — пересечение прав пользователя и приложения
+- 🔒 **`.default` scope** — запрашивает все заранее настроенные application permissions
+- 🎯 **Incremental consent** — улучшает UX за счёт постепенного запроса прав
+- 💡 **Resource identifier** — уникальный идентификатор API
+- ⚠️ **Best practice** — запрашивать минимально необходимые разрешения
+
+---
+
+# Exam Tips (AZ-204)
+
+## Типы разрешений
+
+- **Delegated permissions**
+    - Пользователь присутствует
+    - Consent может дать пользователь или администратор
+    - Права ограничены правами пользователя
+
+- **Application permissions**
+    - Пользователь отсутствует
+    - Consent даёт только администратор
+    - Приложение получает выданные ему права напрямую
+
+---
+
+## OAuth и Scopes
+
+- OAuth 2.0 — протокол авторизации, используемый Microsoft Identity Platform.
+- Scopes — наборы разрешений.
+- Передаются в параметре `scope` как список.
+- Пример короткой формы: `User.Read`.
+- Полная форма включает Application ID URI ресурса.
+
+---
+
+## Consent модели
+
+- **Static consent**  
+  Все разрешения определены заранее и отображаются при первом входе.
+
+- **Dynamic / Incremental consent**  
+  Разрешения запрашиваются по мере необходимости (только для delegated).
+
+- **Admin consent**  
+  Обязателен для разрешений с высоким уровнем доступа.
+
+---
+
+## Важные моменты
+
+- `.default` используется для запроса всех заранее настроенных application permissions.
+- OpenID Connect scopes:
+    - `openid`
+    - `profile`
+    - `email`
+    - `offline_access`
+- Resource identifier определяет, для какого API выдается токен.
+- Multi-tenant приложение создаёт Service Principal при согласии в новом tenant.
+
+---
+
+## Обработка consent и токенов
+
+- Consent prompt показывает список запрошенных разрешений.
+- При отсутствии согласия может возникнуть необходимость интерактивного входа.
+- Администратор может выдать согласие через портал.
+- Multi-tenant приложения требуют согласия в каждом tenant.
+
+---
+
+## Что часто проверяется
+
+- Различие Delegated и Application permissions.
+- Кто может выдать согласие.
+- Что означает effective permissions.
+- Назначение `.default`.
+- Различие static и incremental consent.
+- Почему нужно запрашивать минимальные разрешения.
+- Как создаётся service principal в другом tenant.
+
+---
+
+> 🎯 Ключевая идея:  
+> Delegated = пользователь + приложение.  
+> Application = только приложение.  
+> Consent определяет, какие данные доступны.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-microsoft-identity-platform/4-permission-consent)

@@ -1,18 +1,83 @@
 # Service Principals and Application Objects
 
-## Key Concepts
-- **Application Object** - Global template/blueprint
-- **Service Principal** - Local instance per tenant
-- **Three types** - Application, Managed Identity, Legacy
-- **Registration** - Creates both objects automatically
+## Ключевые понятия
 
-## Overview
+- **Application Object** — глобальный шаблон (blueprint) приложения
+- **Service Principal** — локальный экземпляр приложения в конкретном tenant
+- **Три типа service principal** — Application, Managed Identity, Legacy
+- **Регистрация приложения** — автоматически создаёт оба объекта
 
-**Identity configuration** for applications in Microsoft Entra ID:
+---
 
-- **Application Object** - One per application (home tenant)
-- **Service Principal** - One or more per tenant where app is used
-- **Relationship** - Application object is template for service principals
+# Обзор
+
+Service Principals и Application Objects используются для настройки идентификации приложений в Microsoft Entra ID.
+
+## Application Object
+
+- Создаётся один раз при регистрации приложения.
+- Существует в **home tenant**.
+- Содержит глобальную конфигурацию:
+    - redirect URI
+    - разрешения (API permissions)
+    - scopes
+    - app roles
+    - сертификаты и client secrets
+
+> 💡 Это «шаблон» приложения, описывающий его возможности и настройки.
+
+---
+
+## Service Principal
+
+- Создаётся в каждом tenant, где используется приложение.
+- Представляет приложение как объект безопасности.
+- Используется для:
+    - назначения ролей
+    - выдачи разрешений
+    - контроля доступа к ресурсам
+
+> 💡 Если приложение multi-tenant, в каждом новом tenant будет создан свой service principal.
+
+---
+
+# Связь между объектами
+
+- **Application Object** — глобальное описание приложения.
+- **Service Principal** — конкретная реализация этого приложения в отдельном tenant.
+- Один application object может иметь несколько service principals.
+- Service principal создаётся автоматически при первом использовании приложения в новом tenant.
+
+---
+
+# Три типа Service Principal
+
+1. **Application**  
+   Создаётся для зарегистрированного приложения.
+
+2. **Managed Identity**  
+   Используется Azure-ресурсами для доступа к другим сервисам без хранения секретов.
+
+3. **Legacy**  
+   Устаревшие объекты, созданные до текущей модели регистрации.
+
+---
+
+# Важно для AZ-204
+
+- Регистрация приложения создаёт Application Object в home tenant.
+- Service Principal создаётся автоматически.
+- Для multi-tenant приложений создаются service principals в каждом tenant.
+- Разрешения и роли назначаются service principal, а не application object.
+- Managed Identity — это особый тип service principal.
+
+---
+
+> 🎯 Частый экзаменационный вопрос:  
+> Application Object — это шаблон.  
+> Service Principal — это объект безопасности, который используется для авторизации.
+
+Готов продолжать следующий раздел.
 
 ## Application Registration
 
@@ -59,30 +124,64 @@ Azure Portal → Microsoft Entra ID → App registrations → New registration
 
 ### Automatic Creation
 
-**When you register an app, Azure creates**:
+**При регистрации приложения Azure автоматически создаёт:**
 
-1. ✅ **Application Object** - In your home tenant
-2. ✅ **Service Principal** - In your home tenant
-3. ✅ **Application (Client) ID** - Globally unique identifier
+1. ✅ **Application Object** — в вашем home tenant
+2. ✅ **Service Principal** — в вашем home tenant
+3. ✅ **Application (Client) ID** — глобально уникальный идентификатор
 
-## Application Object
+> 💡 Application (Client) ID используется приложением для идентификации при запросе токенов.
 
-### What is an Application Object?
+---
 
-**Global template** for the application:
+# Application Object
 
-- **Location** - Home tenant only (where registered)
-- **Scope** - One per application (globally unique)
-- **Purpose** - Template/blueprint for service principals
-- **Properties** - Static configuration applied to all instances
+## Что такое Application Object?
 
-### Three Aspects Defined
+**Глобальный шаблон (template)** приложения в Microsoft Entra ID.
 
-| Aspect | Description |
-|--------|-------------|
-| **Token Issuance** | How the service issues tokens to access the application |
-| **Resource Access** | Resources the application needs to access |
-| **Actions** | Operations the application can perform |
+### Основные характеристики
+
+- **Местоположение** — существует только в home tenant (где зарегистрировано приложение)
+- **Уникальность** — один объект на приложение (глобально уникален)
+- **Назначение** — служит шаблоном для service principals
+- **Свойства** — содержит статическую конфигурацию, применяемую ко всем экземплярам приложения
+
+> 💡 Это логическое описание приложения, а не объект, которому напрямую назначаются роли доступа к ресурсам.
+
+---
+
+## Три ключевых аспекта, определяемых Application Object
+
+| Аспект | Описание |
+|--------|----------|
+| **Token Issuance** | Определяет, как выдаются токены для доступа к приложению |
+| **Resource Access** | Указывает, к каким ресурсам требуется доступ |
+| **Actions** | Описывает операции, которые приложение может выполнять |
+
+---
+
+## Что входит в конфигурацию
+
+- Redirect URI
+- Поддерживаемые типы аккаунтов
+- API permissions
+- App roles
+- Scopes
+- Client secrets и сертификаты
+
+---
+
+## Важно для AZ-204
+
+- Application Object создаётся один раз и находится только в home tenant.
+- Он не используется напрямую для назначения ролей Azure RBAC.
+- Service Principal создаётся на его основе.
+- Client ID связан именно с Application Object.
+
+> 🎯 Частый вопрос: где хранится глобальная конфигурация приложения?  
+Ответ: в Application Object.
+
 
 ### Application Object Properties
 
@@ -136,42 +235,71 @@ Console.WriteLine($"Display Name: {application.DisplayName}");
 Console.WriteLine($"Sign-in Audience: {application.SignInAudience}");
 ```
 
-## Service Principal Object
+# Service Principal Object
 
-### What is a Service Principal?
+## Что такое Service Principal?
 
-**Local representation** of application in a tenant:
+**Локальное представление приложения** в конкретном tenant.
 
-- **Purpose** - Represents app instance in specific tenant
-- **Security Principal** - Defines access policy and permissions
-- **Created** - In each tenant where app is used
-- **References** - Points to global application object
+### Основные характеристики
 
-### Why Service Principals?
+- **Назначение** — представляет экземпляр приложения в определённом tenant
+- **Security Principal** — объект безопасности, которому назначаются роли и разрешения
+- **Создание** — создаётся в каждом tenant, где используется приложение
+- **Связь** — ссылается на глобальный Application Object
 
-**Security principal** for applications (like user principal for users):
+> 💡 Service Principal — это «учётная запись» приложения в конкретном каталоге.
 
-```
-User → User Principal → Access permissions for user
-App  → Service Principal → Access permissions for app
-```
+---
 
-**Enables**:
-- ✅ Authentication during sign-in
-- ✅ Authorization during resource access
-- ✅ Access policy definition
-- ✅ Permission management
+## Зачем нужны Service Principals?
 
-## Three Types of Service Principals
+Service Principal — это объект безопасности для приложения, аналогичный user principal для пользователя.
+User → User Principal → Права доступа пользователя
+App → Service Principal → Права доступа приложения
 
-### 1. Application Service Principal
+### Обеспечивает
 
-**Standard application instance**:
+- ✅ Аутентификацию приложения
+- ✅ Авторизацию при доступе к ресурсам
+- ✅ Определение политик доступа
+- ✅ Управление разрешениями
 
-- **Most common type** - Regular app registrations
-- **One per tenant** - Created when app is used in tenant
-- **References** - Global application object
-- **Defines** - What app can do in specific tenant
+> 🎯 Все роли и разрешения назначаются именно Service Principal, а не Application Object.
+
+---
+
+# Три типа Service Principals
+
+## 1️⃣ Application Service Principal
+
+**Стандартный экземпляр приложения**
+
+### Характеристики
+
+- Наиболее распространённый тип
+- Создаётся при регистрации приложения или при первом использовании в tenant
+- Ссылается на глобальный Application Object
+- Определяет, что приложение может делать в конкретном tenant
+
+### Использование
+
+- Web-приложения
+- API
+- SaaS-приложения
+- Daemon-сервисы
+
+---
+
+## Важно для AZ-204
+
+- Service Principal — объект безопасности, которому назначаются роли Azure RBAC.
+- Multi-tenant приложение создаёт Service Principal в каждом tenant.
+- Application Object — шаблон, Service Principal — рабочий объект.
+
+> 🎯 Частый экзаменационный вопрос:  
+Кому назначаются роли и разрешения? Ответ — Service Principal.
+
 
 **Creation**:
 
@@ -201,18 +329,63 @@ App  → Service Principal → Access permissions for app
 
 **Represents a [Managed Identity](https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview)**:
 
-- **Purpose** - Identity for Azure resources
-- **No credentials** - No passwords or certificates to manage
-- **Automatic** - Created when managed identity enabled
-- **Cannot modify** - System-managed properties
-- **Azure services** - VM, App Service, Functions, etc.
+## 2️⃣ Managed Identity Service Principal
 
-**Types of Managed Identities**:
+### Назначение
 
-| Type | Description | Use Case |
-|------|-------------|----------|
-| **System-Assigned** | Tied to single Azure resource | VM accessing Key Vault |
-| **User-Assigned** | Standalone resource, reusable | Multiple VMs sharing identity |
+- **Identity для Azure-ресурсов**  
+  Используется для аутентификации Azure-сервисов при доступе к другим ресурсам.
+
+- **Без учётных данных**  
+  Не требуется управлять паролями или сертификатами.
+
+- **Автоматическое создание**  
+  Создаётся при включении Managed Identity для ресурса.
+
+- **Системное управление**  
+  Свойства управляются Azure и не редактируются вручную.
+
+- **Используется Azure-сервисами**  
+  VM, App Service, Azure Functions и другие сервисы.
+
+> 💡 Managed Identity — это специальный тип Service Principal, управляемый платформой.
+
+---
+
+## Типы Managed Identities
+
+| Тип | Описание | Типовой сценарий |
+|------|----------|------------------|
+| **System-Assigned** | Привязана к одному Azure-ресурсу | Ресурс получает доступ к Key Vault |
+| **User-Assigned** | Отдельный ресурс, который можно использовать повторно | Несколько ресурсов используют одну и ту же идентичность |
+
+---
+
+### System-Assigned
+
+- Создаётся и удаляется вместе с ресурсом.
+- Связана только с одним конкретным ресурсом.
+- Проста в настройке.
+
+### User-Assigned
+
+- Создаётся как отдельный Azure-ресурс.
+- Может быть назначена нескольким ресурсам.
+- Удобна для повторного использования и централизованного управления доступом.
+
+---
+
+## Важно для AZ-204
+
+- Managed Identity устраняет необходимость хранения client secret.
+- Используется для безопасного доступа к Azure-ресурсам.
+- System-assigned удаляется вместе с ресурсом.
+- User-assigned можно повторно использовать.
+- Это разновидность Service Principal.
+
+> 🎯 Частый вопрос:  
+Как безопасно предоставить VM доступ к Key Vault без хранения секретов?  
+Ответ — использовать Managed Identity.
 
 **Example - System-Assigned Managed Identity**:
 
@@ -246,26 +419,51 @@ var client = new SecretClient(
 var secret = await client.GetSecretAsync("MySecret");
 ```
 
-**Benefits**:
-- ✅ No credentials in code
-- ✅ Automatic rotation
-- ✅ Azure-managed lifecycle
-- ✅ No permission to modify
+## Преимущества Managed Identity
 
-### 3. Legacy Service Principal
+- ✅ Отсутствие учётных данных в коде
+- ✅ Автоматическая ротация учётных данных
+- ✅ Управление жизненным циклом со стороны Azure
+- ✅ Невозможность ручного изменения критических свойств
 
-**Old application** created before modern app registrations:
+> 💡 Managed Identity снижает риск утечки секретов и упрощает эксплуатацию.
 
-- **Legacy apps** - Created through old experiences
-- **No app registration** - Doesn't have associated app object
-- **Can edit** - But deprecated approach
-- **Should migrate** - To modern app registrations
+---
 
-**Properties legacy service principals can have**:
-- Credentials
+# 3️⃣ Legacy Service Principal
+
+## Что это такое?
+
+**Устаревший тип service principal**, созданный до внедрения современной модели регистрации приложений.
+
+### Характеристики
+
+- Создавался через старые механизмы управления Azure AD
+- Не имеет связанного Application Object
+- Можно редактировать вручную
+- Подход считается устаревшим
+- Рекомендуется миграция на современную модель App Registration
+
+---
+
+## Какие свойства могут иметь Legacy Service Principals
+
+- Credentials (секреты или сертификаты)
 - Service principal names
 - Reply URLs
-- Other properties
+- Дополнительные параметры конфигурации
+
+---
+
+## Важно для AZ-204
+
+- Современная модель использует связку Application Object + Service Principal.
+- Legacy service principals не имеют полноценной поддержки современной архитектуры.
+- Для новых решений следует использовать App Registration.
+- Managed Identity — предпочтительный вариант для Azure-ресурсов.
+
+> 🎯 Экзамен может проверять различие между Application Service Principal, Managed Identity и Legacy Service Principal.
+
 
 **Example (deprecated pattern)**:
 
@@ -305,17 +503,50 @@ New-AzADApplication -DisplayName "ModernApp"
     Home Tenant         Tenant 2             Tenant 3
 ```
 
-### Application Object Relationships
+## Application Object Relationships
 
-**An application object has**:
+### Связи Application Object
 
-- ✅ **One-to-one** - With the software application
-- ✅ **One-to-many** - With service principal objects
+**Application Object имеет следующие отношения:**
 
-**Properties**:
-- Globally unique
-- Lives in home tenant
-- Template for all service principals
+- ✅ **One-to-one** — соответствует одному конкретному программному приложению
+- ✅ **One-to-many** — может иметь несколько Service Principal (в разных tenant)
+
+> 💡 Один Application Object → несколько Service Principals (по одному в каждом tenant, где используется приложение).
+
+---
+
+## Основные свойства Application Object
+
+- **Глобально уникален**  
+  Связан с уникальным Application (Client) ID.
+
+- **Существует в home tenant**  
+  Создаётся в tenant, где было зарегистрировано приложение.
+
+- **Является шаблоном**  
+  Используется как основа для создания Service Principals.
+
+---
+
+
+- Application Object хранит глобальную конфигурацию.
+- Service Principal реализует доступ и разрешения в конкретном tenant.
+
+---
+
+## Важно для AZ-204
+
+- Application Object существует только один раз.
+- Service Principals создаются по мере использования приложения в других tenant.
+- Роли и разрешения назначаются Service Principal.
+- Multi-tenant приложения имеют несколько Service Principals.
+
+> 🎯 Частый вопрос:  
+Где хранится глобальная конфигурация приложения?  
+Ответ — в Application Object.
+
+
 
 ### Service Principal Creation
 
@@ -576,41 +807,113 @@ DisplayName = "App1"
 6. App acquires tokens using client credentials
 ```
 
-## Critical Notes
-- 💡 **Application Object** - Global template in home tenant
-- 🎯 **Service Principal** - Local instance per tenant
-- ✅ **One-to-many** - One app object, many service principals
-- ⚠️ **Three types** - Application, Managed Identity, Legacy
-- 🔄 **Registration** - Creates both objects automatically
-- 📊 **Single-tenant** - One tenant only, more secure
-- 💡 **Multi-tenant** - Multiple tenants, requires consent
-- ✅ **Managed Identity** - Best for Azure resources (no credentials)
-- ⚠️ **Service Principal** - Represents app in tenant
-- 🔒 **Security principal** - Defines access policy and permissions
-- 🎯 **Automatic creation** - Portal, CLI, PowerShell, Graph API
-- 💡 **Azure RBAC** - Assign roles to service principals
-- ⚠️ **Best practice** - Use managed identities when possible
+# Critical Notes
 
-## Exam Tips
-- Application object: Global template/blueprint in home tenant only
-- Service principal: Local representation in each tenant where app is used
-- Relationship: One application object → many service principals (one-to-many)
-- Three types of service principals: Application, Managed Identity, Legacy
-- Application service principal: Most common, represents app instance
-- Managed identity service principal: For Azure resources, no credentials to manage
-- Legacy service principal: Old apps, should migrate to modern registrations
-- Registration creates: Both application object and service principal automatically
-- Single-tenant: Accessible only in your tenant (AzureADMyOrg)
-- Multi-tenant: Accessible in other tenants (AzureADMultipleOrgs)
-- Service principal creation: Automatically when admin/user consents in their tenant
-- Managed identities: System-assigned (tied to resource) or User-assigned (standalone)
-- DefaultAzureCredential: Automatically uses managed identity in Azure
-- Application object defines: Token issuance, resource access, actions
-- Security principal: Defines access policy and permissions for user/app
-- Microsoft Graph: Use Application entity for programmatic management
-- Azure CLI: az ad sp create-for-rbac, az ad sp list
-- PowerShell: New-AzADServicePrincipal, Get-AzADServicePrincipal
-- Best practice: Use managed identities for Azure resources (no credentials in code)
-- RBAC: Assign roles to service principals for Azure resource access
+- 💡 **Application Object** — глобальный шаблон в home tenant
+- 🎯 **Service Principal** — локальный экземпляр приложения в каждом tenant
+- ✅ **One-to-many** — один application object → несколько service principals
+- ⚠️ **Три типа** — Application, Managed Identity, Legacy
+- 🔄 **Регистрация приложения** — автоматически создаёт оба объекта
+- 📊 **Single-tenant** — доступно только в одном tenant, более строгая модель
+- 💡 **Multi-tenant** — доступно в нескольких tenant, требуется согласие (consent)
+- ✅ **Managed Identity** — оптимальный вариант для Azure-ресурсов (без учётных данных)
+- ⚠️ **Service Principal** — представляет приложение в конкретном tenant
+- 🔒 **Security principal** — определяет политики доступа и разрешения
+- 🎯 **Автоматическое создание** — через Portal, CLI, PowerShell, Graph API
+- 💡 **Azure RBAC** — роли назначаются service principal
+- ⚠️ **Best practice** — использовать managed identities, когда это возможно
+
+---
+
+# Exam Tips (AZ-204)
+
+## Базовые определения
+
+- **Application Object** — глобальный шаблон в home tenant.
+- **Service Principal** — локальное представление приложения в tenant.
+- Связь: один application object → много service principals.
+
+---
+
+## Типы Service Principals
+
+1. **Application Service Principal**  
+   Наиболее распространённый тип, представляет зарегистрированное приложение.
+
+2. **Managed Identity Service Principal**  
+   Используется Azure-ресурсами, не требует управления секретами.
+
+3. **Legacy Service Principal**  
+   Устаревшая модель, рекомендуется миграция.
+
+---
+
+## Регистрация приложения
+
+- Создаёт:
+    - Application Object
+    - Service Principal (в home tenant)
+
+- Service Principal в другом tenant создаётся автоматически при consent.
+
+---
+
+## Single vs Multi-tenant
+
+- **Single-tenant**  
+  Доступно только в вашем tenant.
+
+- **Multi-tenant**  
+  Доступно в других tenant после согласия администратора или пользователя.
+
+---
+
+## Managed Identities
+
+- **System-assigned** — привязана к одному ресурсу.
+- **User-assigned** — отдельный ресурс, может использоваться несколькими сервисами.
+- Используются через DefaultAzureCredential.
+- Рекомендуются для доступа к Azure-ресурсам.
+
+---
+
+## Что определяет Application Object
+
+- Выдачу токенов (token issuance)
+- Доступ к ресурсам (resource access)
+- Разрешённые действия (actions)
+
+---
+
+## RBAC
+
+- Роли Azure назначаются **Service Principal**.
+- Именно service principal получает доступ к ресурсам.
+
+---
+
+## Управление через инструменты
+
+- Microsoft Graph — программное управление объектами.
+- Azure CLI — создание и управление service principals.
+- PowerShell — управление через командлеты.
+
+---
+
+## Часто проверяется на экзамене
+
+- Различие между Application Object и Service Principal.
+- Связь one-to-many.
+- Когда создаётся service principal в другом tenant.
+- Различие между Managed Identity и обычным service principal.
+- Почему managed identity предпочтительнее client secret.
+- Кому назначаются роли Azure RBAC.
+
+---
+
+> 🎯 Ключевая мысль:  
+> Application Object — описание приложения.  
+> Service Principal — объект безопасности, которому назначаются права.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-microsoft-identity-platform/3-app-service-principals)

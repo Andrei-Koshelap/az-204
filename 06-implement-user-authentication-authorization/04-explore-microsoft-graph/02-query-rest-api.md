@@ -1,29 +1,92 @@
 # Query Microsoft Graph by using REST
 
-## Key Concepts
-- **REST API** - HTTP-based API following REST principles
-- **Request structure** - Method + Endpoint + Version + Resource + Query params
-- **HTTP methods** - GET, POST, PATCH, PUT, DELETE
-- **OData** - Open Data Protocol for queries
+## Ключевые понятия
 
-## REST API Request Structure
+- **REST API** — HTTP API, построенный по принципам REST
+- **Структура запроса** — Метод + Endpoint + Версия + Ресурс + Query-параметры
+- **HTTP методы** — GET, POST, PATCH, PUT, DELETE
+- **OData** — Open Data Protocol для параметров запросов
 
-### Complete Request Format
+---
+
+## Что это означает
+
+Microsoft Graph предоставляет REST-интерфейс, где взаимодействие строится через:
+
+- URL ресурса
+- HTTP метод
+- Заголовки (включая `Authorization`)
+- (Опционально) тело запроса для создания/изменения данных
+- OData query-параметры для фильтрации и выборки
+
+---
+## Общая структура запроса
 
 ```http
 {HTTP method} https://graph.microsoft.com/{version}/{resource}?{query-parameters}
 ```
+---
+``Где:
 
-### Components
+- `{version}` — `v1.0` (для production) или `beta` (preview)
+- `{resource}` — путь к сущности (например, `users`, `me`, `groups`)
+- `{query-params}` — параметры OData (`$select`, `$filter`, `$top` и т.д.)
 
-| Component | Description | Example |
-|-----------|-------------|---------|
-| **HTTP Method** | Operation type | `GET`, `POST`, `PATCH`, `PUT`, `DELETE` |
-| **Base URL** | Microsoft Graph endpoint | `https://graph.microsoft.com` |
-| **Version** | API version | `v1.0` or `beta` |
-| **Resource** | Entity or collection | `me`, `users`, `groups` |
-| **Query Parameters** | Optional filters/options | `?$select=displayName&$top=10` |
+``
+## HTTP методы в Microsoft Graph
 
+- **GET** — чтение данных
+- **POST** — создание объекта
+- **PATCH** — частичное обновление
+- **PUT** — полная замена (используется реже)
+- **DELETE** — удаление
+
+---
+
+## OData (Open Data Protocol)
+
+OData используется для управления выборкой данных:
+
+- `$select` — выбрать поля
+- `$filter` — фильтрация
+- `$orderby` — сортировка
+- `$expand` — включить связанные сущности
+- `$top` / `$skip` — пагинация
+
+---
+
+## Важно для AZ-204
+
+- Всегда использовать `v1.0` для production.
+- Для вызова Graph нужен access token (OAuth 2.0).
+- Важно правильно выбирать HTTP метод под операцию.
+- OData помогает оптимизировать запросы и уменьшить объём ответа.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как получить данные из Microsoft Graph через REST?  
+Ответ — отправить HTTP запрос на `https://graph.microsoft.com/v1.0/...` с `Authorization: Bearer <token>`.
+
+## Компоненты REST-запроса к Microsoft Graph
+
+| Компонент | Описание | Пример |
+|------------|----------|---------|
+| **HTTP Method** | Тип операции | `GET`, `POST`, `PATCH`, `PUT`, `DELETE` |
+| **Base URL** | Базовый endpoint Microsoft Graph | `https://graph.microsoft.com` |
+| **Version** | Версия API | `v1.0` или `beta` |
+| **Resource** | Сущность или коллекция | `me`, `users`, `groups` |
+| **Query Parameters** | Дополнительные параметры запроса | `?$select=displayName&$top=10` |
+
+# Важно для AZ-204
+
+- Правильная структура URL — частый экзаменационный сценарий.
+- Версия указывается сразу после base URL.
+- Query-параметры начинаются с `?`.
+- OData-параметры всегда начинаются с `$`.
+
+> 🎯 Экзаменационный момент:  
+Как получить 10 пользователей с указанием только displayName?  
+Ответ — использовать `GET` + `v1.0/users` + `?$select=displayName&$top=10`
+> 
 ### Example Requests
 
 ```http
@@ -45,15 +108,56 @@ GET https://graph.microsoft.com/v1.0/groups/{group-id}/members
 
 ## HTTP Methods
 
-### Method Overview
+### Обзор методов
 
-| Method | Purpose | Request Body | Common Status Codes |
-|--------|---------|--------------|---------------------|
-| **GET** | Read data | ❌ No | 200 OK, 404 Not Found |
-| **POST** | Create resource or action | ✅ Yes (JSON) | 201 Created, 202 Accepted |
-| **PATCH** | Update (partial) | ✅ Yes (JSON) | 200 OK, 204 No Content |
-| **PUT** | Replace (full) | ✅ Yes (JSON) | 200 OK, 204 No Content |
-| **DELETE** | Remove resource | ❌ No | 204 No Content, 404 Not Found |
+| Метод   | Назначение | Тело запроса | Частые коды ответа |
+|----------|------------|--------------|---------------------|
+| **GET**    | Получение данных (чтение ресурса) | ❌ Нет | 200 OK, 404 Not Found |
+| **POST**   | Создание ресурса или выполнение действия | ✅ Да (JSON) | 201 Created, 202 Accepted |
+| **PATCH**  | Частичное обновление ресурса | ✅ Да (JSON) | 200 OK, 204 No Content |
+| **PUT**    | Полная замена ресурса | ✅ Да (JSON) | 200 OK, 204 No Content |
+| **DELETE** | Удаление ресурса | ❌ Нет | 204 No Content, 404 Not Found |
+
+---
+
+### Дополнительные пояснения
+
+#### 🔹 GET
+- Используется только для чтения данных.
+- Должен быть **идемпотентным** (повторный вызов не меняет состояние).
+- Не должен изменять данные на сервере.
+- Параметры обычно передаются через query string.
+
+#### 🔹 POST
+- Применяется для создания нового ресурса.
+- Не является идемпотентным.
+- Часто используется для отправки формы или запуска серверной операции.
+- `201 Created` — ресурс создан.
+- `202 Accepted` — запрос принят в обработку (часто при асинхронной обработке).
+
+#### 🔹 PUT
+- Полностью заменяет существующий ресурс.
+- Идемпотентный метод.
+- Если ресурс не существует — в некоторых API может быть создан (зависит от реализации).
+
+#### 🔹 PATCH
+- Частичное обновление ресурса.
+- Изменяет только переданные поля.
+- Обычно используется для более эффективного обновления данных по сравнению с PUT.
+
+#### 🔹 DELETE
+- Удаляет ресурс.
+- Идемпотентный (повторный вызов обычно возвращает 404).
+- Часто возвращает `204 No Content`.
+
+---
+
+### Важно для AZ-204
+
+- Понимать разницу между **идемпотентными** (GET, PUT, DELETE) и **неидемпотентными** (POST) методами.
+- Уметь выбирать корректный HTTP-метод при проектировании REST API.
+- Знать, когда использовать `201` vs `202`.
+- Понимать различие между `PUT` и `PATCH` в контексте RESTful сервисов.
 
 ### 1. GET - Read Data
 
@@ -260,12 +364,30 @@ Authorization: Bearer {token}
 GET https://graph.microsoft.com/v1.0/me
 ```
 
-**Characteristics**:
-- ✅ **No breaking changes**
-- ✅ **Production-ready**
-- ✅ **Supported by Microsoft**
-- ✅ **Complete documentation**
-- ✅ **SLA available**
+**Характеристики**:
+- ✅ **Отсутствие ломающих изменений (No breaking changes)**
+- ✅ **Готовность к использованию в production**
+- ✅ **Поддерживается Microsoft**
+- ✅ **Полная документация**
+- ✅ **Доступно SLA (гарантированный уровень обслуживания)**
+
+---
+
+### Дополнение для AZ-204
+
+В контексте Azure это обычно относится к сервисам со статусом **General Availability (GA)**:
+
+- Интерфейсы и API стабильны.
+- Обновления не нарушают обратную совместимость.
+- Сервис официально поддерживается.
+- Предоставляется SLA (Service Level Agreement) — финансовые гарантии доступности.
+- Рекомендуется для production-нагрузки.
+
+Для сравнения:
+- **Preview**-версии могут не иметь SLA.
+- Возможны breaking changes.
+- Не рекомендуется для критичных production-сценариев.
+
 
 **Use for**: All production applications
 
@@ -277,12 +399,29 @@ GET https://graph.microsoft.com/v1.0/me
 GET https://graph.microsoft.com/beta/me
 ```
 
-**Characteristics**:
-- ⚠️ **May have breaking changes**
-- ⚠️ **Development/testing only**
-- 🔄 **Access new features early**
-- 📊 **Provide feedback**
-- ❌ **No SLA**
+**Характеристики**:
+- ⚠️ **Возможны ломающие изменения (breaking changes)**
+- ⚠️ **Только для разработки и тестирования**
+- 🔄 **Ранний доступ к новым возможностям**
+- 📊 **Возможность предоставить обратную связь**
+- ❌ **Отсутствует SLA**
+
+---
+
+### Дополнение для AZ-204
+
+Обычно это относится к сервисам со статусом **Preview** в Azure:
+
+- API может изменяться без сохранения обратной совместимости.
+- Поведение сервиса может меняться.
+- Нет финансовых гарантий доступности.
+- Не рекомендуется для production-среды.
+- Часто используется для оценки новых возможностей перед выходом в **General Availability (GA)**.
+
+На экзамене AZ-204 важно помнить:
+- Preview → нет SLA.
+- GA → есть SLA и стабильный контракт API.
+
 
 **Use for**: Testing and development only
 
@@ -361,20 +500,43 @@ GET /users/john@contoso.com
 GET /me
 ```
 
-## Query Parameters
+## Query Parameters (Параметры запроса)
 
-### OData System Query Options
+### Системные параметры запроса OData
 
-| Parameter | Purpose | Example |
-|-----------|---------|---------|
-| **$select** | Choose properties | `?$select=displayName,mail` |
-| **$filter** | Filter results | `?$filter=startsWith(displayName,'J')` |
-| **$orderby** | Sort results | `?$orderby=displayName` |
-| **$expand** | Include related entities | `?$expand=manager` |
-| **$top** | Limit results | `?$top=10` |
-| **$skip** | Skip results | `?$skip=10` |
-| **$count** | Include count | `?$count=true` |
-| **$search** | Full-text search | `?$search="displayName:John"` |
+| Параметр | Назначение | Пример |
+|-----------|------------|---------|
+| **$select** | Выбор конкретных свойств | `?$select=displayName,mail` |
+| **$filter** | Фильтрация результатов | `?$filter=startsWith(displayName,'J')` |
+| **$orderby** | Сортировка результатов | `?$orderby=displayName` |
+| **$expand** | Загрузка связанных сущностей | `?$expand=manager` |
+| **$top** | Ограничение количества результатов | `?$top=10` |
+| **$skip** | Пропуск указанного количества записей | `?$skip=10` |
+| **$count** | Добавить общее количество записей в ответ | `?$count=true` |
+| **$search** | Полнотекстовый поиск | `?$search="displayName:John"` |
+
+---
+
+### Дополнение для AZ-204
+
+OData активно используется в:
+- Microsoft Graph
+- Azure Data Services
+- некоторых REST API Azure
+
+Важно понимать:
+
+- `$select` уменьшает размер ответа (оптимизация трафика).
+- `$filter` выполняется на стороне сервера.
+- `$top` + `$skip` используются для пагинации.
+- `$count=true` возвращает общее количество элементов (полезно для UI-пагинации).
+- `$expand` позволяет избежать дополнительных запросов (аналог join).
+
+На экзамене часто проверяют понимание:
+- серверной фильтрации,
+- оптимизации объёма данных,
+- правильного построения REST-запросов.
+
 
 ### 1. $select - Choose Properties
 
@@ -644,36 +806,65 @@ curl -X GET \
   -H 'Authorization: Bearer '$TOKEN
 ```
 
-## Critical Notes
-- 💡 **Request format** - `{Method} https://graph.microsoft.com/{version}/{resource}?{params}`
-- 🎯 **HTTP methods** - GET (read), POST (create/action), PATCH (update), PUT (replace), DELETE (remove)
-- ✅ **Versions** - v1.0 (production stable), beta (preview unstable)
-- ⚠️ **CRUD methods** - GET and DELETE require no request body
-- 🔄 **POST/PATCH/PUT** - Require JSON request body
-- 📊 **Query params** - $select, $filter, $orderby, $expand, $top, $skip, $count, $search
-- 💡 **Pagination** - Use @odata.nextLink for large result sets
-- ✅ **Error handling** - Check status codes (401, 403, 404, 429, 500)
-- ⚠️ **Rate limiting** - 429 Too Many Requests when throttled
-- 🔒 **Authorization header** - Bearer token required for all requests
+## Critical Notes (Ключевые моменты)
 
-## Exam Tips
-- Request structure: {HTTP method} + https://graph.microsoft.com + {version} + {resource} + {query params}
-- HTTP methods: GET (read), POST (create), PATCH (update), PUT (replace), DELETE (remove)
-- GET and DELETE: No request body required
-- POST, PATCH, PUT: Require JSON request body with resource properties
-- Versions: v1.0 (production, stable), beta (preview, development only)
-- Always use v1.0 for production applications
-- OData query options: $select, $filter, $orderby, $expand, $top, $skip, $count, $search
-- $select: Return only specified properties (reduce payload size)
-- $filter: Filter results by condition (eq, ne, gt, lt, startsWith, etc.)
-- $orderby: Sort results (ascending by default, use 'desc' for descending)
-- $expand: Include related entities in response
-- $top: Limit number of results
-- $skip: Skip first N results (pagination)
-- Pagination: Use @odata.nextLink from response to get next page
-- Response status codes: 200 OK, 201 Created, 204 No Content, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 429 Too Many Requests
-- Error response: Contains error object with code, message, innerError
-- Graph Explorer: Interactive tool at developer.microsoft.com/graph/graph-explorer
-- Authorization: Bearer token in Authorization header
+- 💡 **Формат запроса** – `{Method} https://graph.microsoft.com/{version}/{resource}?{params}`
+- 🎯 **HTTP-методы** – GET (чтение), POST (создание/действие), PATCH (обновление), PUT (полная замена), DELETE (удаление)
+- ✅ **Версии API** – v1.0 (стабильная, production), beta (preview, нестабильная)
+- ⚠️ **CRUD-методы** – GET и DELETE не требуют тела запроса
+- 🔄 **POST/PATCH/PUT** – требуют JSON-тело запроса
+- 📊 **Query-параметры** – $select, $filter, $orderby, $expand, $top, $skip, $count, $search
+- 💡 **Пагинация** – использовать `@odata.nextLink` для получения следующей страницы
+- ✅ **Обработка ошибок** – проверять коды статуса (401, 403, 404, 429, 500)
+- ⚠️ **Ограничение запросов (Rate limiting)** – 429 Too Many Requests при превышении лимитов
+- 🔒 **Authorization header** – требуется Bearer token во всех запросах
+
+---
+
+## Exam Tips (Советы к экзамену AZ-204)
+
+- Структура запроса: `{HTTP method} + https://graph.microsoft.com + {version} + {resource} + {query params}`
+- HTTP-методы:
+    - GET – чтение
+    - POST – создание
+    - PATCH – обновление
+    - PUT – полная замена
+    - DELETE – удаление
+- GET и DELETE → без тела запроса
+- POST, PATCH, PUT → JSON-тело с данными ресурса
+- Версии:
+    - v1.0 → production, стабильная
+    - beta → preview, только для разработки
+- Для production-приложений всегда использовать **v1.0**
+- OData-параметры:
+    - `$select` – вернуть только указанные свойства (уменьшает размер ответа)
+    - `$filter` – фильтрация по условию (eq, ne, gt, lt, startsWith и др.)
+    - `$orderby` – сортировка (по умолчанию по возрастанию, `desc` – по убыванию)
+    - `$expand` – включить связанные сущности
+    - `$top` – ограничить количество записей
+    - `$skip` – пропустить первые N записей
+- Пагинация – использовать `@odata.nextLink` из ответа
+- Основные коды ответа:
+    - 200 OK
+    - 201 Created
+    - 204 No Content
+    - 400 Bad Request
+    - 401 Unauthorized
+    - 403 Forbidden
+    - 404 Not Found
+    - 429 Too Many Requests
+- Ошибка в ответе содержит объект `error` с полями `code`, `message`, `innerError`
+- Graph Explorer – интерактивный инструмент для тестирования запросов: https://developer.microsoft.com/graph/graph-explorer
+- Авторизация – Bearer token в заголовке `Authorization`
+
+---
+
+### Дополнение от себя (что часто спрашивают)
+
+- При получении 429 важно обрабатывать заголовок `Retry-After`.
+- Для production желательно реализовывать retry-политику (exponential backoff).
+- Не забывать про принцип least privilege при настройке разрешений (Permissions).
+- Делать `$select`, чтобы уменьшить payload — это часто фигурирует в вопросах на оптимизацию.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/microsoft-graph/3-microsoft-graph-api)

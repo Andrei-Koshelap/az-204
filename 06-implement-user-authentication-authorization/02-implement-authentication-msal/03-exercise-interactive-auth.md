@@ -1,13 +1,17 @@
-# Exercise: Implement Interactive Authentication with MSAL.NET
+# Упражнение: Реализовать интерактивную аутентификацию с MSAL.NET
 
-## Overview
-Build a .NET console application that uses MSAL.NET to perform interactive authentication with Microsoft Entra ID and acquire an access token for Microsoft Graph.
+## Обзор
 
-## Learning Objectives
-- Register an application with Microsoft identity platform
-- Implement PublicClientApplicationBuilder to configure authentication
-- Acquire tokens interactively using Microsoft Graph permissions
-- Understand token caching and silent authentication
+Создайте .NET консольное приложение, которое использует **MSAL.NET** для интерактивной аутентификации через Microsoft Entra ID и получения **access token** для **Microsoft Graph**.
+
+---
+
+## Цели обучения
+
+- Зарегистрировать приложение в Microsoft identity platform
+- Использовать `PublicClientApplicationBuilder` для настройки аутентификации
+- Получать токены интерактивно с разрешениями Microsoft Graph
+- Понять кеширование токенов и silent-аутентификацию
 
 ## Prerequisites
 - Azure subscription ([sign up for free](https://azure.microsoft.com/))
@@ -26,26 +30,39 @@ Build a .NET console application that uses MSAL.NET to perform interactive authe
 Azure Portal → Search "App registrations" → + New registration
 ```
 
-### Step 2: Configure Registration
+### Шаг 2: Настройка регистрации (Configure Registration)
 
-| Setting | Value |
-|---------|-------|
-| **Name** | `myMsalApplication` |
-| **Supported account types** | Accounts in this organizational directory only (Single tenant) |
-| **Redirect URI** | Platform: `Public client/native (mobile & desktop)`<br>URI: `http://localhost` |
-
-### Step 3: Record Important Values
-
-After registration, on the **Overview** page, record:
-
-| Property | Location |
+| Параметр | Значение |
 |----------|----------|
-| **Application (client) ID** | Overview → Essentials section |
-| **Directory (tenant) ID** | Overview → Essentials section |
+| **Name** | `myMsalApplication` |
+| **Supported account types** | Только аккаунты в этом организационном каталоге (Single tenant) |
+| **Redirect URI** | Платформа: `Public client/native (mobile & desktop)`<br>URI: `http://localhost` |
 
-💡 **Tip**: Copy these IDs to a text file - you'll need them in the next steps.
+---
 
-**Screenshot location**: Look for "Application (client) ID" and "Directory (tenant) ID" in the Essentials section.
+## Примечания
+
+- Выбор **Single tenant** означает, что вход смогут выполнять только пользователи вашего tenant.
+- Тип redirect URI **Public client/native** соответствует сценарию консольного/desktop приложения.
+- `http://localhost` используется как стандартный redirect для public client в desktop/console сценариях.
+
+---
+
+### Шаг 3: Запишите важные значения (Record Important Values)
+
+После регистрации приложения на странице **Overview** сохраните следующие параметры:
+
+| Параметр | Где найти |
+|----------|-----------|
+| **Application (client) ID** | Overview → раздел Essentials |
+| **Directory (tenant) ID** | Overview → раздел Essentials |
+
+💡 **Совет**: скопируйте эти ID в отдельный файл — они понадобятся на следующих шагах.
+
+**Где искать на странице**: в блоке **Essentials** найдите строки
+- “Application (client) ID”
+- “Directory (tenant) ID”
+
 
 ## Part 2: Create .NET Console Application
 
@@ -590,37 +607,79 @@ var app = PublicClientApplicationBuilder.Create(_clientId)
     }, LogLevel.Verbose, enablePiiLogging: false)
     .Build();
 ```
+# Critical Notes
 
-## Critical Notes
-- 🎯 **Public client** - For desktop/mobile apps (cannot keep secrets)
-- 💡 **Interactive auth** - User must sign in via browser
-- ✅ **Silent-first** - Always try cache before interactive
-- ⚠️ **Scopes** - User.Read for basic profile access
-- 🔄 **Token caching** - Automatic by MSAL.NET
-- 📊 **Consent** - First run requires user to accept permissions
-- 💡 **MsalUiRequiredException** - Indicates need for interactive auth
-- ✅ **Environment variables** - Secure way to store client ID and tenant ID
-- ⚠️ **Redirect URI** - Must match Azure Portal configuration
-- 🔒 **Cleanup** - Delete app registration after exercise to avoid unused resources
+- 🎯 **Public client** — используется для desktop/mobile приложений, не хранит секреты
+- 💡 **Интерактивная аутентификация** — пользователь входит через браузер
+- ✅ **Silent-first подход** — сначала попытка получить токен из кеша
+- ⚠️ **Scopes** — `User.Read` для базового доступа к профилю
+- 🔄 **Кеширование токенов** — автоматически управляется MSAL.NET
+- 📊 **Consent** — при первом запуске требуется подтверждение разрешений
+- 💡 **MsalUiRequiredException** — сигнал, что требуется интерактивная аутентификация
+- ✅ **Переменные окружения** — безопасный способ хранения Client ID и Tenant ID
+- ⚠️ **Redirect URI** — должен совпадать с настройкой в Azure Portal
+- 🔒 **Очистка** — после упражнения удалить App Registration
 
-## Exam Tips
-- PublicClientApplicationBuilder: Used for public clients (desktop, mobile)
-- AcquireTokenInteractive: Prompts user for interactive sign-in (browser)
-- AcquireTokenSilent: Attempts to get token from cache without user interaction
-- MsalUiRequiredException: Exception thrown when silent auth fails, need interactive
-- WithAuthority: Specify Azure cloud instance and tenant ID
-- WithDefaultRedirectUri: Use platform-appropriate default redirect (http://localhost for desktop)
-- User.Read scope: Microsoft Graph permission to read user profile
-- First run: User must consent to permissions (browser prompt)
-- Subsequent runs: Tokens retrieved from cache, no user interaction needed
-- Token cache: Automatically managed by MSAL.NET, encrypted per platform
-- GetAccountsAsync: Retrieve cached user accounts from token cache
-- Authentication flow: Try silent first (AcquireTokenSilent), fall back to interactive (AcquireTokenInteractive)
-- dotenv.net: Load configuration from .env file (CLIENT_ID, TENANT_ID)
-- Security: Never hardcode secrets, use environment variables or Key Vault
-- App registration: Requires Application (client) ID, Directory (tenant) ID, and redirect URI
-- Redirect URI: Must be registered in Azure Portal under Authentication settings
-- Token format: JWT (JSON Web Token) with claims like aud, iss, scp, tid, upn
-- Exercise duration: ~15 minutes
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- `PublicClientApplicationBuilder` используется для public client.
+- `AcquireTokenInteractive` инициирует вход через браузер.
+- `AcquireTokenSilent` пытается получить токен из кеша.
+- Если silent-аутентификация не удалась — возникает `MsalUiRequiredException`.
+
+---
+
+## Конфигурация
+
+- `WithAuthority` — указывает cloud instance и tenant.
+- `WithDefaultRedirectUri` — автоматически устанавливает подходящий redirect.
+- `User.Read` — базовое разрешение Microsoft Graph.
+- Redirect URI должен быть зарегистрирован в настройках приложения.
+
+---
+
+## Поведение приложения
+
+- **Первый запуск** — пользователь видит окно consent.
+- **Повторные запуски** — токен берётся из кеша без взаимодействия.
+- Кеш токенов автоматически шифруется (зависит от платформы).
+
+---
+
+## Работа с кешем
+
+- `GetAccountsAsync` — получение учётных записей из кеша.
+- Рекомендуемый паттерн:
+    1. Попытка silent получения токена
+    2. При ошибке — интерактивная аутентификация
+
+---
+
+## Безопасность
+
+- Никогда не хардкодить секреты.
+- Использовать переменные окружения или Azure Key Vault.
+- Загружать конфигурацию из `.env` или конфигурационных файлов.
+- Токен — это JWT, содержит claims (aud, iss, scp, tid, upn).
+
+---
+
+## Что часто проверяется
+
+- Разница между silent и interactive.
+- Когда возникает `MsalUiRequiredException`.
+- Почему redirect URI должен совпадать.
+- Какой builder использовать для desktop-приложения.
+- Почему public client не использует secret.
+
+---
+
+> 🎯 Ключевая идея:  
+> Попробовать silent → при необходимости перейти к interactive → использовать кеш токенов автоматически.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-authentication-by-using-microsoft-authentication-library/4-interactive-authentication-msal)

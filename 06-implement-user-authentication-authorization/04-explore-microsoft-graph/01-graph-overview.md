@@ -1,26 +1,54 @@
 # Microsoft Graph Overview
 
-## Key Concepts
-- **Microsoft Graph** - Unified API to access Microsoft 365 data and intelligence
-- **Single endpoint** - `https://graph.microsoft.com`
-- **RESTful API** - Uses standard HTTP methods (GET, POST, PATCH, PUT, DELETE)
-- **Three components** - Graph API, Graph Connectors, Graph Data Connect
+## Ключевые понятия
 
-## What is Microsoft Graph?
+- **Microsoft Graph** — единый API для доступа к данным и аналитике Microsoft 365
+- **Единая точка входа** — `https://graph.microsoft.com`
+- **RESTful API** — использует стандартные HTTP-методы (GET, POST, PATCH, PUT, DELETE)
+- **Три компонента** — Graph API, Graph Connectors, Graph Data Connect
 
-**Microsoft Graph is the gateway to data and intelligence in Microsoft 365**. It provides a unified programmability model to access data from:
+---
 
-- **Microsoft 365** - Users, emails, calendars, files, teams
-- **Windows** - Device information, activities
-- **Enterprise Mobility + Security** - Identity, access policies
+# Что такое Microsoft Graph?
 
-### Purpose
+**Microsoft Graph — это единая точка доступа к данным и интеллекту Microsoft 365.**
 
-**Access Microsoft cloud resources** through a single endpoint:
-- Unified API for multiple Microsoft services
-- Consistent authentication and authorization
-- Rich data relationships and insights
-- Real-time notifications
+Он предоставляет унифицированную модель программирования для работы с данными из:
+
+- **Microsoft 365** — пользователи, почта, календари, файлы, Teams
+- **Windows** — информация об устройствах и активности
+- **Enterprise Mobility + Security** — идентификация, политики доступа
+
+---
+
+## Назначение
+
+Предоставляет доступ к облачным ресурсам Microsoft через **единый endpoint**:
+
+- Унифицированный API для различных сервисов Microsoft
+- Единая модель аутентификации и авторизации
+- Поддержка связей между объектами (пользователь → почта → файлы → группы)
+- Поддержка уведомлений в реальном времени
+
+---
+
+## Архитектурная идея
+
+Вместо работы с разными API (Exchange API, SharePoint API и т.д.)  
+используется **единый REST endpoint**, который объединяет их.
+
+---
+
+## Важно для AZ-204
+
+- Microsoft Graph — основной API для доступа к данным Microsoft 365.
+- Использует OAuth 2.0 и Microsoft Entra ID.
+- Поддерживает как delegated, так и application permissions.
+- Работает через `https://graph.microsoft.com`.
+
+> 🎯 Частый экзаменационный вопрос:  
+> Как получить доступ к данным Microsoft 365 программно?  
+> Ответ — использовать Microsoft Graph API.
 
 ## Microsoft Graph Components
 
@@ -55,9 +83,18 @@ GET https://graph.microsoft.com/v1.0/me/drive/root/children
 External Data → Graph Connectors → Microsoft Graph → Microsoft 365
 ```
 
-**Purpose**: Bring external data into Microsoft cloud services
+## Microsoft Graph Connectors
 
-**Common connectors**:
+### Назначение
+
+Позволяют интегрировать **внешние источники данных** в экосистему Microsoft 365.
+
+> 💡 Данные из сторонних систем становятся доступны через Microsoft Search и другие сервисы Microsoft.
+
+---
+
+## Популярные коннекторы
+
 - Box
 - Google Drive
 - Jira
@@ -65,10 +102,33 @@ External Data → Graph Connectors → Microsoft Graph → Microsoft 365
 - ServiceNow
 - Confluence
 
-**Use cases**:
-- Unified search across internal and external data
-- Enhanced Microsoft Search experiences
-- Cross-platform content discovery
+---
+
+## Сценарии использования
+
+- Единый поиск по внутренним и внешним данным
+- Расширение возможностей Microsoft Search
+- Поиск и обнаружение контента между различными платформами
+
+---
+
+## Что это даёт
+
+- Централизованный доступ к данным из разных систем
+- Улучшенный пользовательский опыт
+- Повышение продуктивности за счёт единого поиска
+
+---
+
+## Важно для AZ-204
+
+- Graph Connectors интегрируют внешние данные в Microsoft 365.
+- Используются для расширения поиска.
+- Не заменяют Graph API, а дополняют его.
+
+> 🎯 Частый экзаменационный вопрос:  
+> Как включить данные сторонней системы в Microsoft Search?  
+> Ответ — использовать Microsoft Graph Connectors.
 
 ### 3. Microsoft Graph Data Connect
 
@@ -77,20 +137,55 @@ External Data → Graph Connectors → Microsoft Graph → Microsoft 365
 ```
 Microsoft Graph → Data Connect → Azure Storage → Analytics Tools
 ```
+## Microsoft Graph Data Connect
 
-**Purpose**: Stream Microsoft 365 data to Azure data stores at scale
+### Назначение
 
-**Features**:
-- Secure and scalable data delivery
-- Azure Synapse Analytics integration
-- Azure Data Factory pipelines
-- Cached data for analytics
+Позволяет **масштабно выгружать данные Microsoft 365 в Azure-хранилища** для аналитики и обработки.
 
-**Use cases**:
-- Machine learning on Microsoft 365 data
-- Advanced analytics and reporting
-- Data warehousing
-- Backup and archival
+> 💡 В отличие от Microsoft Graph API (операционные запросы), Data Connect предназначен для больших объёмов данных и аналитических сценариев.
+
+---
+
+## Основные возможности
+
+- Безопасная и масштабируемая доставка данных
+- Интеграция с Azure Synapse Analytics
+- Использование Azure Data Factory для построения пайплайнов
+- Кэширование данных для аналитических задач
+
+---
+
+## Типовые сценарии
+
+- Машинное обучение на данных Microsoft 365
+- Продвинутая аналитика и отчётность
+- Построение хранилищ данных (Data Warehouse)
+- Резервное копирование и архивирование
+
+---
+
+## Отличие от Graph API
+
+| Microsoft Graph API | Graph Data Connect |
+|----------------------|-------------------|
+| Операционные запросы | Массовая выгрузка данных |
+| REST-запросы | Batch-передача в Azure |
+| Реальное время | Аналитические сценарии |
+| Ограничения по throttling | Оптимизирован для Big Data |
+
+---
+
+## Важно для AZ-204
+
+- Graph Data Connect используется для аналитики и ML.
+- Предназначен для больших объёмов данных.
+- Интегрируется с Azure Synapse и Data Factory.
+- Не предназначен для real-time API-запросов.
+
+> 🎯 Частый экзаменационный вопрос:  
+> Как выгрузить большие объёмы данных Microsoft 365 в Azure для аналитики?  
+> Ответ — использовать Microsoft Graph Data Connect.
 
 ## Architecture Diagram
 
@@ -194,11 +289,35 @@ GET /identityGovernance          # Identity governance
 https://graph.microsoft.com/v1.0/...
 ```
 
-**Characteristics**:
-- ✅ **Stable** - No breaking changes
-- ✅ **Production-ready** - Use in production apps
-- ✅ **Supported** - Microsoft support available
-- ✅ **Documented** - Complete documentation
+## Характеристики (Microsoft Graph v1.0)
+
+- ✅ **Стабильная версия** — без breaking changes
+- ✅ **Готова к продакшену** — рекомендуется для production-приложений
+- ✅ **Поддерживается Microsoft** — доступна официальная поддержка
+- ✅ **Полностью документирована** — актуальная и завершённая документация
+
+---
+
+## Что это означает
+
+- Контракты API не меняются неожиданно.
+- Подходит для бизнес-критичных приложений.
+- Можно рассчитывать на долгосрочную поддержку.
+- Документация соответствует реальному поведению API.
+
+---
+
+## Важно для AZ-204
+
+- Для production следует использовать **v1.0**, а не beta.
+- Версия указывается в URL:  
+  `https://graph.microsoft.com/v1.0/...`
+- Beta-версия может содержать изменения и не предназначена для продакшена.
+
+> 🎯 Экзаменационный момент:  
+> Какую версию Microsoft Graph использовать в production?  
+> Ответ — v1.0.
+
 
 **Example**:
 ```http
@@ -252,12 +371,45 @@ grant_type=authorization_code
 &client_secret=<client-secret>
 ```
 
-### Permission Types
+## Типы разрешений (Permission Types)
 
-| Type | Description | Example Scope |
-|------|-------------|---------------|
-| **Delegated** | User is present, app acts on behalf of user | `User.Read` |
-| **Application** | No user present, app acts as itself | `User.Read.All` |
+| Тип | Описание | Пример Scope |
+|------|----------|--------------|
+| **Delegated** | Пользователь присутствует, приложение действует от имени пользователя | `User.Read` |
+| **Application** | Пользователь отсутствует, приложение действует от своего имени | `User.Read.All` |
+
+---
+
+## Delegated Permissions
+
+- Требуется вошедший пользователь.
+- Используются в web, mobile, SPA приложениях.
+- Эффективные права = пересечение прав пользователя и приложения.
+- Требуется user consent или admin consent (в зависимости от разрешения).
+
+---
+
+## Application Permissions
+
+- Используются в daemon, background services.
+- Пользователь не участвует.
+- Требуется admin consent.
+- Приложение получает полный объём разрешённых прав.
+
+---
+
+## Важно для AZ-204
+
+- Delegated → пользователь есть.
+- Application → пользователь отсутствует.
+- Delegated permissions часто используются с Authorization Code Flow.
+- Application permissions используются с Client Credentials Flow.
+- `User.Read` — delegated.
+- `User.Read.All` — application (требует admin consent).
+
+> 🎯 Экзаменационный момент:  
+> Какое разрешение использовать для background-сервиса без пользователя?  
+> Ответ — Application permission.
 
 ### Common Permissions
 
@@ -318,20 +470,49 @@ GET /users?$select=displayName,mail&$filter=startsWith(displayName,'A')&$orderby
 URL: https://developer.microsoft.com/graph/graph-explorer
 ```
 
-**Features**:
-- Test API calls without code
-- See sample requests and responses
-- Authenticate with your account
-- Explore API documentation
-- Generate code snippets
+## Microsoft Graph Explorer
 
-**Example workflow**:
-1. Navigate to Graph Explorer
-2. Sign in with Microsoft account
-3. Select sample query or write your own
-4. Click "Run query"
-5. View response
-6. Copy code snippet for your language
+### Возможности
+
+- Тестирование API-запросов без написания кода
+- Просмотр примеров запросов и ответов
+- Аутентификация под своей учётной записью
+- Изучение документации API
+- Генерация готовых code snippets для разных языков
+
+---
+
+## Пример рабочего процесса
+
+1. Перейти в **Graph Explorer**
+2. Выполнить вход с Microsoft-аккаунтом
+3. Выбрать пример запроса или написать свой
+4. Нажать **Run query**
+5. Просмотреть ответ сервера
+6. Скопировать сгенерированный код для нужного языка
+
+---
+
+## Зачем использовать
+
+- Быстрая проверка разрешений (scopes)
+- Отладка запросов к Microsoft Graph
+- Изучение структуры JSON-ответов
+- Проверка формата URL и параметров
+
+---
+
+## Важно для AZ-204
+
+- Graph Explorer полезен для тестирования delegated permissions.
+- Требует согласия (consent) на запрашиваемые разрешения.
+- Можно увидеть реальный HTTP-запрос и ответ.
+- Удобен для изучения структуры Graph API.
+
+> 🎯 Частый экзаменационный вопрос:  
+> Как быстро протестировать Microsoft Graph API без написания приложения?  
+> Ответ — использовать Microsoft Graph Explorer.
+
 
 ## Metadata
 
@@ -342,13 +523,54 @@ https://graph.microsoft.com/v1.0/$metadata
 https://graph.microsoft.com/beta/$metadata
 ```
 
-**Namespace**: `microsoft.graph`
+## OData и пространство имён Microsoft Graph
 
-**Use cases**:
-- Generate strongly-typed clients
-- Understand entity relationships
-- Discover available operations
-- Validate requests
+### Namespace
+
+`microsoft.graph`
+
+Все сущности Microsoft Graph находятся в этом пространстве имён.
+
+---
+
+## Для чего используется
+
+- Генерация строго типизированных клиентов (strongly-typed clients)
+- Понимание связей между сущностями
+- Обнаружение доступных операций
+- Валидация запросов
+
+---
+
+## Что это означает на практике
+
+Microsoft Graph построен на **OData-модели**, что позволяет:
+
+- Использовать стандартные OData-параметры (`$select`, `$filter`, `$expand`, `$orderby`)
+- Получать метаданные сервиса
+- Работать с навигационными свойствами (relationships)
+
+---
+
+## Примеры возможностей OData
+
+- Выбрать только нужные поля
+- Фильтровать данные
+- Сортировать результаты
+- Разворачивать связанные сущности
+
+---
+
+## Важно для AZ-204
+
+- Microsoft Graph основан на OData.
+- Namespace: `microsoft.graph`.
+- Поддерживает стандартные OData query parameters.
+- Позволяет строить оптимизированные запросы.
+
+> 🎯 Экзаменационный момент:  
+> Как ограничить возвращаемые поля в Microsoft Graph?  
+> Ответ — использовать OData параметр `$select`.
 
 ## Benefits of Microsoft Graph
 
@@ -379,12 +601,57 @@ var graphClient = new GraphServiceClient(credential);
 // Access all services with same credential
 ```
 
-### 3. Unified Developer Experience
+## 3️⃣ Unified Developer Experience
 
-- **Consistent API patterns** across services
-- **SDKs for multiple languages** (.NET, JavaScript, Java, Python, etc.)
-- **Rich documentation** and samples
-- **Type-safe models** for entities
+### Основные принципы
+
+- **Единые API-паттерны** во всех сервисах
+- **SDK для разных языков** (.NET, JavaScript, Java, Python и др.)
+- **Подробная документация и примеры**
+- **Типобезопасные модели сущностей**
+
+---
+
+## Что это даёт разработчику
+
+- Одинаковая логика работы с пользователями, файлами, почтой, группами и др.
+- Снижение времени на изучение отдельных API.
+- Возможность использовать официальные SDK вместо ручной работы с HTTP.
+- Автоматическую сериализацию и десериализацию объектов.
+
+---
+
+## SDK поддерживаются для
+
+- .NET
+- JavaScript / TypeScript
+- Java
+- Python
+- Go (preview)
+- PowerShell
+
+---
+
+## Преимущества SDK
+
+- Автоматическая работа с токенами (через MSAL)
+- Поддержка pagination
+- Обработка throttling
+- Strongly-typed модели вместо "сырых" JSON
+
+---
+
+## Важно для AZ-204
+
+- Microsoft Graph предоставляет унифицированный API.
+- Использование SDK упрощает разработку.
+- Типобезопасные модели снижают ошибки.
+- Рекомендуется использовать официальные SDK вместо ручных REST-запросов.
+
+> 🎯 Экзаменационный момент:  
+> Как упростить работу с Microsoft Graph в .NET-приложении?  
+> Ответ — использовать официальный Microsoft Graph SDK.
+
 
 ### 4. Rich Data Relationships
 
@@ -523,37 +790,90 @@ var chatMessage = new ChatMessage
 await graphClient.Teams["team-id"].Channels["channel-id"].Messages.PostAsync(chatMessage);
 ```
 
-## Critical Notes
-- 💡 **Single endpoint** - `https://graph.microsoft.com` for all Microsoft 365 services
-- 🎯 **Three components** - Graph API, Graph Connectors (external data), Data Connect (bulk to Azure)
-- ✅ **Two versions** - v1.0 (production stable) and beta (preview, unstable)
-- ⚠️ **Production apps** - Always use v1.0, not beta
-- 🔄 **Authentication** - OAuth 2.0 / OpenID Connect
-- 📊 **Permissions** - Delegated (user present) vs Application (no user)
-- 💡 **OData support** - $select, $filter, $orderby, $expand, $top, $skip
-- ✅ **Benefits** - Unified API, consistent auth, rich relationships, batching
-- ⚠️ **Graph Explorer** - Interactive tool for testing API calls
-- 🔒 **Namespace** - microsoft.graph for most APIs
+# Critical Notes
 
-## Exam Tips
-- Microsoft Graph: Gateway to Microsoft 365 data and intelligence
-- Endpoint: https://graph.microsoft.com (single endpoint for all services)
-- Three components: Graph API, Graph Connectors, Graph Data Connect
-- Graph API: Access Microsoft 365, Windows, EMS data via REST
-- Graph Connectors: Bring external data (Box, Jira, Salesforce) into Microsoft 365
-- Graph Data Connect: Stream Microsoft 365 data to Azure at scale
-- Two versions: v1.0 (stable, production), beta (preview, development only)
-- Always use v1.0 in production apps (beta may have breaking changes)
-- Authentication: OAuth 2.0 / OpenID Connect
-- Permission types: Delegated (user present), Application (no user)
-- Common scopes: User.Read, Mail.Read, Calendars.Read, Files.Read
-- OData support: $select, $filter, $orderby, $expand, $top, $skip, $count, $search
-- REST methods: GET (read), POST (create), PATCH (update), PUT (replace), DELETE (remove)
-- Batching: Combine multiple requests in single call (/$batch)
-- Delta queries: Track changes over time (/delta endpoint)
-- Webhooks: Real-time change notifications
-- Graph Explorer: Interactive tool at developer.microsoft.com/graph/graph-explorer
-- Metadata: Available at /$metadata endpoint
-- Namespace: microsoft.graph for most APIs
+- 💡 **Единый endpoint** — `https://graph.microsoft.com` для всех сервисов Microsoft 365
+- 🎯 **Три компонента** — Graph API, Graph Connectors (внешние данные), Graph Data Connect (массовая выгрузка в Azure)
+- ✅ **Две версии** — v1.0 (стабильная для production) и beta (preview, нестабильная)
+- ⚠️ **Production-приложения** — использовать только v1.0
+- 🔄 **Аутентификация** — OAuth 2.0 / OpenID Connect через Microsoft Entra ID
+- 📊 **Типы разрешений** — Delegated (с пользователем) и Application (без пользователя)
+- 💡 **Поддержка OData** — `$select`, `$filter`, `$orderby`, `$expand`, `$top`, `$skip`
+- ✅ **Преимущества** — единый API, единая модель авторизации, связи между объектами, batching
+- ⚠️ **Graph Explorer** — интерактивный инструмент для тестирования API
+- 🔒 **Namespace** — `microsoft.graph`
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- Microsoft Graph — единая точка доступа к данным Microsoft 365.
+- Endpoint: `https://graph.microsoft.com`.
+- Использует REST и стандартные HTTP-методы.
+
+---
+
+## Компоненты
+
+- **Graph API** — доступ к данным Microsoft 365, Windows, EMS.
+- **Graph Connectors** — подключение внешних данных (Box, Jira, Salesforce и др.).
+- **Graph Data Connect** — массовая выгрузка данных в Azure для аналитики.
+
+---
+
+## Версии API
+
+- **v1.0** — стабильная, использовать в production.
+- **beta** — preview, возможны breaking changes.
+
+---
+
+## Аутентификация и разрешения
+
+- Использует OAuth 2.0 и OpenID Connect.
+- Delegated — пользователь присутствует.
+- Application — приложение действует самостоятельно.
+- Часто используемые scopes:
+    - `User.Read`
+    - `Mail.Read`
+    - `Calendars.Read`
+    - `Files.Read`
+
+---
+
+## OData-поддержка
+
+- `$select` — выбор полей
+- `$filter` — фильтрация
+- `$orderby` — сортировка
+- `$expand` — связанные сущности
+- `$top`, `$skip` — пагинация
+- `$count`, `$search` — подсчёт и поиск
+
+---
+
+## Дополнительные возможности
+
+- **Batching** — объединение нескольких запросов (`/$batch`)
+- **Delta queries** — отслеживание изменений (`/delta`)
+- **Webhooks** — уведомления в реальном времени
+- **Metadata** — доступно по `/\$metadata`
+
+---
+
+## Часто проверяется
+
+- Какой endpoint использовать? → `https://graph.microsoft.com`
+- Какую версию API использовать в production? → `v1.0`
+- Какой тип разрешения нужен для daemon? → Application
+- Как отфильтровать данные? → `$filter`
+
+---
+
+> 🎯 Ключевая идея:  
+> Microsoft Graph — это единый REST API для всей экосистемы Microsoft 365.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/microsoft-graph/2-microsoft-graph-overview)

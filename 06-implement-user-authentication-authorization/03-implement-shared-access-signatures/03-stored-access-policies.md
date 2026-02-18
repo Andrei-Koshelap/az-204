@@ -1,47 +1,84 @@
 # Stored Access Policies
 
-## Key Concepts
-- **Stored access policy** - Server-side policy for service-level SAS
-- **Revocable** - Change or revoke SAS without regenerating storage keys
-- **Centralized control** - Manage SAS expiry and permissions from one place
-- **Maximum 5 policies** - Per container, queue, table, or file share
+## Ключевые понятия
 
-## What is a Stored Access Policy?
+- **Stored access policy** — серверная политика для Service SAS
+- **Отзыв доступа** — можно изменить или отменить SAS без регенерации ключей
+- **Централизованное управление** — управление сроками и правами из одного места
+- **Максимум 5 политик** — на контейнер, очередь, таблицу или file share
 
-A **stored access policy** provides an additional level of control over **service-level shared access signatures (SAS)** on the server side.
+---
 
-### Purpose
+# Что такое Stored Access Policy?
 
-**Group and manage SAS tokens** with:
-- Centralized expiry time management
-- Permission changes for all associated SAS
-- Revocation without regenerating storage account keys
-- Start time control for scheduled access
+**Stored access policy** — это дополнительный уровень контроля для **service-level SAS**, реализованный на стороне сервера.
 
-### Supported Resources
+> 💡 Работает только с Service SAS (не с Account SAS).
 
-| Resource Type | Stored Policy Support |
-|--------------|----------------------|
-| **Blob containers** | ✅ Yes |
-| **File shares** | ✅ Yes |
-| **Queues** | ✅ Yes |
-| **Tables** | ✅ Yes |
-| **Individual blobs/files** | ❌ No (use container/share policy) |
-| **Account SAS** | ❌ No (only service SAS) |
+---
 
-## SAS Parameters: Policy vs Token
+## Назначение
 
-### Parameter Distribution
+Позволяет **группировать и управлять SAS-токенами**:
 
-You can specify SAS parameters in **three ways**:
+- Централизованно управлять сроком действия
+- Изменять разрешения для всех связанных SAS
+- Отзывать доступ без регенерации account key
+- Контролировать время начала действия
 
-| Option | Start Time | Expiry Time | Permissions | Example Use Case |
-|--------|-----------|-------------|-------------|------------------|
-| **All on SAS token** | Token | Token | Token | One-time, ad-hoc access |
-| **All in policy** | Policy | Policy | Policy | Managed, revocable access |
-| **Mixed** | Token | Policy | Policy | Scheduled start with managed expiry |
+---
 
-⚠️ **Rule**: Cannot specify the same parameter in both SAS token and stored access policy.
+# Поддерживаемые ресурсы
+
+| Тип ресурса | Поддержка Stored Policy |
+|--------------|--------------------------|
+| **Blob containers** | ✅ Да |
+| **File shares** | ✅ Да |
+| **Queues** | ✅ Да |
+| **Tables** | ✅ Да |
+| **Отдельные blobs/files** | ❌ Нет (используется политика контейнера/share) |
+| **Account SAS** | ❌ Нет (только для Service SAS) |
+
+---
+
+# Параметры SAS: Policy vs Token
+
+## Способы задания параметров
+
+Параметры SAS можно определить **тремя способами**:
+
+| Вариант | Start Time | Expiry Time | Permissions | Когда использовать |
+|----------|------------|-------------|-------------|--------------------|
+| **Все в SAS токене** | В токене | В токене | В токене | Разовый доступ |
+| **Все в Stored Policy** | В политике | В политике | В политике | Управляемый и отзывной доступ |
+| **Смешанный вариант** | В токене | В политике | В политике | Запланированный старт с централизованным окончанием |
+
+---
+
+⚠️ **Правило:**  
+Нельзя указывать один и тот же параметр одновременно в SAS-токене и в Stored Access Policy.
+
+---
+
+## Почему это важно
+
+- Позволяет централизованно менять срок действия.
+- Позволяет отзывать доступ без смены ключей.
+- Упрощает управление большим количеством SAS.
+
+---
+
+## Важно для AZ-204
+
+- Работает только для Service SAS.
+- Максимум 5 политик на контейнер или share.
+- Позволяет изменять права для уже выданных SAS.
+- Нельзя комбинировать одинаковые параметры в токене и политике.
+
+> 🎯 Частый экзаменационный вопрос:  
+Как отозвать доступ для уже выданных SAS без смены ключа?  
+Ответ — использовать Stored Access Policy.
+
 
 ### Example: All Parameters in Policy
 
@@ -282,21 +319,56 @@ $policy = New-AzStorageContainerStoredAccessPolicy `
 
 Write-Host "Policy created: $($policy.Policy)"
 ```
+## Создание Stored Access Policy через Azure Portal
 
-### Using Azure Portal
+### Пошаговая инструкция
 
-1. Navigate to storage account
-2. Select **Containers** (or Queues, Tables, File shares)
-3. Select container
-4. Click **Access policy** (or **Stored access policies**)
-5. Click **+ Add policy**
-6. Fill in:
-   - **Identifier**: Policy name (e.g., `read-policy`)
-   - **Permissions**: Select permissions (Read, Write, Delete, List, etc.)
-   - **Start time**: When access begins (optional)
-   - **Expiry time**: When access ends
-7. Click **OK**
-8. Click **Save**
+1. Перейдите в нужный **Storage Account**
+2. Выберите раздел **Containers**  
+   (или **Queues**, **Tables**, **File shares**)
+3. Откройте нужный контейнер
+4. Нажмите **Access policy**  
+   (или **Stored access policies**)
+5. Нажмите **+ Add policy**
+6. Заполните параметры:
+   - **Identifier** — имя политики (например, `read-policy`)
+   - **Permissions** — выберите разрешения (Read, Write, Delete, List и др.)
+   - **Start time** — время начала действия (необязательно)
+   - **Expiry time** — время окончания действия
+7. Нажмите **OK**
+8. Нажмите **Save**
+
+---
+
+## Важно помнить
+
+- Максимум 5 политик на контейнер/очередь/table/share.
+- Политика применяется только к Service SAS.
+- После изменения политики все связанные SAS автоматически обновляют своё поведение.
+- Удаление политики немедленно аннулирует связанные SAS.
+
+---
+
+## Best Practices
+
+- Использовать понятные имена для Identifier.
+- Устанавливать минимальные разрешения.
+- Ограничивать срок действия.
+- Использовать HTTPS для всех SAS.
+
+---
+
+## Важно для AZ-204
+
+- Stored Access Policy создаётся на уровне контейнера или share.
+- Позволяет централизованно управлять SAS.
+- Используется для отзыва доступа без регенерации ключей.
+- Работает только с Service SAS.
+
+> 🎯 Частый экзаменационный вопрос:  
+Где создаётся Stored Access Policy?  
+Ответ — на уровне контейнера, очереди, таблицы или file share.
+
 
 ## Using Stored Access Policies with SAS
 
@@ -442,14 +514,47 @@ await containerClient.SetAccessPolicyAsync(permissions: policies);
 
 Console.WriteLine("Policy expired - all associated SAS immediately invalid");
 ```
+## Сравнение способов отзыва доступа (Revocation Methods)
 
-### Comparison of Revocation Methods
+| Метод | Эффект | Восстановление | Когда использовать |
+|--------|--------|---------------|--------------------|
+| **Удаление политики** | Немедленный отзыв всех связанных SAS | Невозможно восстановить | Постоянный отзыв доступа |
+| **Изменение identifier** | Разрывает связь с существующими SAS | Можно создать новую политику с теми же параметрами | Ротация доступа |
+| **Установка прошедшей даты окончания** | Немедленное истечение срока действия | Можно продлить позже | Временная блокировка |
 
-| Method | Effect | Recovery | Use When |
-|--------|--------|----------|----------|
-| **Delete policy** | Immediate revocation | Cannot recover | Permanent revocation |
-| **Change identifier** | Breaks association | Can create new with same params | Want to rotate access |
-| **Set past expiry** | Immediate expiration | Can extend later | Temporary revocation |
+---
+
+## Разбор методов
+
+### Удаление политики
+- Все SAS, связанные с этой политикой, сразу становятся недействительными.
+- Используется при полном отзыве доступа.
+- Восстановление невозможно без создания новой политики и новых SAS.
+
+### Изменение identifier
+- SAS больше не сможет найти соответствующую политику.
+- Подходит для ротации и обновления доступа.
+- Позволяет создать новую политику с теми же настройками.
+
+### Установка прошедшего срока действия
+- Доступ прекращается немедленно.
+- Позже можно продлить срок действия.
+- Подходит для временной блокировки.
+
+---
+
+## Важно для AZ-204
+
+- Stored Access Policy позволяет отзывать SAS без регенерации ключей.
+- Удаление политики — самый радикальный способ.
+- Изменение срока действия — гибкий метод управления.
+- Account SAS не поддерживает Stored Access Policy.
+
+---
+
+> 🎯 Частый экзаменационный вопрос:  
+Как временно приостановить доступ по SAS без его удаления?  
+Ответ — установить прошедшую дату окончания действия в Stored Access Policy.
 
 ## Managing Multiple Policies
 
@@ -699,34 +804,88 @@ var userDelegationKey = await blobServiceClient.GetUserDelegationKeyAsync(...);
 // Cannot reference stored policy with user delegation key
 ```
 
-## Critical Notes
-- 💡 **Stored access policy** - Server-side policy for service-level SAS
-- 🎯 **Benefits** - Revoke SAS without regenerating keys, centralized control
-- ✅ **Supports** - Blob containers, file shares, queues, tables
-- ⚠️ **Limitations** - Max 5 policies per resource, only service SAS (not user delegation)
-- 🔄 **Parameters** - Can be in policy, token, or split between both
-- 📊 **Revocation methods** - Delete policy, change identifier, set past expiry
-- 💡 **Effect** - Immediate for all SAS using that policy
-- ✅ **Activation delay** - Up to 30 seconds for new policies
-- ⚠️ **Best practice** - Use policies for long-lived SAS (revocable)
-- 🔒 **Cannot specify** - Same parameter in both policy and token
+# Critical Notes
 
-## Exam Tips
-- Stored access policy: Server-side policy providing extra control over service SAS
-- Supports: Blob containers, file shares, queues, tables
-- Does not support: Individual blobs/files, account SAS, user delegation SAS
-- Maximum: 5 stored access policies per container/share/queue/table
-- Parameters: Cannot specify same parameter in both policy and SAS token
-- Revocation: Delete policy, change identifier, or set expiry to past
-- Immediate effect: Modifying/deleting policy affects all associated SAS instantly
-- Activation delay: May take up to 30 seconds after creation/modification
-- SetAccessPolicy: Method to create/modify stored access policies
-- Identifier: Unique ID for policy (up to 64 characters)
-- Permissions: Specify in policy (r, w, d, l, a, c) or SAS token, not both
-- Table restrictions: Cannot specify startpk, startrk, endpk, endrk in policy
-- Best practice: Use stored policies for long-lived SAS (enables revocation)
-- Revoke without keys: Change/delete policy instead of regenerating storage keys
-- CLI: az storage container policy create/update/delete/list
-- C#: SetAccessPolicyAsync, GetAccessPolicyAsync, BlobSignedIdentifier
+- 💡 **Stored Access Policy** — серверная политика для Service SAS
+- 🎯 **Преимущества** — отзыв SAS без регенерации ключей, централизованное управление
+- ✅ **Поддержка** — Blob containers, file shares, queues, tables
+- ⚠️ **Ограничения** — максимум 5 политик на ресурс, только для Service SAS (не для User Delegation и не для Account SAS)
+- 🔄 **Параметры** — могут быть заданы в политике, в токене или разделены между ними
+- 📊 **Методы отзыва** — удаление политики, изменение identifier, установка прошедшей даты окончания
+- 💡 **Эффект** — изменения применяются ко всем SAS, связанным с политикой
+- ✅ **Задержка активации** — до 30 секунд после создания или изменения
+- ⚠️ **Best practice** — использовать политики для долгоживущих SAS
+- 🔒 **Нельзя указывать** — один и тот же параметр одновременно в политике и в токене
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы
+
+- Stored Access Policy — серверная политика для дополнительного контроля Service SAS.
+- Позволяет централизованно управлять сроками и разрешениями.
+- Позволяет отзывать SAS без смены ключей Storage Account.
+
+---
+
+## Поддержка
+
+Поддерживается для:
+- Blob containers
+- File shares
+- Queues
+- Tables
+
+Не поддерживается для:
+- Отдельных blob/file
+- Account SAS
+- User Delegation SAS
+
+---
+
+## Ограничения
+
+- Максимум 5 политик на контейнер/share/queue/table.
+- Нельзя указывать одинаковые параметры в SAS и в политике.
+- После изменения политики может быть задержка до 30 секунд.
+
+---
+
+## Отзыв доступа
+
+- Удаление политики — немедленный и окончательный отзыв.
+- Изменение identifier — разрыв связи с SAS.
+- Установка прошедшей даты окончания — временная блокировка.
+
+---
+
+## SDK и инструменты
+
+- **Методы SDK**:
+   - `SetAccessPolicyAsync`
+   - `GetAccessPolicyAsync`
+   - `BlobSignedIdentifier`
+
+- **CLI**:
+   - `az storage container policy create`
+   - `az storage container policy update`
+   - `az storage container policy delete`
+   - `az storage container policy list`
+
+---
+
+## Важно помнить
+
+- Использовать Stored Access Policy для долгоживущих SAS.
+- Для краткоживущих SAS можно задавать параметры напрямую в токене.
+- Stored Access Policy позволяет избежать регенерации ключей.
+
+---
+
+> 🎯 Ключевой экзаменационный момент:  
+> Как отозвать Service SAS без смены ключа Storage Account?  
+> Ответ — изменить или удалить Stored Access Policy.
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-shared-access-signatures/4-stored-access-policies)

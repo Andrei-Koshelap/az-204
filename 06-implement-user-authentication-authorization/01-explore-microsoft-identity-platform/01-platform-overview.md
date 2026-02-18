@@ -1,45 +1,85 @@
-# Microsoft Identity Platform Overview
+# Обзор Microsoft Identity Platform
 
-## Key Concepts
-- **OAuth 2.0 & OpenID Connect** - Industry-standard authentication protocols
-- **MSAL** - Microsoft Authentication Libraries
-- **Microsoft Entra ID** - Identity and access management service
-- **Multi-identity support** - Work, school, personal, social accounts
+## Ключевые понятия
 
-## What is Microsoft Identity Platform?
+- **OAuth 2.0 и OpenID Connect** — отраслевые стандарты протоколов аутентификации и авторизации
+- **MSAL** — Microsoft Authentication Libraries
+- **Microsoft Entra ID** — сервис управления идентификацией и доступом
+- **Поддержка нескольких типов учётных записей** — рабочие, учебные, личные и социальные аккаунты
 
-**Comprehensive identity and access management solution** for Azure:
+---
 
-- **Authentication service** - OAuth 2.0 and OpenID Connect compliant
-- **Identity types** - Multiple account types supported
-- **Libraries** - MSAL for various platforms
-- **Management** - Azure Portal and API configuration
-- **Modern security** - Passwordless, MFA, Conditional Access
+## Что такое Microsoft Identity Platform?
 
-### Purpose
+**Комплексная платформа управления идентификацией и доступом** для Azure и облачных приложений.
 
-Build applications where users can:
-- ✅ Sign in with Microsoft identities
-- ✅ Sign in with social accounts  
-- ✅ Access your APIs securely
-- ✅ Access Microsoft APIs (Microsoft Graph)
+Основные характеристики:
 
-## Platform Components
+- **Сервис аутентификации** — соответствует стандартам OAuth 2.0 и OpenID Connect
+- **Поддержка разных типов учётных записей**
+- **Библиотеки** — MSAL для различных платформ и языков
+- **Управление** — настройка через Azure Portal или API
+- **Современные механизмы безопасности** — passwordless, MFA, Conditional Access
 
-### 1. Authentication Service
+> 💡 Платформа объединяет механизмы аутентификации, выдачи токенов и контроля доступа для приложений и API.
 
-**OAuth 2.0 and OpenID Connect compliant**:
+---
 
-| Identity Type | Description | Example |
-|---------------|-------------|---------|
-| **Work/School Accounts** | Provisioned through Microsoft Entra ID | Enterprise user accounts |
-| **Personal Microsoft Account** | Consumer accounts | Skype, Xbox, Outlook.com |
-| **Social/Local (B2C)** | Azure AD B2C | Facebook, Google login |
-| **Social/Local (External ID)** | Microsoft Entra External ID | Customer accounts |
+## Назначение
 
-### 2. Microsoft Authentication Libraries (MSAL)
+Позволяет создавать приложения, в которых пользователи могут:
 
-**Open-source libraries** for authentication:
+- ✅ Выполнять вход с использованием Microsoft-учётных записей
+- ✅ Входить через социальные аккаунты
+- ✅ Безопасно получать доступ к вашим API
+- ✅ Получать доступ к Microsoft API (например, Microsoft Graph)
+
+---
+
+# Компоненты платформы
+
+## 1. Authentication Service
+
+**Соответствует стандартам OAuth 2.0 и OpenID Connect**
+
+Поддерживаемые типы идентификаций:
+
+| Тип идентификации | Описание | Пример |
+|-------------------|----------|--------|
+| **Work/School Accounts** | Учётные записи, созданные в Microsoft Entra ID | Корпоративные пользователи |
+| **Personal Microsoft Account** | Потребительские аккаунты | Skype, Xbox, Outlook.com |
+| **Social/Local (B2C)** | Azure AD B2C | Вход через Facebook или Google |
+| **Social/Local (External ID)** | Microsoft Entra External ID | Аккаунты клиентов |
+
+---
+
+## 2. Microsoft Authentication Libraries (MSAL)
+
+**Open-source библиотеки для аутентификации**
+
+Назначение:
+
+- Получение и обновление токенов доступа
+- Поддержка OAuth 2.0 flows
+- Работа с различными платформами (веб, мобильные, десктопные приложения)
+- Автоматическое управление кешированием токенов
+
+Основные особенности:
+
+- Поддержка интерактивной и безынтерактивной аутентификации
+- Поддержка различных grant flows
+- Унифицированная модель работы с токенами
+
+---
+
+## Важно для AZ-204
+
+- Microsoft Identity Platform основана на стандартах OAuth 2.0 и OpenID Connect.
+- Microsoft Entra ID является провайдером идентификации.
+- MSAL используется для получения токенов в приложении.
+- Поддерживаются разные типы аккаунтов в зависимости от сценария.
+- Токены используются для доступа к защищённым API.
+
 
 ```csharp
 // .NET example
@@ -74,10 +114,30 @@ https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize
 https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token
 ```
 
-**Features**:
-- Human-readable scopes (industry standards)
-- Works with MSAL or other standards-compliant libraries
-- OAuth 2.0 and OpenID Connect protocols
+### Основные возможности (Features)
+
+- **Человекочитаемые scopes**  
+  Используются стандартные разрешения (scopes), понятные разработчикам и соответствующие отраслевым стандартам.
+
+- **Совместимость с MSAL и другими библиотеками**  
+  Работает как с Microsoft Authentication Libraries, так и с любыми библиотеками, поддерживающими стандарты OAuth 2.0 и OpenID Connect.
+
+- **Поддержка протоколов OAuth 2.0 и OpenID Connect**  
+  Обеспечивает:
+   - Аутентификацию пользователей
+   - Выдачу access token и ID token
+   - Делегированный и application-доступ
+
+---
+
+## Важно для AZ-204
+
+- Scopes определяют, к каким ресурсам запрашивается доступ.
+- MSAL упрощает работу с токенами, но можно использовать и другие совместимые библиотеки.
+- OAuth 2.0 отвечает за авторизацию, OpenID Connect — за аутентификацию.
+
+> 🎯 Часто проверяется понимание различия между authentication (кто пользователь) и authorization (к каким ресурсам есть доступ).
+
 
 **Example authorization request**:
 
@@ -102,23 +162,58 @@ https://portal.azure.com
 # Go to: Microsoft Entra ID → App registrations → New registration
 ```
 
-**Configuration options**:
-- App registration (single-tenant or multi-tenant)
-- Client secrets and certificates
-- API permissions and scopes
-- Redirect URIs
-- Branding customization
-- Authentication settings
+## Параметры конфигурации (Configuration Options)
 
-**Create app registration (Azure Portal)**:
+При настройке приложения в Microsoft Identity Platform доступны следующие параметры:
 
-1. **Navigate**: Microsoft Entra ID → App registrations
-2. **Click**: New registration
-3. **Configure**:
-   - Name: Your application name
-   - Supported account types: Single/Multi-tenant
-   - Redirect URI: Your app's callback URL
-4. **Save**: Azure generates Application (client) ID
+- **App registration** — регистрация приложения (single-tenant или multi-tenant)
+- **Client secrets и сертификаты** — учетные данные приложения для аутентификации
+- **API permissions и scopes** — разрешения на доступ к ресурсам
+- **Redirect URIs** — адреса возврата после аутентификации
+- **Branding customization** — настройка внешнего вида страницы входа
+- **Authentication settings** — параметры протоколов и потоков аутентификации
+
+---
+
+## Создание App Registration (через Azure Portal)
+
+1. **Перейти**: Microsoft Entra ID → App registrations
+2. **Выбрать**: New registration
+3. **Настроить параметры**:
+   - **Name** — имя приложения
+   - **Supported account types** — выбор между Single-tenant и Multi-tenant
+   - **Redirect URI** — URL возврата (callback) вашего приложения
+4. **Сохранить** — система создаёт Application (client) ID
+
+---
+
+## Что важно понимать для AZ-204
+
+- Application (client) ID используется в коде приложения для идентификации клиента.
+- Single-tenant — приложение доступно только пользователям одного каталога.
+- Multi-tenant — приложение может использоваться пользователями из разных организаций.
+- Redirect URI должен точно совпадать с тем, что используется в приложении.
+- Client secret или сертификат применяются в серверных сценариях (confidential clients).
+
+> 🎯 Часто проверяется понимание различий между single-tenant и multi-tenant приложениями, а также назначение redirect URI и client secret.
+> # Client Secret — зачем нужен?
+
+**Client secret** — это учётные данные приложения, аналог «пароля» для приложения.
+
+## Используется в сценариях:
+
+- Server-side приложениях (confidential clients)
+- Обмене authorization code на access token
+- Client credentials flow
+
+## Важно понимать
+
+- Никогда не хранится в frontend-приложениях.
+- Должен храниться безопасно (например, в Azure Key Vault).
+- Имеет срок действия.
+
+> 🔐 Client secret подтверждает, что именно ваше приложение запрашивает токен.
+
 
 ### 5. Application Configuration API
 
@@ -171,44 +266,104 @@ New-MgApplicationPermission -ApplicationId $app.Id `
     -Scopes @("User.Read")
 ```
 
-## Modern Identity Innovations
+# Modern Identity Innovations
 
-**Built-in security features** automatically available:
+Современные механизмы безопасности в Microsoft Identity Platform доступны «из коробки» и интегрированы с Microsoft Entra ID.
 
-### 1. Passwordless Authentication
+---
 
-**No passwords required**:
+## 1️⃣ Passwordless Authentication
+
+**Аутентификация без использования пароля**
+
+Поддерживаемые методы:
+
 - Windows Hello for Business
 - FIDO2 security keys
-- Microsoft Authenticator app
-- SMS/Phone sign-in
+- Microsoft Authenticator
+- Вход по SMS или телефону
 
-### 2. Step-Up Authentication
+### Что это даёт
 
-**Adaptive authentication** based on risk:
-- Low risk: Single factor
-- Medium risk: MFA required
-- High risk: Additional verification
+- Снижение риска фишинга
+- Устранение атак с подбором паролей
+- Улучшенный пользовательский опыт
+- Соответствие современным требованиям безопасности
 
-### 3. Conditional Access
+> 💡 Пароль считается слабым звеном безопасности. Passwordless снижает зависимость от него.
 
-**Policy-based access control**:
-- Location-based access
-- Device compliance requirements
-- Risk-based authentication
-- App-specific policies
+---
 
-**Example**: Require MFA when accessing from outside corporate network
+## 2️⃣ Step-Up Authentication
 
-### 4. Risk Detection
+**Адаптивная аутентификация на основе уровня риска**
 
-**Automated threat detection**:
-- Atypical travel
-- Anonymous IP address
-- Malware-linked IP
-- Unfamiliar sign-in properties
-- Password spray attacks
-- Leaked credentials
+Система может усиливать требования к проверке личности:
+
+- Низкий риск → достаточно одного фактора
+- Средний риск → требуется MFA
+- Высокий риск → дополнительная проверка
+
+### Принцип работы
+
+Оценка риска выполняется автоматически на основе поведения пользователя, устройства и других сигналов.
+
+> 🎯 Часто используется вместе с Conditional Access.
+
+---
+
+## 3️⃣ Conditional Access
+
+**Политики доступа на основе условий**
+
+Позволяет управлять доступом в зависимости от контекста:
+
+- Геолокация пользователя
+- Соответствие устройства требованиям безопасности
+- Уровень риска входа
+- Конкретное приложение
+
+### Возможности
+
+- Требование MFA при определённых условиях
+- Блокировка доступа из небезопасных регионов
+- Ограничение доступа с unmanaged-устройств
+- Применение разных политик к разным приложениям
+
+> 💡 Это механизм централизованного контроля доступа на основе политик.
+
+---
+
+## 4️⃣ Risk Detection
+
+**Автоматическое обнаружение угроз**
+
+Система анализирует сигналы и выявляет подозрительную активность:
+
+- Нетипичное перемещение пользователя
+- Использование анонимных IP-адресов
+- IP-адреса, связанные с вредоносной активностью
+- Необычные параметры входа
+- Password spray атаки
+- Утёкшие учётные данные
+
+### Назначение
+
+- Автоматическая оценка риска входа
+- Интеграция с Conditional Access
+- Усиление требований к аутентификации
+
+---
+
+# Важно для AZ-204
+
+- Passwordless и MFA — встроенные механизмы безопасности.
+- Conditional Access применяет политики на основе условий.
+- Risk Detection автоматически оценивает угрозы.
+- Step-Up Authentication усиливает проверку в зависимости от уровня риска.
+
+> 🎯 Экзамен часто проверяет понимание различий между MFA, Conditional Access и Risk-based authentication.
+
 
 ## Authentication Flow
 
@@ -329,11 +484,49 @@ public class AuthenticationService
 }
 ```
 
-**Properties**:
-- Short-lived (typically 1 hour)
-- Used in Authorization header
-- Contains user and app claims
-- Scopes define permissions
+## Свойства Access Token
+
+Access token используется для доступа к защищённым API и выдаётся после успешной аутентификации и авторизации.
+
+### Основные свойства
+
+- **Короткий срок жизни**  
+  Обычно действует около 1 часа. После истечения требуется получение нового токена (через refresh token или повторный flow).
+
+- **Передаётся в заголовке Authorization**  
+  Используется в HTTP-запросах для доступа к API.
+
+- **Содержит claims**  
+  Включает утверждения (claims) о пользователе и приложении:
+   - идентификатор пользователя
+   - tenant
+   - роли
+   - разрешения
+
+- **Scopes определяют права доступа**  
+  Токен содержит scopes, которые указывают, к каким ресурсам разрешён доступ.
+
+---
+
+## Что важно понимать
+
+- Access token предназначен для API, а не для самого клиента.
+- API должно проверять валидность токена и его claims.
+- Scopes реализуют принцип наименьших привилегий.
+- Токен подписывается и проверяется с использованием публичных ключей.
+
+---
+
+## Важно для AZ-204
+
+- Access token ≠ ID token.  
+  ID token используется для аутентификации пользователя, access token — для доступа к API.
+
+- Срок жизни токена ограничен по соображениям безопасности.
+- Permissions задаются через scopes или app roles.
+
+> 🎯 Частый экзаменационный вопрос: какой токен используется для вызова API? Ответ — access token.
+
 
 ### 2. ID Token
 
@@ -353,11 +546,58 @@ public class AuthenticationService
 }
 ```
 
-**Properties**:
-- JWT (JSON Web Token) format
-- Contains user claims
-- Used for authentication verification
-- Should not be used for authorization
+## Свойства ID Token
+
+ID token используется для подтверждения личности пользователя после успешной аутентификации.
+
+### Основные свойства
+
+- **Формат JWT (JSON Web Token)**  
+  Представляет собой подписанный токен в формате JSON Web Token.
+
+- **Содержит пользовательские claims**  
+  Включает информацию о пользователе:
+   - идентификатор (sub)
+   - имя
+   - email
+   - tenant
+   - время аутентификации
+
+- **Используется для проверки аутентификации**  
+  Подтверждает, что пользователь успешно вошёл в систему.
+
+- **Не должен использоваться для авторизации**  
+  Не предназначен для проверки прав доступа к API.
+
+---
+
+## Важно понимать
+
+- ID token предназначен для клиента (приложения), а не для API.
+- Используется для создания пользовательской сессии.
+- Подписывается Microsoft Identity Platform и должен проверяться по подписи и аудитории.
+- Содержит минимальный набор информации для подтверждения личности.
+
+---
+
+## Отличие от Access Token
+
+| ID Token | Access Token |
+|-----------|--------------|
+| Для аутентификации | Для доступа к API |
+| Предназначен клиенту | Предназначен API |
+| Не используется для проверки прав | Используется для проверки scopes и ролей |
+
+---
+
+## Важно для AZ-204
+
+- ID token подтверждает, кто пользователь.
+- Access token определяет, что пользователь может делать.
+- Использование ID token для вызова API — ошибка архитектуры.
+
+> 🎯 Экзамен часто проверяет понимание различия между authentication и authorization.
+
 
 ### 3. Refresh Token
 
@@ -535,41 +775,171 @@ catch (MsalUiRequiredException)
 // Security risk, token theft
 ```
 
-## Critical Notes
-- 💡 **OAuth 2.0 & OpenID Connect** - Industry-standard protocols
-- 🎯 **MSAL** - Microsoft Authentication Libraries for all platforms
-- ✅ **Multiple identities** - Work, school, personal, social accounts
-- ⚠️ **Endpoint** - login.microsoftonline.com/{tenant}/oauth2/v2.0
-- 🔄 **Tokens** - Access token (API calls), ID token (identity), Refresh token (renewal)
-- 📊 **Azure Portal** - App registration and management
-- 💡 **Microsoft Graph API** - Access Microsoft 365 data
-- ✅ **Modern security** - Passwordless, MFA, Conditional Access built-in
-- ⚠️ **Scopes** - Define permissions (User.Read, Mail.Send, etc.)
-- 🔒 **Token caching** - Try silent acquisition first
-- 🎯 **DevOps** - Automate with Microsoft Graph API and PowerShell
-- 💡 **Application types** - Web, SPA, mobile, desktop, daemon, API
-- ⚠️ **Best practice** - Use MSAL, request minimum scopes, handle expiration
+# Critical Notes
 
-## Exam Tips
-- Microsoft identity platform: OAuth 2.0 and OpenID Connect authentication service
-- Components: Authentication service, MSAL, endpoints, Azure Portal, configuration API
-- MSAL: Microsoft Authentication Libraries for various platforms (.NET, JavaScript, Java, Python)
-- Endpoint: login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize
-- Token types: Access token (API access), ID token (identity), Refresh token (renewal)
-- Access token: Short-lived (1 hour), used for API calls
-- ID token: JWT format, contains user identity claims
-- Refresh token: Long-lived, used to get new access tokens
-- Identity types: Work/school (Entra ID), Personal (Microsoft), Social (B2C), Customer (External ID)
-- Scopes: Permissions (User.Read, Mail.Send, openid, profile, email)
-- Azure Portal: App registration, configuration, secrets, certificates
-- Microsoft Graph: Programmatic configuration and automation
-- Modern features: Passwordless, MFA, Conditional Access, risk detection
-- Application scenarios: Web app, SPA, mobile, desktop, daemon, Web API
-- Best practices: Use MSAL, cache tokens, request minimum scopes, handle expiration
-- PublicClientApplication: For apps with users (web, mobile, desktop)
-- ConfidentialClientApplication: For daemons/services without users
-- AcquireTokenInteractive: User sign-in with UI
-- AcquireTokenSilent: Get token from cache without UI
-- MsalUiRequiredException: Thrown when interactive sign-in required
+- 💡 **OAuth 2.0 & OpenID Connect** — отраслевые стандарты аутентификации и авторизации
+- 🎯 **MSAL** — Microsoft Authentication Libraries для разных платформ
+- ✅ **Поддержка нескольких типов учётных записей** — рабочие, учебные, личные и социальные
+- ⚠️ **Endpoint** — `login.microsoftonline.com/{tenant}/oauth2/v2.0`
+- 🔄 **Типы токенов** — Access token (вызовы API), ID token (идентификация), Refresh token (обновление)
+- 📊 **Azure Portal** — регистрация и управление приложениями
+- 💡 **Microsoft Graph API** — доступ к данным Microsoft 365
+- ✅ **Современные механизмы безопасности** — Passwordless, MFA, Conditional Access
+- ⚠️ **Scopes** — определяют разрешения
+- 🔒 **Кеширование токенов** — сначала попытка silent-получения
+- 🎯 **DevOps-автоматизация** — через Microsoft Graph API и PowerShell
+- 💡 **Типы приложений** — Web, SPA, mobile, desktop, daemon, API
+- ⚠️ **Best practice** — использовать MSAL, запрашивать минимальные scopes, обрабатывать истечение токена
+
+---
+
+# Exam Tips (AZ-204)
+
+## Основы платформы
+
+- Microsoft identity platform — сервис аутентификации на базе OAuth 2.0 и OpenID Connect.
+- Основные компоненты:
+   - Authentication service
+   - MSAL
+   - Endpoints
+   - Azure Portal
+   - Configuration API
+
+---
+
+## MSAL
+
+- Библиотеки доступны для .NET, JavaScript, Java, Python.
+- Управляют получением, кешированием и обновлением токенов.
+- Рекомендуется использовать вместо прямой реализации OAuth flow.
+
+---
+
+## Endpoints
+
+- Используется endpoint авторизации формата:
+  `login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize`
+
+- Tenant может быть:
+   - конкретный ID каталога
+   - `common`
+   - `organizations`
+   - `consumers`
+
+---
+
+## Типы токенов
+
+- **Access token**
+   - Короткий срок жизни (примерно 1 час)
+   - Используется для вызова API
+
+- **ID token**
+   - Формат JWT
+   - Содержит claims пользователя
+
+- **Refresh token**
+   - Более долгий срок жизни
+   - Используется для получения нового access token
+
+---
+
+## Типы идентификаций
+
+- Work/School — Microsoft Entra ID
+- Personal — Microsoft account
+- Social — B2C
+- Customer — External ID
+
+---
+
+## Scopes
+
+- Определяют разрешения на доступ к ресурсам.
+- Примеры: доступ к профилю пользователя, почте, базовой информации.
+- Реализуют принцип наименьших привилегий.
+
+---
+
+## Управление через Azure Portal
+
+- App registration
+- Настройка redirect URI
+- Создание client secrets
+- Управление сертификатами
+- Назначение API permissions
+
+---
+
+## Microsoft Graph
+
+- Используется для программной настройки и автоматизации.
+- Позволяет управлять пользователями, группами, приложениями.
+
+---
+
+## Современные возможности безопасности
+
+- Passwordless authentication
+- Multi-Factor Authentication
+- Conditional Access
+- Risk detection
+
+---
+
+## Сценарии приложений
+
+- Web application
+- SPA
+- Mobile app
+- Desktop app
+- Daemon/service
+- Web API
+
+---
+
+## Рекомендации (Best Practices)
+
+- Использовать MSAL.
+- Кешировать токены.
+- Запрашивать минимально необходимые scopes.
+- Обрабатывать истечение токенов.
+- Разделять public и confidential клиенты.
+
+---
+
+## Типы клиентов в MSAL
+
+- **PublicClientApplication**  
+  Используется для приложений с участием пользователя.
+
+- **ConfidentialClientApplication**  
+  Используется для сервисов и daemon-приложений без пользовательского интерфейса.
+
+---
+
+## Методы получения токена
+
+- **AcquireTokenInteractive**  
+  Интерактивный вход пользователя через UI.
+
+- **AcquireTokenSilent**  
+  Попытка получить токен из кеша без показа UI.
+
+- **MsalUiRequiredException**  
+  Исключение возникает, если требуется интерактивный вход.
+
+---
+
+## Часто проверяется на экзамене
+
+- Различие между access, ID и refresh токенами.
+- Когда используется public vs confidential client.
+- Как работают scopes.
+- Почему важно кеширование токенов.
+- Как обрабатывать истечение срока действия токена.
+
+---
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-microsoft-identity-platform/2-microsoft-identity-platform-overview)
