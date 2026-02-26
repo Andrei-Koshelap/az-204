@@ -875,5 +875,46 @@ await graphClient.Teams["team-id"].Channels["channel-id"].Messages.PostAsync(cha
 > 🎯 Ключевая идея:  
 > Microsoft Graph — это единый REST API для всей экосистемы Microsoft 365.
 
+Д. Используя конвейеры Azure Data Factory с механизмом согласия на основе Azure AD, можно добиться этого.
+Microsoft Graph Data Connect предназначен для:
+работы с большими объёмами данных
+пакетного экспорта данных (bulk extraction)
+строгого контроля доступа
+соблюдения требований compliance
+Он работает через:
 
+Azure Data Factory
+управляемые пайплайны
+механизм согласия (consent) на уровне Azure AD
+RBAC и администрируемые разрешения
+
+Процесс выглядит так:
+Администратор даёт согласие (admin consent)
+Настраивается Azure Data Factory pipeline
+Данные экспортируются в Azure Data Lake Storage
+Доступ контролируется через Azure AD
+🔒 Почему это важно
+
+Graph API:
+хорош для онлайн-запросов
+не предназначен для массового экспорта миллионов записей
+Graph Data Connect:
+предназначен именно для масштабной аналитики
+не влияет на лимиты Graph API
+работает через управляемые Azure-сервисы
+
+🎯 Что значит "optimize query results" в Microsoft Graph
+уменьшить объём возвращаемых данных
+сократить нагрузку на сеть
+сократить время выполнения запроса
+уменьшить потребление ресурсов
+
+$expand наоборот увеличивает объём ответа,
+потому что подтягивает связанные объекты.
+
+Если в вопросе:
+optimize results / reduce payload / reduce response size
+Ответ почти всегда:
+$filter
+$select
 [Learn More](https://learn.microsoft.com/en-us/training/modules/microsoft-graph/2-microsoft-graph-overview)

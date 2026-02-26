@@ -119,8 +119,6 @@ az webapp deployment slot swap \
 1. **Используйте версионированные теги**  
    Применяйте commit ID или timestamp вместо `latest`.
 
-   ```bash
-   docker tag myapp:latest myregistry.azurecr.io/myapp:v1.2.3-abc123
 
    ```bash
    docker tag myapp:latest myregistry.azurecr.io/myapp:v1.2.3-abc123
@@ -292,5 +290,22 @@ Swap прогревает инстансы.
 
 Правильная комбинация:
 CI/CD → staging slot → тестирование → swap
+
+
+🔷 Как работает Python в Azure App Service?
+Когда ты деплоишь Python-приложение:
+Azure использует Oryx для авто-детекции
+Если это Flask или Django — Azure знает, как запустить
+Но для FastAPI (ASGI framework) нужен сервер вроде:
+uvicorn
+🔥 Если НЕ указать startup command?
+Azure не знает:
+какой файл запускать
+какой ASGI сервер использовать
+какой объект приложения стартовать
+В итоге:
+контейнер запускается
+но приложение не стартует
+получаешь runtime error / 500
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/introduction-to-azure-app-service/4-deploy-code-to-app-service)

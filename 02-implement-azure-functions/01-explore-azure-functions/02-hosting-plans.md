@@ -672,3 +672,17 @@ Result: Consumption Plan (best cost/simplicity)
 - Для длительных операций используйте **Durable Functions**
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-azure-functions/3-compare-azure-functions-hosting-options)
+
+| Требование                    | Ответ            |
+| ----------------------------- | ---------------- |
+| Event-driven + cheapest       | Consumption      |
+| No cold start                 | Premium          |
+| VNet required + no cold start | Premium          |
+| Full control infra            | App Service Plan |
+
+User Delegation SAS работает ТОЛЬКО с Blob storage.
+
+Storage Account
+└ Blob Service
+└ Container
+└ Blob

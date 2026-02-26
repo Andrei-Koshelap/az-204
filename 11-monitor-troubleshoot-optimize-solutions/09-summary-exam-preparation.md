@@ -439,6 +439,68 @@ You're now ready to take the **AZ-204: Developing Solutions for Microsoft Azure*
 
 **🎯 Good luck with your certification!**
 
+В Application Insights для поиска узких мест (performance bottlenecks) анализируют:
+
+время выполнения запросов
+
+зависимости (Dependency calls)
+
+распределение задержек (latency distribution)
+
+Histogram:
+
+показывает распределение времени отклика
+
+помогает выявить медленные операции
+
+позволяет увидеть, какие страницы или зависимости тормозят
+
+Особенно важно анализировать:
+
+Server response time
+
+Dependency duration (SQL, HTTP, Redis и т.д.)
+
+
+Как обычно ищут bottleneck
+Открывают Performance → Requests
+Сортируют по Duration
+Анализируют зависимости (Dependencies)
+ Смотрят распределение задержек (histogram)
+
+
+Live Metrics Stream показывает:
+🔹 Request rate (RPS)
+🔹 Failure rate
+🔹 Response times
+🔹 CPU / Memory
+🔹 Dependency failures
+🔹 Incoming requests
+
+Profiler
+Анализирует performance на уровне кода
+Не показывает failure counts в real-time
+
+🔹 Smart Detection
+AI-based аномалии
+Не real-time мониторинг
+Не real-time dashboard,
+а автоматическое обнаружение проблем.
+
+🔹 Snapshot Debugger
+Делает snapshot при exception
+Для debugging, не для live мониторинга
+
+Logs (Log Analytics / KQL)
+Полный доступ к данным через KQL (Kusto Query Language).
+📌 Позволяет:
+Фильтровать ошибки
+Искать конкретные request
+Делать кастомную аналитику
+Создавать alert rules
+
+
+
 **📚 Further Resources:**
 - [Application Insights Documentation](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview)
 - [Azure Monitor Documentation](https://learn.microsoft.com/en-us/azure/azure-monitor/)

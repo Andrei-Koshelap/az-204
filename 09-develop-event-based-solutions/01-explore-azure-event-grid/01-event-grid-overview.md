@@ -1,20 +1,46 @@
-# Azure Event Grid Overview
+# Azure Event Grid — Обзор
 
-## What is Azure Event Grid?
+## Что такое Azure Event Grid?
 
-**Azure Event Grid** is a fully managed event routing service that enables reactive, event-driven programming using a **publish-subscribe model**. It provides reliable message delivery at massive scale, allowing you to build event-driven architectures.
 
-### Key Characteristics
+::contentReference[oaicite:0]{index=0}
 
-- **Serverless and fully managed**: No infrastructure to provision or manage
-- **HTTP and MQTT support**: Multiple protocols for different scenarios
-  - **HTTP**: Request-response messaging, cloud events delivery
-  - **MQTT**: IoT messaging, bidirectional communication
-- **CloudEvents v1.0 compliant**: Industry-standard event schema
-- **Massive scale**: Millions of events per second
-- **Low cost**: Pay only for what you use
-- **High availability**: 99.99% SLA
-- **Advanced filtering**: Route events based on content
+
+**Azure Event Grid** — это полностью управляемый сервис маршрутизации событий, предназначенный для построения реактивных, event-driven архитектур по модели **publish-subscribe**.
+
+Он обеспечивает надёжную доставку сообщений в большом масштабе и позволяет строить loosely coupled системы, реагирующие на события.
+
+---
+
+## Ключевые характеристики
+
+- **Serverless и полностью управляемый сервис**  
+  Не требуется управлять инфраструктурой
+
+- **Поддержка HTTP и MQTT**
+    - **HTTP** — доставка событий и интеграция с облачными сервисами
+    - **MQTT** — сценарии IoT и двусторонняя коммуникация
+
+- **Совместимость с CloudEvents v1.0**  
+  Используется индустриальный стандарт формата событий
+
+- **Масштабируемость**  
+  Поддержка миллионов событий в секунду
+
+- **Модель оплаты Pay-as-you-go**  
+  Платите только за обработанные события
+
+- **Высокая доступность**  
+  SLA 99.99%
+
+- **Продвинутая фильтрация**  
+  Маршрутизация событий на основе содержимого
+
+---
+
+## Архитектурная идея
+
+Event Grid реализует модель:
 
 ### Event Grid Architecture
 
@@ -72,17 +98,57 @@
 
 ---
 
-## Core Event Grid Concepts
+## Основные концепции Event Grid
 
-### 1. Events
+### 1. Events (События)
 
-An **event** is the smallest unit of information that fully describes something that happened in a system.
 
-**Event Characteristics:**
-- **Immutable**: Events describe facts about what happened
-- **Lightweight**: Maximum size of 1 MB per event
-- **Structured**: JSON format following CloudEvents or Event Grid schema
-- **Timestamped**: Contains event generation time
+::contentReference[oaicite:0]{index=0}
+
+
+**Event (Событие)** — это минимальная единица информации, которая полностью описывает произошедшее действие в системе.
+
+Событие фиксирует факт изменения состояния, но не содержит бизнес-логики обработки.
+
+---
+
+## Характеристики события
+
+- **Неизменяемость (Immutable)**  
+  События описывают уже произошедший факт и не изменяются после публикации
+
+- **Лёгковесность**  
+  Максимальный размер — 1 МБ на одно событие
+
+- **Структурированность**  
+  Формат JSON согласно схеме CloudEvents или Event Grid Schema
+
+- **Метка времени (Timestamped)**  
+  Содержит время генерации события
+
+---
+
+## Архитектурный смысл
+
+Событие обычно содержит:
+
+- Кто инициировал изменение
+- Что произошло
+- Когда это произошло
+- Дополнительные метаданные
+
+Важно: Event Grid передаёт **уведомление о событии**, а не сам объект целиком (например, не сам файл, а факт его создания).
+
+---
+
+## Что важно для AZ-204
+
+- События являются **immutable**
+- Поддерживаются стандартные схемы (CloudEvents)
+- Максимальный размер события — 1 МБ
+- Event Grid маршрутизирует события, но не хранит их длительное время
+
+Если в вопросе говорится о реакции на факт изменения ресурса — это классический сценарий использования Event Grid.
 
 **Common Event Properties:**
 ```json
@@ -101,23 +167,72 @@ An **event** is the smallest unit of information that fully describes something 
 }
 ```
 
-**Event Size and Billing:**
-- Maximum event size: **1 MB**
-- Billing increments: **64 KB**
-- Example: A 130 KB event is billed as 3 operations (192 KB rounded up)
+## Event Size and Billing
 
-### 2. Publishers
+- Максимальный размер события: **1 MB**
+- Тарификация происходит блоками по **64 KB**
+- Пример: событие размером 130 KB тарифицируется как 3 операции  
+  (192 KB — округление вверх до ближайшего блока 64 KB)
 
-A **publisher** is the application or service that sends events to Event Grid.
+---
 
-**Types of Publishers:**
+### Что это означает
 
-| Publisher Type | Description | Examples |
-|---------------|-------------|----------|
-| **Azure Services** | Built-in Azure resources that emit events | Storage accounts, Resource Manager, IoT Hub |
-| **Custom Applications** | Your applications that publish custom events | Web apps, background services, microservices |
-| **Partner Services** | SaaS providers integrated with Event Grid | Auth0, SAP, Microsoft Graph API |
-| **IoT Devices** | IoT devices publishing over MQTT | Sensors, gateways, edge devices |
+Event Grid тарифицирует события по объёму, а не просто по количеству.
+
+Если размер события превышает 64 KB:
+- происходит округление вверх;
+- каждое увеличение на 64 KB считается дополнительной операцией.
+
+---
+
+### Архитектурная рекомендация
+
+- Минимизируйте payload события.
+- Не передавайте большие данные напрямую — передавайте ссылку на ресурс.
+- Используйте lightweight event pattern (event notification, а не data transfer).
+
+---
+
+## 2. Publishers
+
+**Publisher** — это приложение или сервис, который отправляет события в Event Grid.
+
+---
+
+### Типы Publisher’ов
+
+| Тип Publisher | Описание | Примеры |
+|---------------|------------|----------|
+| **Azure Services** | Встроенные ресурсы Azure, генерирующие события | Storage accounts, Resource Manager, IoT Hub |
+| **Custom Applications** | Пользовательские приложения, публикующие события | Web apps, фоновые сервисы, микросервисы |
+| **Partner Services** | SaaS-провайдеры, интегрированные с Event Grid | Auth0, SAP, Microsoft Graph API |
+| **IoT Devices** | IoT-устройства, публикующие события по MQTT | Датчики, шлюзы, edge-устройства |
+
+---
+
+### Архитектурное значение
+
+Event Grid — это fully managed event routing service, который:
+
+- поддерживает event-driven архитектуру;
+- отделяет publisher от subscriber;
+- обеспечивает масштабируемую доставку событий;
+- поддерживает фильтрацию и маршрутизацию.
+
+Publisher не знает, кто будет обрабатывать событие — это обеспечивает слабую связанность (loose coupling).
+
+---
+
+### Важно для AZ-204
+
+Запомните:
+
+- Максимальный размер события — **1 MB**.
+- Тарификация — блоками по **64 KB**.
+- Azure services могут быть нативными publisher’ами.
+- Custom приложения публикуют события через REST API или SDK.
+- Event Grid — ключевой сервис для event-driven архитектуры.
 
 **Publishing Methods:**
 ```bash
@@ -140,34 +255,75 @@ az eventgrid event publish \
 
 ### 3. Event Sources
 
-An **event source** is where the event happens. Each event source is related to one or more event types.
+**Event source** — это ресурс, в котором происходит событие.  
+Каждый источник событий связан с одним или несколькими типами событий (event types).
 
-**Built-in Event Sources:**
+---
 
-| Event Source | Common Event Types | Use Case |
-|-------------|-------------------|----------|
-| **Azure Blob Storage** | `Microsoft.Storage.BlobCreated`, `Microsoft.Storage.BlobDeleted` | Trigger workflows when files are uploaded |
-| **Azure Resource Manager** | `Microsoft.Resources.ResourceWriteSuccess` | Track resource deployments |
-| **Azure Event Hubs** | `Microsoft.EventHub.CaptureFileCreated` | Process captured event data |
-| **Azure IoT Hub** | `Microsoft.Devices.DeviceCreated` | Device lifecycle management |
-| **Azure Media Services** | `Microsoft.Media.JobStateChange` | Monitor encoding jobs |
-| **Azure Container Registry** | `Microsoft.ContainerRegistry.ImagePushed` | Trigger CI/CD pipelines |
-| **Azure Service Bus** | `Microsoft.ServiceBus.ActiveMessagesAvailableWithNoListeners` | Monitor queue health |
-| **Azure App Configuration** | `Microsoft.AppConfiguration.KeyValueModified` | Dynamic configuration updates |
+### Встроенные источники событий (Built-in Event Sources)
 
-### 4. Topics
+| Источник событий | Типичные события | Сценарий использования |
+|------------------|------------------|-------------------------|
+| **Azure Blob Storage** | `Microsoft.Storage.BlobCreated`, `Microsoft.Storage.BlobDeleted` | Запуск процессов при загрузке или удалении файлов |
+| **Azure Resource Manager** | `Microsoft.Resources.ResourceWriteSuccess` | Отслеживание развёртывания ресурсов |
+| **Azure Event Hubs** | `Microsoft.EventHub.CaptureFileCreated` | Обработка сохранённых (captured) событий |
+| **Azure IoT Hub** | `Microsoft.Devices.DeviceCreated` | Управление жизненным циклом устройств |
+| **Azure Media Services** | `Microsoft.Media.JobStateChange` | Мониторинг задач кодирования |
+| **Azure Container Registry** | `Microsoft.ContainerRegistry.ImagePushed` | Триггер CI/CD пайплайнов |
+| **Azure Service Bus** | `Microsoft.ServiceBus.ActiveMessagesAvailableWithNoListeners` | Мониторинг состояния очередей |
+| **Azure App Configuration** | `Microsoft.AppConfiguration.KeyValueModified` | Динамическое обновление конфигурации |
 
-A **topic** is an endpoint where publishers send events. Topics are containers that group related events.
+---
 
-**Topic Types:**
+### Архитектурное значение
+
+Event Sources позволяют реализовать event-driven архитектуру:
+
+- сервисы реагируют на события, а не опрашивают ресурсы;
+- повышается масштабируемость;
+- уменьшается связность между компонентами;
+- упрощается автоматизация.
+
+---
+
+## 4. Topics
+
+**Topic** — это endpoint, в который publishers отправляют события.  
+Topic служит контейнером для группировки связанных событий.
+
+---
+
+### Типы Topics
 
 #### System Topics
-- **Definition**: Topics for events from Azure services
-- **Creation**: Automatically created (no manual creation needed)
-- **Scope**: Tied to specific Azure resource
-- **Naming**: Based on resource ID
-- **Lifecycle**: Deleted when source resource is deleted
 
+- **Определение**: Topic для событий от встроенных Azure-сервисов
+- **Создание**: Создаётся автоматически (вручную создавать не нужно)
+- **Scope**: Привязан к конкретному ресурсу Azure
+- **Имя**: Формируется на основе ID ресурса
+- **Жизненный цикл**: Удаляется вместе с исходным ресурсом
+
+---
+
+### Что важно понимать
+
+System Topic создаётся автоматически, когда вы:
+
+- настраиваете подписку на события ресурса;
+- включаете поддержку Event Grid для Azure-сервиса.
+
+Вам не нужно вручную управлять таким topic.
+
+---
+
+### Важно для AZ-204
+
+Запомните:
+
+- Event Source — это место возникновения события.
+- Topic — это endpoint для приёма событий.
+- System Topics создаются автоматически для Azure-ресурсов.
+- Они удаляются вместе с ресурсом-источником.
 ```bash
 # Subscribe to system topic events
 az eventgrid event-subscription create \
@@ -198,27 +354,78 @@ az eventgrid topic show \
   --query "endpoint" \
   --output tsv
 ```
-
 #### Partner Topics
-- **Definition**: Topics for events from SaaS providers
-- **Creation**: Partner creates, you activate
-- **Examples**: Auth0, Microsoft Graph, SAP
-- **Use Case**: Integrate third-party events
 
-**Topic Comparison:**
+- **Определение**: Topic для событий от SaaS-провайдеров
+- **Создание**: Создаётся партнёром, вы активируете
+- **Примеры**: Auth0, Microsoft Graph, SAP
+- **Сценарий использования**: Интеграция событий сторонних систем
 
-| Feature | System Topics | Custom Topics | Partner Topics |
-|---------|--------------|---------------|----------------|
-| **Creation** | Automatic | Manual | Partner creates |
-| **Event Schema** | Azure-defined | User-defined | Partner-defined |
-| **Lifecycle** | Tied to resource | Independent | Partner-managed |
-| **Use Case** | Azure service events | Custom app events | Third-party events |
-| **Cost** | Included with resource | Standard pricing | Varies by partner |
+Partner Topic позволяет получать события из внешних сервисов так же, как и из Azure-ресурсов, но без необходимости писать собственную интеграцию с их webhook-механизмами.
 
-### 5. Event Subscriptions
+---
 
-An **event subscription** tells Event Grid which events on a topic you want to receive and where to send them.
+## Сравнение типов Topic
 
+| Характеристика | System Topics | Custom Topics | Partner Topics |
+|----------------|--------------|---------------|----------------|
+| **Создание** | Автоматическое | Вручную | Создаёт партнёр |
+| **Схема события** | Определена Azure | Определяется пользователем | Определена партнёром |
+| **Жизненный цикл** | Привязан к ресурсу | Независимый | Управляется партнёром |
+| **Сценарий использования** | События Azure-сервисов | События пользовательских приложений | События сторонних сервисов |
+| **Стоимость** | Включена в ресурс | Стандартная тарификация | Зависит от партнёра |
+
+---
+
+### Архитектурное различие
+
+- **System Topic** — для встроенных Azure-событий.
+- **Custom Topic** — для ваших приложений.
+- **Partner Topic** — для интеграции SaaS и внешних платформ.
+
+Выбор зависит от источника события.
+
+---
+
+## 5. Event Subscriptions
+
+**Event Subscription** определяет:
+
+- какие события из topic нужно получать;
+- куда их доставлять;
+- какие фильтры применять;
+- какие параметры доставки использовать.
+
+Event Subscription связывает:
+
+**Topic → Endpoint (Subscriber)**
+
+Без подписки события не доставляются.
+
+---
+
+### Архитектурное значение
+
+Event Grid реализует модель:
+
+- Publisher → Topic → Subscription → Subscriber
+
+Это обеспечивает:
+
+- слабую связанность;
+- гибкую маршрутизацию;
+- возможность добавлять новых подписчиков без изменения publisher.
+
+---
+
+### Важно для AZ-204
+
+Запомните:
+
+- Topic — это контейнер событий.
+- Subscription — это правило маршрутизации.
+- Без Event Subscription события никуда не отправляются.
+- Разные подписчики могут получать разные события из одного Topic.
 **Subscription Configuration:**
 
 ```json
@@ -253,15 +460,102 @@ An **event subscription** tells Event Grid which events on a topic you want to r
 }
 ```
 
-**Key Subscription Properties:**
+## Ключевые свойства Event Subscription
 
-| Property | Description | Options |
-|----------|-------------|---------|
-| **Destination** | Where to send events | Webhook, Azure Function, Event Hubs, Service Bus, Storage Queue, Hybrid Connection |
-| **Filter** | Which events to receive | Event types, subject patterns, advanced filters |
-| **Retry Policy** | Delivery retry behavior | Max attempts (1-30), TTL (1-1440 min) |
-| **Dead Letter** | Failed event storage | Storage account blob container |
-| **Expiration** | Subscription end time | DateTime or duration |
+| Свойство | Описание | Возможные варианты |
+|------------|------------|-------------------|
+| **Destination** | Куда отправлять события | Webhook, Azure Function, Event Hubs, Service Bus, Storage Queue, Hybrid Connection |
+| **Filter** | Какие события получать | Типы событий, шаблоны subject, расширенные фильтры |
+| **Retry Policy** | Поведение повторной доставки | Макс. попыток (1–30), TTL (1–1440 минут) |
+| **Dead Letter** | Хранение недоставленных событий | Blob-контейнер в Storage Account |
+| **Expiration** | Срок действия подписки | DateTime или продолжительность |
+
+---
+
+### Пояснение
+
+### 1️⃣ Destination
+
+Определяет конечную точку доставки событий.
+
+Наиболее частые варианты:
+
+- **Azure Function** — serverless-обработка
+- **Webhook** — вызов внешнего HTTP endpoint
+- **Service Bus / Event Hubs** — интеграция с messaging-системами
+- **Storage Queue** — асинхронная обработка
+
+---
+
+### 2️⃣ Filter
+
+Позволяет получать только нужные события.
+
+Можно фильтровать:
+
+- по типу события;
+- по `subject`;
+- по значениям в payload (advanced filters).
+
+Это снижает нагрузку и уменьшает ненужную обработку.
+
+---
+
+### 3️⃣ Retry Policy
+
+Если endpoint недоступен:
+
+- Event Grid автоматически выполняет повторные попытки;
+- можно настроить количество попыток;
+- TTL (time-to-live) определяет максимальное время повторной доставки.
+
+---
+
+### 4️⃣ Dead Letter
+
+Если событие не удалось доставить после всех попыток, оно отправляется в Blob Storage.
+
+Это позволяет:
+
+- не терять события;
+- анализировать ошибки доставки;
+- реализовать повторную обработку вручную.
+
+---
+
+### 5️⃣ Expiration
+
+Позволяет задать срок действия подписки.
+
+Полезно для:
+
+- временных интеграций;
+- тестовых сценариев;
+- динамических подписчиков.
+
+---
+
+### Архитектурное значение
+
+Event Subscription — это гибкий механизм маршрутизации и доставки:
+
+- обеспечивает надёжную доставку;
+- поддерживает повторные попытки;
+- реализует dead-letter pattern;
+- позволяет фильтровать события на уровне инфраструктуры.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+
+- фильтрации событий,
+- настройке повторной доставки,
+- сохранении недоставленных событий,
+- выборе endpoint,
+
+— решение связано с настройкой **Event Subscription properties**.
 
 **Create Event Subscription:**
 
@@ -277,22 +571,59 @@ az eventgrid event-subscription create \
   --subject-ends-with ".jpg"
 ```
 
-### 6. Event Handlers
+## 6. Event Handlers
 
-An **event handler** is the destination where events are sent. Handlers process or react to events.
+**Event Handler** — это конечная точка (destination), куда доставляются события.  
+Handler обрабатывает или реагирует на полученные события.
 
-**Supported Event Handlers:**
+Event Grid доставляет события подписчику через настроенную Event Subscription.
 
-| Handler Type | Use Case | Delivery Method | Limitations |
-|-------------|----------|-----------------|-------------|
-| **Azure Functions** | Serverless event processing | Direct invocation | 230 seconds timeout |
-| **Webhooks** | Custom HTTP endpoints | HTTP POST | Must validate endpoint |
-| **Logic Apps** | Workflow automation | Direct trigger | 120 seconds timeout |
-| **Azure Event Hubs** | Event streaming | Push to stream | N/A |
-| **Azure Service Bus** | Message queuing | Push to queue/topic | 256 KB message size |
-| **Storage Queues** | Simple queuing | Push to queue | 64 KB message size |
-| **Hybrid Connections** | On-premises endpoints | Azure Relay | Requires relay setup |
+---
 
+## Поддерживаемые Event Handlers
+
+| Тип обработчика | Сценарий использования | Способ доставки | Ограничения |
+|-----------------|------------------------|------------------|-------------|
+| **Azure Functions** | Serverless-обработка событий | Прямой вызов | Таймаут 230 секунд |
+| **Webhooks** | Пользовательские HTTP endpoint | HTTP POST | Требуется валидация endpoint |
+| **Logic Apps** | Автоматизация workflow | Прямой триггер | Таймаут 120 секунд |
+| **Azure Event Hubs** | Потоковая обработка событий | Push в поток | Нет |
+| **Azure Service Bus** | Очереди и topic | Push в очередь/topic | 256 KB размер сообщения |
+| **Storage Queues** | Простая очередь | Push в очередь | 64 KB размер сообщения |
+| **Hybrid Connections** | On-premises endpoint | Через Azure Relay | Требуется настройка Relay |
+
+---
+
+### Что важно понимать
+
+- Event Grid использует модель **push** — события отправляются подписчику.
+- Webhook должен подтвердить владение endpoint (validation handshake).
+- Таймауты означают максимальное время ожидания ответа от обработчика.
+- Если обработчик не отвечает, включается retry policy.
+
+---
+
+### Архитектурные рекомендации
+
+- Для serverless-сценариев используйте **Azure Functions**.
+- Для сложных интеграций — **Logic Apps**.
+- Для высокой пропускной способности — **Event Hubs**.
+- Для гарантированной доставки и очередей — **Service Bus**.
+- Для on-prem интеграции — **Hybrid Connections**.
+
+---
+
+### Важно для AZ-204
+
+Запомните:
+
+- Event Grid работает по push-модели.
+- Webhook требует подтверждения при создании подписки.
+- Таймаут Azure Functions — 230 секунд.
+- Storage Queue ограничен 64 KB.
+- Service Bus ограничен 256 KB.
+
+Экзамен часто проверяет выбор правильного handler для конкретного сценария.
 **Azure Function Handler Example (C#):**
 
 ```csharp
@@ -324,12 +655,91 @@ public static class BlobCreatedHandler
 }
 ```
 
-**Webhook Handler Requirements:**
+## Требования к Webhook Handler
 
-1. **Endpoint Validation**: Respond to validation handshake
-2. **HTTP 200 Response**: Return success within 30 seconds
-3. **TLS/SSL**: HTTPS endpoint with valid certificate
-4. **Idempotency**: Handle duplicate events gracefully
+При использовании Webhook в качестве Event Handler необходимо соблюдать следующие требования:
+
+---
+
+### 1️⃣ Подтверждение endpoint (Endpoint Validation)
+
+При создании подписки Event Grid отправляет **validation event**.
+
+Webhook обязан:
+
+- обработать событие валидации;
+- вернуть validation code в ответе;
+- подтвердить владение endpoint.
+
+Без успешной валидации подписка создана не будет.
+
+---
+
+### 2️⃣ HTTP 200 Response
+
+Webhook должен:
+
+- вернуть HTTP 200 (OK);
+- сделать это в течение **30 секунд**.
+
+Если ответ не получен или превышен таймаут:
+
+- считается, что доставка не удалась;
+- запускается retry policy.
+
+---
+
+### 3️⃣ TLS / SSL
+
+Endpoint должен:
+
+- использовать HTTPS;
+- иметь действительный сертификат;
+- поддерживать современную версию TLS.
+
+Небезопасные HTTP endpoint не поддерживаются.
+
+---
+
+### 4️⃣ Идемпотентность (Idempotency)
+
+Event Grid может повторно отправить событие при сбое доставки.
+
+Webhook должен:
+
+- корректно обрабатывать дубликаты;
+- не выполнять одну и ту же операцию повторно;
+- использовать `eventId` для проверки уникальности.
+
+---
+
+### Архитектурное значение
+
+Webhook должен быть:
+
+- устойчивым к повторной доставке;
+- быстрым в обработке;
+- безопасным (TLS);
+- способным подтверждать владение endpoint.
+
+Рекомендуется:
+
+- выполнять тяжёлую обработку асинхронно;
+- возвращать 200 как можно быстрее;
+- использовать очередь внутри приложения.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+
+- валидации Webhook,
+- необходимости вернуть 200 в течение 30 секунд,
+- использовании HTTPS,
+- обработке дубликатов,
+
+— речь идёт о требованиях к Webhook handler в Event Grid.
 
 ```python
 # Python Flask webhook example
@@ -358,22 +768,69 @@ def handle_event():
 
 ---
 
-## Event Delivery Models
+## Модели доставки событий
 
-### Push Delivery (Default)
+### Push Delivery (по умолчанию)
 
-Event Grid pushes events to configured endpoints.
+Event Grid **сам отправляет (push)** события в настроенные endpoint’ы.
 
-**Characteristics:**
-- **Automatic**: Events delivered immediately when published
-- **At-least-once**: Guaranteed delivery with retries
-- **Retry Policy**: Exponential backoff (30 sec to 1 day)
-- **Dead Lettering**: Failed events stored for later processing
+---
 
-**Best For:**
-- Azure Functions, Logic Apps
-- Webhooks with high availability
-- Event-driven architectures
+### Характеристики
+
+- **Автоматическая доставка**  
+  Событие отправляется сразу после публикации.
+
+- **At-least-once delivery**  
+  Гарантируется доставка как минимум один раз (возможны дубликаты).
+
+- **Retry Policy**  
+  Используется экспоненциальный backoff  
+  (от 30 секунд до 1 дня).
+
+- **Dead Lettering**  
+  Недоставленные события сохраняются в Storage для последующей обработки.
+
+---
+
+### Что это означает
+
+- Publisher не ждёт подтверждения от подписчика.
+- Event Grid самостоятельно управляет повторными попытками.
+- Подписчик должен быть идемпотентным.
+
+Push-модель обеспечивает высокую масштабируемость и низкую задержку.
+
+---
+
+### Лучшие сценарии использования
+
+- **Azure Functions**
+- **Logic Apps**
+- Webhook с высокой доступностью
+- Event-driven архитектуры
+
+---
+
+### Архитектурное значение
+
+Push delivery:
+
+- уменьшает сложность subscriber’а;
+- снижает задержку обработки;
+- подходит для реактивных систем;
+- поддерживает автоматическое масштабирование.
+
+---
+
+### Важно для AZ-204
+
+Запомните:
+
+- Event Grid по умолчанию использует push-модель.
+- Доставка — at-least-once.
+- Повторная отправка выполняется автоматически.
+- Subscriber должен корректно обрабатывать дубликаты.
 
 **Push Delivery Flow:**
 ```
@@ -426,30 +883,73 @@ foreach (ReceiveDetails details in result.Value)
 
 ---
 
-## Security in Event Grid
+## Безопасность в Event Grid
 
-### Authentication
+### Аутентификация
 
-**Publisher Authentication:**
-- **Access Keys**: Shared access keys for custom topics
-- **SAS Tokens**: Time-limited access tokens
-- **Azure AD**: OAuth 2.0 with managed identities
+#### Аутентификация Publisher
 
-**Handler Authentication:**
-- **Endpoint Validation**: Prove ownership during subscription
-- **Event Delivery**: Optional authentication headers
+Publisher должен подтвердить право публиковать события в topic.
 
-### Authorization
+Поддерживаются следующие механизмы:
 
-**Azure RBAC Roles:**
+- **Access Keys**  
+  Общие ключи доступа для Custom Topics.
 
-| Role | Permissions | Use Case |
-|------|-------------|----------|
-| **Event Grid Contributor** | Full control over Event Grid resources | Admins managing topics |
-| **Event Grid Data Sender** | Publish events to topics | Applications publishing events |
-| **Event Grid Subscription Reader** | Read event subscriptions | Monitoring and auditing |
-| **Event Grid Subscription Contributor** | Manage event subscriptions | Operations team |
+- **SAS Tokens**  
+  Токены с ограниченным сроком действия.
 
+- **Azure AD**  
+  OAuth 2.0, включая Managed Identities (рекомендуемый способ).
+
+---
+
+#### Аутентификация Handler
+
+Когда события доставляются подписчику:
+
+- **Endpoint Validation**  
+  Подтверждение владения endpoint при создании подписки.
+
+- **Event Delivery Authentication**  
+  Возможность передавать дополнительные заголовки аутентификации.
+
+---
+
+### Авторизация
+
+Event Grid использует **Azure RBAC** для управления доступом.
+
+---
+
+### Роли Azure RBAC
+
+| Роль | Права | Сценарий использования |
+|------|--------|------------------------|
+| **Event Grid Contributor** | Полный контроль над ресурсами Event Grid | Администраторы |
+| **Event Grid Data Sender** | Публикация событий в topic | Приложения |
+| **Event Grid Subscription Reader** | Чтение подписок | Мониторинг и аудит |
+| **Event Grid Subscription Contributor** | Управление подписками | Операционная команда |
+
+---
+
+### Архитектурные рекомендации
+
+- Для production используйте **Azure AD + Managed Identity** вместо access keys.
+- Ограничивайте права по принципу least privilege.
+- Используйте SAS только для временного доступа.
+- Для webhook’ов применяйте дополнительную аутентификацию (например, секрет в заголовке).
+
+---
+
+### Важно для AZ-204
+
+Запомните:
+
+- Publisher аутентифицируется через Access Key, SAS или Azure AD.
+- Handler подтверждает endpoint при создании подписки.
+- RBAC управляет доступом к ресурсам Event Grid.
+- Для безопасной архитектуры предпочтителен Azure AD.
 ```bash
 # Grant Data Sender role to managed identity
 az role assignment create \
@@ -508,35 +1008,62 @@ IoT Devices (MQTT) → Event Grid → Azure Functions → Time Series Insights
 
 ---
 
-## Event Grid vs. Other Azure Messaging Services
+## Event Grid vs. Другие сервисы обмена сообщениями в Azure
 
-| Feature | **Event Grid** | **Event Hubs** | **Service Bus** |
-|---------|---------------|---------------|----------------|
-| **Pattern** | Pub/Sub (Reactive) | Streaming (Big data) | Message Queue |
-| **Message Size** | 1 MB | 1 MB | 256 KB (Premium: 100 MB) |
-| **Ordering** | No guarantee | Per partition | FIFO (sessions) |
-| **Delivery** | Push + Pull | Pull | Pull |
-| **Retention** | No retention (immediate) | 1-90 days | 14 days max |
-| **Throughput** | Millions/sec | Millions/sec | Thousands/sec |
-| **Latency** | Sub-second | Real-time | Low latency |
-| **Use Case** | Event notifications | Telemetry ingestion | Transactional messaging |
-| **Filtering** | Advanced filtering | Consumer group | Message filters |
-
-**When to Use Event Grid:**
-- ✅ React to state changes in Azure resources
-- ✅ Integrate multiple services with event-driven patterns
-- ✅ Build serverless applications
-- ✅ Need advanced filtering and routing
-- ✅ Want push-based delivery
-
-**When NOT to Use Event Grid:**
-- ❌ Need message ordering guarantees
-- ❌ Need long-term event retention
-- ❌ Need complex message workflows (use Service Bus)
-- ❌ Need high-throughput streaming (use Event Hubs)
+| Характеристика | **Event Grid** | **Event Hubs** | **Service Bus** |
+|---------------|---------------|---------------|----------------|
+| **Паттерн** | Pub/Sub (реактивная модель) | Streaming (Big Data) | Очередь сообщений |
+| **Размер сообщения** | 1 MB | 1 MB | 256 KB (Premium: до 100 MB) |
+| **Гарантия порядка** | Нет | В пределах partition | FIFO (через sessions) |
+| **Модель доставки** | Push + Pull | Pull | Pull |
+| **Хранение сообщений** | Нет (моментальная доставка) | 1–90 дней | До 14 дней |
+| **Пропускная способность** | Миллионы/сек | Миллионы/сек | Тысячи/сек |
+| **Задержка** | Менее секунды | Почти в реальном времени | Низкая |
+| **Сценарий использования** | Уведомления о событиях | Приём телеметрии | Транзакционные сообщения |
+| **Фильтрация** | Расширенная фильтрация | Consumer groups | Message filters |
 
 ---
 
+## Когда использовать Event Grid
+
+- ✅ Реагировать на изменения состояния ресурсов Azure
+- ✅ Интегрировать несколько сервисов через event-driven паттерн
+- ✅ Создавать serverless-приложения
+- ✅ Использовать продвинутую фильтрацию и маршрутизацию
+- ✅ Нужна push-модель доставки
+
+---
+
+## Когда НЕ использовать Event Grid
+
+- ❌ Требуется строгая гарантия порядка сообщений
+- ❌ Нужна долговременная ретенция событий
+- ❌ Требуются сложные workflow или транзакционность (используйте Service Bus)
+- ❌ Нужен высоконагруженный потоковый ingestion (используйте Event Hubs)
+
+---
+
+## Архитектурный выбор
+
+- **Event Grid** → события и уведомления
+- **Event Hubs** → поток телеметрии и big data ingestion
+- **Service Bus** → гарантированная доставка и бизнес-транзакции
+
+---
+
+### Важно для AZ-204
+
+На экзамене часто проверяют:
+
+- различие между push и pull моделями;
+- отсутствие гарантии порядка в Event Grid;
+- отсутствие хранения событий;
+- выбор правильного сервиса под конкретный сценарий.
+
+Главный критерий:  
+**События → Event Grid**  
+**Поток данных → Event Hubs**  
+**Очередь и транзакции → Service Bus**
 ## Quick Start Example
 
 ### Step 1: Create Custom Topic
@@ -634,51 +1161,94 @@ az eventgrid event publish \
    }
    ```
 
-### Performance Optimization
+## Оптимизация производительности
 
-- **Batch Publishing**: Send multiple events in one request
-- **Async Handlers**: Process events asynchronously
-- **Parallel Processing**: Use multiple handler instances
-- **Filter Early**: Apply filters at subscription level
+- **Batch Publishing**  
+  Отправляйте несколько событий в одном HTTP-запросе, чтобы снизить накладные расходы.
 
-### Security Best Practices
+- **Async Handlers**  
+  Обрабатывайте события асинхронно, чтобы быстрее возвращать 200 OK и избежать повторной доставки.
 
-- ✅ Use managed identities instead of access keys
-- ✅ Enable private endpoints for sensitive workloads
-- ✅ Validate webhook endpoints properly
-- ✅ Use HTTPS for all endpoints
-- ✅ Implement least privilege access with RBAC
+- **Parallel Processing**  
+  Используйте несколько экземпляров обработчиков для масштабирования.
+
+- **Filter Early**  
+  Настраивайте фильтры на уровне Event Subscription, чтобы уменьшить количество ненужных событий.
 
 ---
 
-## Exam Tips for AZ-204
+## Best Practices по безопасности
 
-### Key Concepts to Remember
+- ✅ Используйте **Managed Identity** вместо access keys
+- ✅ Включайте **Private Endpoints** для чувствительных нагрузок
+- ✅ Корректно реализуйте валидацию Webhook endpoint
+- ✅ Используйте HTTPS для всех endpoint’ов
+- ✅ Применяйте принцип **least privilege** через RBAC
 
-1. **Event Grid is for reactive programming** - push-based event distribution
-2. **System topics** are automatic; **custom topics** require creation
-3. **Event subscriptions** filter and route events to handlers
-4. **CloudEvents 1.0** is the preferred schema standard
-5. **Maximum event size**: 1 MB (billed in 64 KB increments)
+---
 
-### Common Exam Scenarios
+# Советы к экзамену AZ-204
 
-**Scenario 1**: Trigger Azure Function when blob is uploaded
-- ✅ Use Event Grid with BlobCreated event
-- ❌ Don't use polling or timers
+## Ключевые концепции
 
-**Scenario 2**: Process events from third-party SaaS
-- ✅ Use Partner Topics
-- ❌ Don't build custom integration
+1. **Event Grid предназначен для реактивного программирования**  
+   Push-модель распределения событий.
 
-**Scenario 3**: Need guaranteed message ordering
-- ❌ Event Grid doesn't guarantee order
-- ✅ Use Service Bus with sessions instead
+2. **System Topics создаются автоматически**,  
+   **Custom Topics требуют ручного создания**.
 
-**Scenario 4**: High-volume telemetry ingestion
-- ❌ Event Grid isn't for streaming
-- ✅ Use Event Hubs instead
+3. **Event Subscription фильтрует и маршрутизирует события** к обработчикам.
 
+4. **CloudEvents 1.0** — предпочтительный стандарт схемы событий.
+
+5. **Максимальный размер события — 1 MB**,  
+   тарификация блоками по 64 KB.
+
+---
+
+## Частые экзаменационные сценарии
+
+### Сценарий 1
+Триггер Azure Function при загрузке blob
+
+- ✅ Использовать Event Grid с событием BlobCreated
+- ❌ Не использовать polling или таймеры
+
+---
+
+### Сценарий 2
+Обработка событий от стороннего SaaS
+
+- ✅ Использовать Partner Topics
+- ❌ Не реализовывать собственную интеграцию
+
+---
+
+### Сценарий 3
+Требуется гарантированный порядок сообщений
+
+- ❌ Event Grid не гарантирует порядок
+- ✅ Использовать Service Bus с sessions
+
+---
+
+### Сценарий 4
+Высоконагруженный ingestion телеметрии
+
+- ❌ Event Grid не предназначен для потоковой передачи
+- ✅ Использовать Event Hubs
+
+---
+
+## Финальный акцент
+
+На экзамене важно:
+
+- выбрать правильный сервис под задачу;
+- помнить про отсутствие гарантии порядка в Event Grid;
+- понимать push-модель доставки;
+- отличать System, Custom и Partner Topics;
+- знать ограничения по размеру события и тарификации.
 ### Important Commands
 
 ```bash
@@ -698,41 +1268,187 @@ az eventgrid topic-type list
 az role assignment create --role "EventGrid Data Sender" --assignee <identity>
 ```
 
-### Troubleshooting Checklist
+## Чек-лист по устранению неполадок
 
-- ❓ Events not delivered? Check endpoint validation and retry policy
-- ❓ Handler timing out? Ensure response within 30 seconds
-- ❓ Events missing? Check event filters and subscription configuration
-- ❓ Authentication failing? Verify access keys or managed identity setup
-- ❓ Dead letter storage? Configure blob container for failed events
+- ❓ События не доставляются?  
+  Проверьте валидацию endpoint и настройки retry policy.
 
-### Remember for Exam
+- ❓ Handler завершает работу по таймауту?  
+  Убедитесь, что ответ возвращается в течение 30 секунд.
 
-- **At-least-once delivery**: Events may be delivered multiple times
-- **30-second webhook timeout**: Handler must respond quickly
-- **Retry policy defaults**: 30 attempts, 24-hour TTL
-- **System topics** tied to resource lifecycle
-- **Advanced filtering** supports 25 conditions per subscription
-- **RBAC roles**: Know Data Sender, Contributor, Subscription Reader
-- **No event retention**: Events delivered immediately (use Event Hubs for retention)
+- ❓ События «пропадают»?  
+  Проверьте фильтры и конфигурацию Event Subscription.
+
+- ❓ Ошибка аутентификации?  
+  Проверьте access keys или корректность настройки managed identity.
+
+- ❓ Нет dead-letter хранения?  
+  Убедитесь, что настроен blob-контейнер для недоставленных событий.
 
 ---
 
-## Summary
+## Что помнить для экзамена
 
-Azure Event Grid enables **event-driven architectures** with:
-- **Publishers** that send events
-- **Topics** that organize events
-- **Subscriptions** that filter and route events
-- **Handlers** that process events
+- **At-least-once delivery**  
+  События могут быть доставлены более одного раза.
 
-**Key Takeaways:**
-- Use **system topics** for Azure service events
-- Use **custom topics** for application events
-- Use **partner topics** for third-party events
-- Apply **filters** to route specific events
-- Configure **retry policies** for reliable delivery
-- Use **dead-letter** storage for failed events
-- Implement **idempotent handlers** for duplicate events
+- **30 секунд для Webhook**  
+  Обработчик должен быстро вернуть ответ.
 
-Event Grid is ideal for **reactive programming**, **serverless applications**, and **service integration** where you need to respond to events as they happen.
+- **Retry policy по умолчанию**  
+  До 30 попыток, TTL — до 24 часов.
+
+- **System Topics**  
+  Привязаны к жизненному циклу ресурса.
+
+- **Advanced filtering**  
+  Поддерживается до 25 условий на подписку.
+
+- **RBAC роли**  
+  Знать роли: Data Sender, Contributor, Subscription Reader.
+
+- **Нет хранения событий**  
+  Event Grid не хранит события — для ретенции используйте Event Hubs.
+
+---
+
+# Итоги
+
+Azure Event Grid реализует **event-driven архитектуру**, где есть:
+
+- **Publishers**, отправляющие события
+- **Topics**, группирующие события
+- **Subscriptions**, фильтрующие и маршрутизирующие события
+- **Handlers**, обрабатывающие события
+
+---
+
+## Ключевые выводы
+
+- Используйте **System Topics** для событий Azure-ресурсов.
+- Используйте **Custom Topics** для событий приложений.
+- Используйте **Partner Topics** для интеграции сторонних сервисов.
+- Применяйте **фильтрацию**, чтобы получать только нужные события.
+- Настраивайте **retry policy** для надёжной доставки.
+- Используйте **dead-letter storage** для анализа ошибок.
+- Реализуйте **идемпотентные обработчики**, чтобы корректно обрабатывать дубликаты.
+
+---
+
+## Архитектурный акцент
+
+Event Grid идеально подходит для:
+
+- реактивного программирования;
+- serverless-приложений;
+- интеграции сервисов;
+- автоматизации процессов при изменении состояния ресурсов.
+
+Если задача — реагировать на событие «здесь и сейчас»,  
+Event Grid — правильный выбор.
+
+Различие между:
+SendGrid action
+SendGrid binding
+
+Action → Logic Apps
+Binding → Azure Functions
+
+🔥 Ключевая архитектурная идея
+
+Bindings в Azure Functions = декларативный способ подключения к сервисам.
+
+Есть:
+Cosmos DB trigger
+Event Hub trigger
+Service Bus trigger
+SendGrid output binding
+Blob input/output binding
+Это как dependency injection для внешних сервисов.
+
+🎯 Простыми словами
+
+SendGrid binding = встроенный адаптер для отправки email из Function.
+
+Azure Event Grid (и в целом в event-driven архитектуре):
+
+Event Subscription содержит:
+✔ к какому topic он подписывается
+✔ куда отправлять события (endpoint обработчика)
+✔ фильтрацию событий — какие типы событий он хочет получать
+
+В Azure Event Grid Event Domain используется в сценариях, где:
+есть много клиентов / арендаторов (multi-tenant scenario)
+требуется централизованное управление
+нужно азграничить доступ между подписчиками
+Event Domain позволяет:
+✔ централизованно управлять большим количеством topics
+✔ изолировать подписчиков по безопасности
+✔ делегировать управление подписками разным командам или клиентам
+✔ применять RBAC на уровне домена и отдельных domain topic
+
+В Azure Event Grid можно использовать Advanced Filters на уровне подписки.
+Они позволяют:
+Фильтровать по строковым значениям (department == "Finance")
+Фильтровать по строке (fileType == "CSV")
+Фильтровать по числовым значениям (transactionAmount > 10000)
+Комбинровать условия через логическое AND
+Это означает:
+Событие вообще не будет доставлено функции, если не проходит фильтр
+Функция не будет запускаться лишний раз
+Снижается количество executions
+Снижается стоимость
+Уменшается нагрузка
+
+В связке с Azure Event Hubs именно Azure Stream Analytics (ASA) используется для:
+Потоковой обработки событий в реальном времени
+Сложной фильтрации данных
+Агрегаций
+Оконных функций (tumbling / hopping / sliding windows)
+Интеграции с Azure Machine Learning для применения ML-моделей к потоковым данным
+Stream Analytics позволяет:
+Выполнять SQLподобные запросы к потоку
+Фильтровать события по условиям
+Подключать ML-функции через Azure ML endpoints
+Почему остальныеварианты неверны
+
+A. Azure Event Grid ❌
+Event Grid — это маршрутизатор событий, а не сервис потоковой аналитики.
+
+B. Azure Synapse Data Explorer ❌
+Используется для аналитики больших данных, но не является основным real-time фильтрующим сервисом в связке с Event Hubs.
+
+C. Azure SAS tokens ❌
+Это механизм авторизации, а не сервис обработки событий.
+
+В паттерне асинхронного взаимодействия (queue-based communication), 
+который часто используется в микросервисной архитектуре:
+Producer (отправитель) помещает сообщение в очередь.
+Сообщение хранится в Azure Queue Storage.
+Consumer (получатель) читает сообщение и обрабатывает его.
+После успешной обработки сообщение удаляется из очереди.
+Это обеспечивает:
+Слабую связанность (loose coupling)
+Масштабируемость
+Надёжность
+Повышенную устойчивость к сбоям
+Особенно эо важно для микросервисов в Kubernetes, где сервисы могут перезапускаться и 
+масштабироваться динамически.
+
+В Azure Queue Storage метод peek:
+Позволяет посмотреть сообщение
+Не удаляет его из очереди
+Не блокирует его
+Не делает его невидимым для других consumers
+Не изменяет порядок сообщений
+То есть сообщение остаётся в очереди как есть.
+
+При создании Azure Service Bus queue или topic необходимо учитывать параметры конфигурации, которые зависят от выбранного pricing tier (Basic, Standard, Premium):
+Во время provisioning задаются:
+Message storage quota (например, до 5 GB в Standard)
+Max delivery count
+Default message time-to-live (TTL)
+Lock duration
+Включение partitioning
+Включение duplicate detection
+Включение sessions

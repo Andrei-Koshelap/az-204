@@ -179,4 +179,45 @@ az monitor autoscale show \
 - Autoscaling изменяет только количество
 
 
+Как работает autoscale в Azure App Service?
+Чтобы масштабирование могло происходить:
+
+Должен быть диапазон масштабирования
+(min instances ≠ max instances)
+
+
+| Сценарий                    | Лучше WebJobs | Лучше Functions |
+| --------------------------- | ------------- | --------------- |
+| Уже есть App Service        | ✅             | ❌               |
+| Постоянный worker           | ✅             | ❌               |
+| Event-driven burst          | ❌             | ✅               |
+| Платить только за execution | ❌             | ✅               |
+| Serverless архитектура      | ❌             | ✅               |
+
+
+| План        | Как платишь             |
+| ----------- | ----------------------- |
+| Consumption | per execution + runtime |
+| Premium     | core-seconds + memory   |
+| App Service | фиксированная VM цена   |
+
+
+Если в вопросе есть:
+no execution charges
+memory allocation
+core seconds
+→ Premium plan
+
+Триерм для Azure Functions, который поддерживает автоматическое масштабирование на основе количества запросов и ресурсов, используемых функциями. 
+
+| Категория   | Примеры            |
+| ----------- | ------------------ |
+| HTTP        | HTTP Trigger       |
+| Очереди     | Queue, Service Bus |
+| Стриминг    | Event Hub, Kafka   |
+| Файлы       | Blob               |
+| БД          | Cosmos DB          |
+| Планировщик | Timer              |
+| События     | Event Grid         |
+
 [Learn More](https://learn.microsoft.com/en-us/training/modules/scale-apps-app-service/2-autoscale-factors)

@@ -1,29 +1,55 @@
-# Exercise: Import and Configure an API
+# Практическое задание: Импорт и настройка API
 
-## Overview
+## Обзор
 
-In this hands-on exercise, you'll:
-1. Create an Azure API Management instance
-2. Import an API from an OpenAPI specification
-3. Configure backend settings
-4. Add a product and subscription
-5. Apply policies (rate limiting, transformation)
-6. Test the API operations
-7. Clean up resources
+В этом практическом упражнении вы:
 
-**Duration**: ~30 minutes
+1. Создадите экземпляр Azure API Management
+2. Импортируете API из спецификации OpenAPI
+3. Настроите параметры backend
+4. Добавите продукт и подписку
+5. Примените политики (rate limiting, трансформация)
+6. Протестируете операции API
+7. Очистите ресурсы
+
+**Продолжительность**: ~30 минут
+
+---
+
+## Предварительные требования
+
+Перед началом убедитесь, что у вас есть:
+
+- ✅ Активная подписка Azure
+- ✅ Установленный Azure CLI (или используйте Azure Cloud Shell)
+- ✅ Права Contributor для создания ресурсов
+- ✅ Базовые знания REST API
 
 ---
 
-## Prerequisites
+## Цель упражнения
 
-Before starting, ensure you have:
-- ✅ Active Azure subscription
-- ✅ Azure CLI installed (or use Azure Cloud Shell)
-- ✅ Contributor access to create resources
-- ✅ Basic knowledge of REST APIs
+После выполнения задания вы сможете:
+
+- развернуть API Management;
+- импортировать OpenAPI-спецификацию;
+- настроить backend и политики;
+- управлять доступом через продукты и подписки;
+- протестировать API через встроенную консоль.
 
 ---
+
+## Экзаменационный фокус (AZ-204)
+
+Практика закрепляет темы:
+
+- Импорт OpenAPI в APIM
+- Настройка backend
+- Product и Subscription
+- Policies (rate-limit, transformation)
+- Тестирование через Developer Portal
+
+Если в экзамене описывается сценарий с импортом OpenAPI и последующей настройкой доступа — это именно тот процесс, который вы проходите в этом упражнении.
 
 ## Architecture
 
@@ -101,10 +127,44 @@ az apim create \
 # For production, use Developer, Basic, Standard, or Premium
 ```
 
-**⏱️ Note**: APIM provisioning takes time:
-- **Consumption tier**: 5-10 minutes
-- **Developer tier**: 30-40 minutes
-- **Standard/Premium tiers**: 40-60 minutes
+**⏱️ Примечание**: Развёртывание API Management занимает время:
+
+- **Consumption tier**: 5–10 минут
+- **Developer tier**: 30–40 минут
+- **Standard / Premium tiers**: 40–60 минут
+
+---
+
+### Почему это важно
+
+Экземпляр APIM — это не просто логическая настройка, а полноценный управляемый сервис с сетевой инфраструктурой, масштабированием и шлюзом.
+
+Особенно долго разворачиваются:
+
+- Developer — из-за выделенной инфраструктуры
+- Standard / Premium — из-за поддержки масштабирования, multi-region и VNet
+
+---
+
+### Практический совет
+
+Во время ожидания можно:
+
+- подготовить OpenAPI-файл;
+- продумать структуру продукта и подписок;
+- написать политики заранее;
+- изучить настройки backend.
+
+---
+
+### Важно для AZ-204
+
+На экзамене могут упоминаться разные tier’ы APIM.  
+Помните:
+
+- Consumption — быстрее и дешевле
+- Premium — поддерживает multi-region и VNet
+- Developer — не предназначен для production
 
 **Check Provisioning Status**:
 ```bash
@@ -724,39 +784,69 @@ curl https://conferenceapi.azurewebsites.net/sessions
 
 ---
 
-## Key Takeaways
+## Итоги
 
-### What You Learned
+### Что вы изучили
 
-1. ✅ **Create APIM instance** with Azure CLI
-2. ✅ **Import API** from OpenAPI specification
-3. ✅ **Create products** and subscriptions
-4. ✅ **Apply policies** (rate limiting, headers, caching)
-5. ✅ **Test APIs** with subscription keys
-6. ✅ **Monitor usage** and analytics
-7. ✅ **Use developer portal** for self-service
+1. ✅ Создание экземпляра APIM с помощью Azure CLI
+2. ✅ Импорт API из OpenAPI-спецификации
+3. ✅ Создание продуктов и подписок
+4. ✅ Применение политик (rate limiting, заголовки, кэширование)
+5. ✅ Тестирование API с использованием subscription keys
+6. ✅ Мониторинг использования и аналитики
+7. ✅ Использование Developer Portal для self-service
 
-### Best Practices Applied
+---
 
-- ✅ Used **Consumption tier** for quick lab setup
-- ✅ Applied **rate limiting** to prevent abuse
-- ✅ Required **subscription keys** for authentication
-- ✅ Removed **sensitive headers** in outbound policy
-- ✅ Logged **requests** for monitoring
-- ✅ Implemented **error handling** with custom responses
+### Применённые best practices
 
-### Production Considerations
+- ✅ Использован **Consumption tier** для быстрого лабораторного развёртывания
+- ✅ Настроен **rate limiting** для предотвращения злоупотреблений
+- ✅ Включена обязательная проверка **subscription keys**
+- ✅ Удалены **чувствительные заголовки** в outbound policy
+- ✅ Настроено логирование **запросов**
+- ✅ Реализована обработка ошибок с кастомными ответами
 
-For production deployments:
-- 🎯 Use **Standard or Premium tier** (SLA, multi-region)
-- 🎯 Enable **Application Insights** integration
-- 🎯 Configure **custom domains** with SSL
-- 🎯 Implement **IP filtering** and **JWT validation**
-- 🎯 Set up **VNet integration** (Premium tier)
-- 🎯 Configure **backup and restore**
-- 🎯 Use **Named Values** for configuration
-- 🎯 Implement **version sets** for API versioning
+---
 
+### Рекомендации для production
+
+Для боевых развёртываний:
+
+- 🎯 Использовать **Standard или Premium tier** (SLA, multi-region)
+- 🎯 Включить интеграцию с **Application Insights**
+- 🎯 Настроить **custom domains** с SSL
+- 🎯 Реализовать **IP filtering** и **JWT validation**
+- 🎯 Настроить **VNet integration** (Premium tier)
+- 🎯 Настроить **backup и restore**
+- 🎯 Использовать **Named Values** для конфигурации
+- 🎯 Применять **version sets** для управления версиями API
+
+---
+
+### Архитектурный вывод
+
+Azure API Management — это не просто прокси, а полноценный слой управления API:
+
+- безопасность,
+- контроль доступа,
+- мониторинг,
+- масштабирование,
+- централизованные политики.
+
+---
+
+### Важно для AZ-204
+
+На экзамене важно понимать:
+
+- когда использовать Consumption vs Premium;
+- как импортировать OpenAPI;
+- где применять политики;
+- как управлять доступом через продукты и подписки;
+- какие функции обязательны для production-сценариев.
+
+Экзамен проверяет понимание архитектуры и сценариев применения, а не только знание интерфейса портала.
 ---
 
 ## Additional Resources
@@ -807,53 +897,93 @@ az group delete --name <rg> --yes --no-wait
 
 ## Congratulations! 🎉
 
-You've successfully:
-- ✅ Created an Azure API Management instance
-- ✅ Imported and configured an API
-- ✅ Applied security and policies
-- ✅ Tested API operations
-- ✅ Monitored API usage
+Вы успешно:
 
-You now have hands-on experience with Azure API Management!
+- ✅ Создали экземпляр Azure API Management
+- ✅ Импортировали и настроили API
+- ✅ Применили механизмы безопасности и политики
+- ✅ Протестировали операции API
+- ✅ Настроили мониторинг использования
 
----
-
-## Next Steps
-
-1. **Explore more policies**: Try JWT validation, IP filtering, request transformation
-2. **Multi-region deployment**: Configure Premium tier with multiple regions
-3. **Custom domains**: Set up custom domain with SSL certificate
-4. **OAuth 2.0**: Integrate with Azure AD for authentication
-5. **Self-hosted gateway**: Deploy gateway on-premises or in Kubernetes
-6. **Monetization**: Set up paid tiers with usage quotas
-7. **Application Insights**: Enable advanced monitoring and analytics
+Теперь у вас есть практический опыт работы с Azure API Management.
 
 ---
 
-## Exam Tips
+## Следующие шаги
 
-### Key Concepts Covered
+1. **Изучить дополнительные политики**  
+   Попробуйте реализовать JWT validation, IP filtering, трансформацию запросов.
 
-1. **APIM provisioning**: Consumption tier fastest (5-10 min), Developer tier 30-40 min
+2. **Multi-region deployment**  
+   Настройте Premium tier с развёртыванием в нескольких регионах.
 
-2. **Import API**: Use OpenAPI/Swagger specification with `az apim api import`
+3. **Custom domains**  
+   Подключите пользовательский домен и SSL-сертификат.
 
-3. **Products**: Container for APIs, subscription required for protected products
+4. **OAuth 2.0**  
+   Интегрируйте API с Azure AD для полноценной аутентификации.
 
-4. **Subscriptions**: Provide keys (primary and secondary) for API access
+5. **Self-hosted gateway**  
+   Разверните gateway on-premises или в Kubernetes.
 
-5. **Policies**: XML-based, applied at global/product/API/operation scope
+6. **Монетизация**  
+   Настройте тарифные планы с квотами и ограничениями.
 
-6. **Rate limiting**: `<rate-limit calls="10" renewal-period="60" />` returns 429
+7. **Application Insights**  
+   Включите расширенный мониторинг и аналитику.
 
-7. **Subscription key**: Pass in `Ocp-Apim-Subscription-Key` header (recommended)
+---
 
-8. **401 vs 429**: 401 = invalid/missing key, 429 = rate limit exceeded
+## Советы к экзамену
 
-9. **Developer portal**: Self-service for developers to subscribe and test APIs
+### Ключевые концепции
 
-10. **Cleanup**: Delete resource group to remove all resources
+1. **Provisioning APIM**
+   - Consumption — самый быстрый (5–10 минут)
+   - Developer — 30–40 минут
 
+2. **Импорт API**  
+   Используется OpenAPI/Swagger, команда `az apim api import`.
+
+3. **Products**  
+   Контейнер для API. Для защищённых продуктов требуется подписка.
+
+4. **Subscriptions**  
+   Предоставляют Primary и Secondary ключи для доступа к API.
+
+5. **Policies**  
+   XML-основанные правила, применяемые на уровнях: Global / Product / API / Operation.
+
+6. **Rate limiting**  
+   `<rate-limit calls="10" renewal-period="60" />`  
+   При превышении возвращается 429.
+
+7. **Subscription key**  
+   Передавать в заголовке `Ocp-Apim-Subscription-Key` (рекомендуемый способ).
+
+8. **401 vs 429**
+   - 401 → отсутствует или неверный ключ
+   - 429 → превышен лимит запросов
+
+9. **Developer Portal**  
+   Self-service инструмент для подписки и тестирования API.
+
+10. **Очистка ресурсов**  
+    Удаление resource group удаляет все связанные ресурсы.
+
+---
+
+### Финальный акцент для AZ-204
+
+На экзамене проверяется:
+
+- понимание tier’ов APIM;
+- знание механизма продуктов и подписок;
+- различие между 401 и 429;
+- понимание, где применять политики;
+- умение выбрать правильный механизм защиты (subscription, JWT, mTLS).
+
+Главное — понимать архитектуру и сценарии применения, а не только команды CLI.
 ---
 
 ## Learn More

@@ -880,7 +880,87 @@ Day 91: Soft-delete retention expires
 🎯 **Bootstrap-проблема** — не использовать secret для доступа к Key Vault → использовать Managed Identity
 
 
+Perfect Forward Secrecy (PFS) — это механизм, который:
+защищает TLS-соединения между клиентом и Microsoft cloud
+гарантирует, что компрометация долгосрочного ключа не позволит расшифровать прошлый трафик
+используется вместе с RSA-2048 сертификатами и современными cipher suites
+Как это работает:
+Для каждой сессии создаётся уникальный временный ключ
+Даже если риватный ключ сервера будет скомпрометирован позже, прошлые сессии нельзя расшифровать
+Это именно про защиту соединений (in-transit encryption).
 ---
+
+
+1️⃣ App Service имеет system-assigned identity
+2️⃣ У identity есть доступ к Key Vault (RBAC или Access Policy)
+3️⃣ В Configuration → Application Settings указываем:
+
+KV_SECRET = @Microsoft.KeyVault(SecretUri=...)
+
+4️⃣ Azure автоматически разрешает ссылку и подставляет секрет
+Чтобы App Service автоматически подтягивал секрет из Azure Key Vault через system-assigned managed identity, используется механизм Key Vault references.
+
+Формат для получения последней версии секрета автоматически:
+
+@Microsoft.KeyVault(SecretUri=https://<vault-name>.vault.azure.net/secrets/<secret-name>/)
+Если нужно указать конкретную версию секрета:
+@Microsoft.KeyVault(SecretUri=https://<vault-name>.vault.azure.net/secrets/<secret-name>/<version>)
+
+
+📌 Почему именно Key Vault Access Policy
+
+В Azure Key Vault есть два разных уровня доступа:
+
+🔹 1️⃣ Management plane
+
+Управление самим vault:
+
+создание/удаление vault
+
+настройка сетевых правил
+
+включение soft delete
+
+управление RBAC
+
+Контролируется через Azure RBAC.
+
+🔹 2️⃣ Data plane ✅
+
+Управление содержимым:
+
+secrets
+
+keys
+
+certificates
+
+Если используется классическая модель доступа, то:
+
+Доступ к data plane настраивается через Key Vault Access Policies.
+
+❌ A. RBAC
+
+RBAC может использоваться для data plane, но только если включена модель "Azure role-based access control" для vault.
+В формулировке вопроса речь идёт о access policies model, а не RBAC.
+
+
+📌 Что такое Secret Identifier
+
+Secret Identifier — это полный URI секрета в Azure Key Vault.
+
+Он выглядит так:
+
+https://<vault-name>.vault.azure.net/secrets/<secret-name>/<secret-version>
+
+Разберём компоненты:
+
+🔹 Vault URI → https://<vault-name>.vault.azure.net
+
+🔹 Secret name → <secret-name>
+
+🔹 Secret version → <secret-version>
+
 
 ## Additional Resources
 

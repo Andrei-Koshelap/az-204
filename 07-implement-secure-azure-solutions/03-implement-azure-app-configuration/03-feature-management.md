@@ -1021,6 +1021,25 @@ else
 }
 ```
 
+C. Evaluate the feature flag using FeatureManager.IsEnabledAsync in your application code
+В Azure App Configuration feature flags могут быть:
+включены/выключены
+иметь фильтры:
+по пользователю
+по группе
+по устройству
+по геолокации
+по времени (time window)
+
+FeatureManager:
+учитывает все фильтры
+проверяет правила
+возвращает итоговое решение (true/false)
+
+Feature flag =
+хранится в Azure App Configuration
+вычисляется через SDK
+результат зависит от фильтров
 ---
 
 ## Learn More

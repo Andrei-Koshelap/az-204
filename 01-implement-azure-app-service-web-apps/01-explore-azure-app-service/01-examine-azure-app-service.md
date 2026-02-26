@@ -118,7 +118,21 @@ App Service — хороший выбор, когда не требуется к
 
 ```bash
 az webapp list-runtimes --os-type linux
+
+az webapp list-runtimes --linux -o tsv
+
 ```
+Она выводит список доступных runtime-стеков, которые можно использовать в Azure App Service.
+Например:
+NODE|18-lts
+PYTHON|3.11
+DOTNETCORE|8.0
+PHP|8.2
+
+Что означает -o tsv?
+Формат вывода:
+tsv = tab-separated values
+(удобно для скриптов)
 ## Ограничения App Service (Linux)
 
 - ❌ **Не поддерживается в Shared tier**
@@ -257,3 +271,56 @@ az webapp config container set \
 Подходит для большинства веб-приложений и REST API.
 
 Если требуется сложная оркестрация микросервисов, управление pod-ами, авто-восстановление и гибкая маршрутизация — стоит рассмотреть использование Azure Kubernetes Service (AKS).
+
+
+Когда открываешь Web App в Azure Portal, ты попадаешь на:
+👉 Overview blade
+URL приложения
+Кнопка Browse
+Статус
+Restart / Stop
+Metrics
+
+B. A Webhook created by ACR triggers a task, which can be a multi-step process.
+Что происходит при коммите в связанный Git-репозиторий
+Если Azure Container Registry (ACR) настроен с ACR Task и подключён к Git-репозиторию (GitHub, Azure Repos и т.п.), то:
+В репозитории происходит commit.
+Git отправляет webhook.
+ACR получает событие.
+Запускается ACR Task.
+Выполняется сборка образа (и при необходимости multi-step pipeline).
+Новый контейнерный образ пушится в ACR.
+Это автоматический CI-процесс внутри ACR.
+
+| Если задача             | Ответ            |
+| ----------------------- | ---------------- |
+| ZIP deploy в production | Risky            |
+| Safe deployment         | Deployment slots |
+| Zero downtime           | Slots + Swap     |
+
+
+free managed certificate:
+Бесплатный
+Автоматически продлевается
+НО ❗
+Работает только с одним App Service
+Нельзя использовать в нескольких apps
+Ограничения по wildcard и private domains
+
+Import from Key Vault — нет?
+Нужно самому управлять сертификатом
+Нужно обеспечить обновление в Key Vault
+Не минимальный overhead
+
+Purchase an App Service certificate — правильно?
+App Service Certificate:
+Автоматически продлевается
+Интегрируется с Key Vault
+Можно использовать в нескольких App Services
+Минимальный management
+
+| Условие                    | Ответ                    |
+| -------------------------- | ------------------------ |
+| Auto renew + multiple apps | App Service Certificate  |
+| Simple + single app        | Free managed certificate |
+| External enterprise cert   | Key Vault import         |

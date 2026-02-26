@@ -658,4 +658,26 @@ jobs:
 - «Сложный workflow» → Multi-step task
 
 
+$Registry
+Это переменная, представляющая адрес текущего ACR.
+
+Варианты доступа к ACR
+Admin user (username + password)
+Service principal
+Managed identity
+
+В production лучше использовать:
+Managed Identity
+RBAC
+
+
+Deployment Center
+Он поддерживает:
+Azure DevOps
+GitHub
+Bitbucket
+Local Git
+FTP
+👉 CI/CD
+
 [Learn More](https://learn.microsoft.com/en-us/training/modules/publish-container-image-to-azure-container-registry/4-azure-container-registry-tasks)

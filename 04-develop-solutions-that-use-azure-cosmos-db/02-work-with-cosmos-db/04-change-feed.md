@@ -127,23 +127,79 @@ public static class ChangeFeedFunction
 }
 ```
 
-**Key benefits**:
-- ✅ Zero infrastructure management
-- ✅ Automatic scaling
-- ✅ Built-in retry logic
-- ✅ Checkpoint management handled
-- ✅ Easy deployment
+## Вариант 2: Change Feed Processor
 
-### Option 2: Change Feed Processor
+**Программная обработка** изменений с полным контролем над логикой.
 
-**Programmatic processing** with full control:
+Если встроенные триггеры недостаточны, можно использовать Change Feed Processor для гибкой и управляемой обработки событий.
 
-#### Four Components
+---
 
-1. **Monitored container** - Source of changes
-2. **Lease container** - Stores processing state (checkpoints)
-3. **Compute instance** - Host that runs processor
-4. **Delegate** - Your code that processes changes
+### Четыре основных компонента
+
+1️⃣ **Monitored Container**  
+Контейнер-источник изменений.  
+Именно из него читается change feed.
+
+2️⃣ **Lease Container**  
+Контейнер, в котором хранится состояние обработки (checkpoints).  
+Используется для:
+
+- отслеживания прогресса;
+- распределения нагрузки между экземплярами;
+- обеспечения отказоустойчивости.
+
+3️⃣ **Compute Instance**  
+Среда выполнения, где запускается процессор:
+
+- Azure Functions
+- App Service
+- VM
+- Kubernetes
+- Любой .NET/Java хост
+
+4️⃣ **Delegate**  
+Ваш код обработки изменений.  
+Именно здесь реализуется бизнес-логика.
+
+---
+
+## Архитектурное значение
+
+Change Feed Processor:
+
+- автоматически распределяет обработку по партициям;
+- поддерживает масштабирование;
+- использует lease-контейнер для координации;
+- обеспечивает fault tolerance.
+
+Это позволяет:
+
+- горизонтально масштабировать обработку;
+- избегать повторной обработки при сбоях;
+- сохранять прогресс.
+
+---
+
+## Когда использовать
+
+- Нужен полный контроль над обработкой
+- Требуется кастомная логика
+- Нужно управлять масштабированием вручную
+- Обработка происходит вне Azure Functions
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Lease container хранит checkpoints
+- Processor масштабируется по partition’ам
+- Delegate — это ваша обработка
+- Change Feed Processor даёт больше контроля, чем встроенный триггер
+
+Экзамен может проверять понимание роли lease-контейнера и механизма checkpoint.
 
 #### Basic Implementation
 

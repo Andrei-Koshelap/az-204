@@ -718,6 +718,13 @@ az account set --subscription "your-subscription-name"
 
 ---
 
+Managed Identity + Key Vault
+Всегда помни две вещи:
+Включить Managed Identity (чтобы была аутентификация через Azure AD)
+Назначить роль в Key Vault (RBAC authorization)
+
+RBAC authentication — использование Azure AD (токены, managed identity)
+RBAC authorization — назначение роли через IAM
 ## Additional Resources
 
 - [Azure Key Vault Secrets Client Library for .NET](https://learn.microsoft.com/en-us/dotnet/api/overview/azure/security.keyvault.secrets-readme)

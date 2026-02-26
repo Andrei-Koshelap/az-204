@@ -1,10 +1,71 @@
-# Secure APIs by Using Certificates
+# Защита API с использованием сертификатов
 
-## Overview
+## Обзор
 
-**Certificate-based authentication** (also known as **TLS mutual authentication** or **mTLS**) provides strong authentication by requiring clients to present valid certificates when accessing APIs.
+**Аутентификация на основе сертификатов** (также известная как **TLS mutual authentication** или **mTLS**) обеспечивает высокий уровень безопасности, требуя от клиента предоставления действительного цифрового сертификата при обращении к API.
 
-**Purpose**: Secure APIs with cryptographic certificates for high-trust scenarios.
+**Назначение**: защита API с использованием криптографических сертификатов в сценариях с повышенным уровнем доверия.
+
+---
+
+## Что такое mTLS?
+
+В стандартном HTTPS:
+
+- Клиент проверяет сертификат сервера
+- Сервер не проверяет сертификат клиента
+
+В **mTLS (mutual TLS)**:
+
+- Клиент проверяет сертификат сервера
+- Сервер проверяет сертификат клиента
+
+Обе стороны аутентифицируют друг друга.
+
+---
+
+## Когда используется certificate-based authentication
+
+- B2B-интеграции
+- Внутренние корпоративные API
+- Банковские и финансовые системы
+- Государственные сервисы
+- Высокозащищённые microservice-to-microservice коммуникации
+
+---
+
+## Почему это безопаснее, чем subscription key
+
+- Используется криптография и PKI
+- Сертификат сложно подделать
+- Нет передачи секретного ключа в заголовках
+- Поддерживается аппаратное хранение ключей (HSM)
+- Можно проверять issuer, subject, thumbprint
+
+---
+
+## Архитектурное значение
+
+mTLS обеспечивает:
+
+- сильную аутентификацию клиента;
+- защиту от MITM-атак;
+- централизованное управление доверием через CA;
+- возможность ограничения доступа по сертификату.
+
+В Azure API Management проверка клиентского сертификата выполняется на уровне gateway до передачи запроса в backend.
+
+---
+
+## Важно для AZ-204
+
+Если в вопросе говорится о:
+- взаимной аутентификации (mutual authentication),
+- проверке клиентского сертификата,
+- повышенных требованиях безопасности,
+- B2B или high-trust интеграциях,
+
+— правильное решение связано с использованием certificate-based authentication (mTLS).
 
 ---
 
@@ -56,12 +117,56 @@ In standard TLS (HTTPS), only the **server** presents a certificate to the clien
     │<────────────────────────────>│
 ```
 
-**Benefits**:
-- ✅ Strong authentication (cryptographic proof)
-- ✅ Non-repudiation (client can't deny request)
-- ✅ Certificate revocation support
-- ✅ No password management
-- ✅ Suitable for machine-to-machine (M2M) communication
+## Преимущества
+
+- ✅ **Сильная аутентификация** (криптографическое подтверждение личности)
+- ✅ **Non-repudiation** (клиент не может отрицать факт запроса)
+- ✅ Поддержка **отзыва сертификатов** (CRL / OCSP)
+- ✅ Отсутствие управления паролями
+- ✅ Подходит для **machine-to-machine (M2M)** взаимодействия
+
+---
+
+### Пояснение
+
+**Сильная аутентификация**  
+Подтверждение личности происходит с использованием закрытого ключа клиента. Это значительно безопаснее, 
+чем передача секретов в заголовках.
+
+**Non-repudiation**  
+Так как запрос подписывается криптографически, клиент не может отрицать факт взаимодействия.
+
+**Отзыв сертификатов**  
+При компрометации сертификат можно отозвать через CA без изменения backend-кода.
+
+**Нет паролей**  
+Исключаются риски, связанные с хранением, утечкой и повторным использованием паролей.
+
+**M2M-сценарии**  
+Идеально подходит для автоматизированных интеграций между сервисами, где нет пользователя, но требуется высокий уровень доверия.
+
+---
+
+### Архитектурное значение
+
+Certificate-based authentication особенно эффективна в:
+
+- B2B-интеграциях
+- Закрытых корпоративных сетях
+- Высоконагруженных системах
+- Микросервисных архитектурах с повышенными требованиями к безопасности
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе упоминается:
+- mutual TLS,
+- подтверждение личности через сертификат,
+- высокозащищённые интеграции,
+- M2M-коммуникации,
+
+— правильным решением будет использование аутентификации на основе сертификатов (mTLS).
 
 ---
 
@@ -86,53 +191,90 @@ Certificate: api-client.contoso.com
 
 ### 2. **Thumbprint (Fingerprint)**
 
-The **thumbprint** is a SHA-1 hash of the certificate (unique identifier).
+**Thumbprint** — это SHA-1 хэш сертификата (уникальный идентификатор).
 
-**Format**: 40-character hexadecimal string
+**Формат**:  
+40-символьная шестнадцатеричная строка
 
-**Example**: `A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0`
+**Пример**:  
+`A1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q7R8S9T0`
 
-**Use Case**: Whitelist specific certificates
-
-### 3. **Subject**
-
-The **subject** identifies the certificate owner.
-
-**Format**: Distinguished Name (DN)
-
-**Example**: `CN=api-client.contoso.com, O=Contoso, C=US`
-
-**Components**:
-- **CN** (Common Name): Client identifier
-- **O** (Organization): Company name
-- **C** (Country): Country code
-- **OU** (Organizational Unit): Department
-
-### 4. **Expiration Date**
-
-Certificates have validity periods:
-- **Not Before**: Start date
-- **Not After**: End date
-
-**Validation**: Ensure current date is within validity period
+**Сценарий использования**:  
+Whitelist конкретных сертификатов (разрешение доступа только определённым клиентам).
 
 ---
 
-## Enable Client Certificates
+### 3. **Subject**
 
-### Consumption and Developer Tiers
+**Subject** — это информация о владельце сертификата.
 
-Client certificates are **enabled by default** in most tiers.
+**Формат**: Distinguished Name (DN)
 
-### Consumption Tier Only
+**Пример**:  
+`CN=api-client.contoso.com, O=Contoso, C=US`
 
-In the **Consumption tier**, you must **explicitly enable** client certificate negotiation:
+**Компоненты**:
 
-**Azure Portal**:
-1. Navigate to API Management instance
-2. Go to **Settings** → **Custom domains**
-3. Enable **Negotiate client certificate**
+- **CN (Common Name)** — идентификатор клиента
+- **O (Organization)** — название организации
+- **C (Country)** — код страны
+- **OU (Organizational Unit)** — подразделение
 
+Subject часто используется для:
+
+- проверки принадлежности сертификата конкретной организации;
+- реализации условной логики на основе DN;
+- дополнительной валидации клиента.
+
+---
+
+### 4. **Expiration Date**
+
+Сертификаты имеют срок действия:
+
+- **Not Before** — дата начала действия
+- **Not After** — дата окончания действия
+
+**Валидация**: текущая дата должна находиться в пределах периода действия.
+
+Истёкший сертификат автоматически считается недействительным.
+
+---
+
+## Включение Client Certificates
+
+### Тарифы Consumption и Developer
+
+В большинстве тарифов поддержка клиентских сертификатов **включена по умолчанию**.
+
+---
+
+### Только для Consumption Tier
+
+В тарифе **Consumption** необходимо явно включить переговоры клиентского сертификата.
+
+**Через Azure Portal**:
+
+1. Перейти в экземпляр API Management
+2. Открыть **Settings** → **Custom domains**
+3. Включить опцию **Negotiate client certificate**
+
+---
+
+### Архитектурный момент
+
+Если negotiation не включён, gateway не запросит клиентский сертификат, даже если политика настроена.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- mutual TLS в Consumption tier,
+- необходимости включить клиентские сертификаты,
+- настройке certificate negotiation,
+
+— требуется включить **Negotiate client certificate** в настройках APIM.
 **Azure CLI**:
 ```bash
 az apim update \
@@ -407,23 +549,64 @@ Here's a comprehensive policy combining multiple validations:
 
 ---
 
-## Certificate Context Properties
+## Свойства сертификата в Context
 
-Access certificate properties using `context.Request.Certificate`:
+Доступ к данным клиентского сертификата осуществляется через:
 
-| Property | Description | Example |
-|----------|-------------|---------|
-| `Thumbprint` | SHA-1 hash of certificate | `A1B2C3...` |
-| `Subject` | Certificate subject (DN) | `CN=client.contoso.com` |
-| `SubjectName.Name` | Full subject name | `CN=client, O=Contoso, C=US` |
-| `Issuer` | Certificate issuer | `CN=My CA, O=Contoso` |
-| `NotBefore` | Validity start date | `DateTime` |
-| `NotAfter` | Validity end date | `DateTime` |
-| `SignatureAlgorithm` | Signature algorithm | `sha256RSA` |
-| `Version` | Certificate version | `3` |
-| `SerialNumber` | Certificate serial number | `01:23:45:67:89:AB` |
-| `Verify()` | Validate certificate chain | `bool` |
+`context.Request.Certificate`
 
+Это позволяет выполнять дополнительную валидацию и реализовывать условную логику в policies.
+
+---
+
+| Свойство | Описание | Пример |
+|------------|------------|---------|
+| `Thumbprint` | SHA-1 хэш сертификата | `A1B2C3...` |
+| `Subject` | Subject сертификата (DN) | `CN=client.contoso.com` |
+| `SubjectName.Name` | Полное имя субъекта | `CN=client, O=Contoso, C=US` |
+| `Issuer` | Издатель сертификата | `CN=My CA, O=Contoso` |
+| `NotBefore` | Дата начала действия | `DateTime` |
+| `NotAfter` | Дата окончания действия | `DateTime` |
+| `SignatureAlgorithm` | Алгоритм подписи | `sha256RSA` |
+| `Version` | Версия сертификата | `3` |
+| `SerialNumber` | Серийный номер сертификата | `01:23:45:67:89:AB` |
+| `Verify()` | Проверка цепочки доверия | `bool` |
+
+---
+
+### Что важно понимать
+
+С помощью `context.Request.Certificate` можно:
+
+- Проверять конкретный `Thumbprint` (whitelisting)
+- Сравнивать `Subject` или `Issuer`
+- Проверять срок действия (`NotBefore`, `NotAfter`)
+- Убедиться, что сертификат подписан доверенным CA (`Verify()`)
+
+Если сертификат отсутствует, объект будет `null`.
+
+---
+
+### Архитектурное значение
+
+Использование certificate context позволяет:
+
+- реализовать строгую аутентификацию;
+- ограничивать доступ по конкретным сертификатам;
+- применять разные правила для разных клиентов;
+- усиливать безопасность без изменения backend.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- проверке thumbprint,
+- валидации issuer,
+- проверке срока действия,
+- использовании `context.Request.Certificate`,
+
+— решение связано с проверкой свойств клиентского сертификата в policy.
 ### Example: Log Certificate Details
 
 ```xml
@@ -527,15 +710,52 @@ Invoke-RestMethod -Uri "https://apim-instance.azure-api.net/api/users" `
 
 ---
 
-## Certificate Management
+## Управление сертификатами
 
-### Upload Certificate to APIM
+### Загрузка сертификата в APIM
 
-**Azure Portal**:
-1. Navigate to API Management instance
-2. Go to **Certificates**
-3. Click **+ Add**
-4. Upload PFX file and provide password
+**Через Azure Portal**:
+
+1. Перейти в экземпляр API Management
+2. Открыть раздел **Certificates**
+3. Нажать **+ Add**
+4. Загрузить файл формата **PFX** и указать пароль
+
+---
+
+### Что важно понимать
+
+- Загружается именно файл **PFX**, так как он содержит приватный ключ.
+- Пароль защищает приватный ключ внутри файла.
+- После загрузки сертификат можно использовать:
+    - для mTLS-аутентификации клиентов;
+    - для исходящих вызовов к backend (client certificate authentication);
+    - для настройки custom domain (TLS).
+
+---
+
+### Архитектурный аспект
+
+В Azure API Management сертификаты могут использоваться для:
+
+- входящей аутентификации (client certificates);
+- исходящей аутентификации к backend;
+- защиты пользовательских доменов;
+- интеграции с Key Vault (рекомендуемый способ в production).
+
+Для production-сценариев предпочтительно хранить сертификаты в **Azure Key Vault**, а не загружать их вручную.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- загрузке клиентского сертификата,
+- использовании PFX-файла,
+- необходимости указать пароль,
+- интеграции с Key Vault,
+
+— речь идёт о разделе **Certificates** в Azure API Management.
 
 **Azure CLI**:
 ```bash
@@ -735,28 +955,46 @@ az apim certificate create --data @cert.pfx
 
 ---
 
-## Exam Tips
+## Советы к экзамену
 
-### Key Concepts for AZ-204
+### Ключевые концепции для AZ-204
 
-1. **Mutual TLS**: Both client and server present certificates
+1. **Mutual TLS (mTLS)**  
+   И клиент, и сервер предъявляют сертификаты для взаимной аутентификации.
 
-2. **Certificate properties**: CA, Thumbprint, Subject, Expiration
+2. **Свойства сертификата**  
+   Проверяются: CA (Issuer), Thumbprint, Subject, срок действия (Expiration).
 
-3. **Consumption tier**: Must explicitly enable client certificates
+3. **Consumption tier**  
+   Требуется явно включить negotiation клиентских сертификатов.
 
-4. **Upload certificates**: Store trusted certificates in APIM
+4. **Загрузка сертификатов**  
+   Доверенные сертификаты необходимо загрузить в APIM (или подключить через Key Vault).
 
-5. **Policy validation**: Use `context.Request.Certificate` in policies
+5. **Валидация в политиках**  
+   Используется `context.Request.Certificate` в policy-выражениях.
 
-6. **Thumbprint validation**: Check against specific thumbprint or uploaded certs
+6. **Проверка thumbprint**  
+   Можно сравнивать с конкретным thumbprint или с загруженными доверенными сертификатами.
 
-7. **Certificate chain validation**: Use `Verify()` method
+7. **Проверка цепочки доверия**  
+   Используется метод `Verify()` для валидации сертификата.
 
-8. **Inbound section**: Certificate validation happens in inbound policies
+8. **Раздел inbound**  
+   Проверка сертификата выполняется в `inbound` policies до вызова backend.
 
-9. **403 response**: Return 403 Forbidden if certificate invalid
+9. **HTTP 403**  
+   Если сертификат недействителен — возвращается `403 Forbidden`.
 
+---
+
+### Финальный акцент для AZ-204
+
+- mTLS применяется в high-trust и B2B-сценариях.
+- В Consumption tier необходимо вручную включить поддержку клиентских сертификатов.
+- Проверка сертификата выполняется через `context.Request.Certificate` в разделе `inbound`.
+- Невалидный сертификат → `403 Forbidden`, запрос не передаётся в backend.
+- Для продакшена предпочтительно хранить сертификаты в Key Vault.
 10. **Context properties**:
     - `context.Request.Certificate.Thumbprint`
     - `context.Request.Certificate.Issuer`
@@ -765,25 +1003,47 @@ az apim certificate create --data @cert.pfx
     - `context.Request.Certificate.NotAfter`
     - `context.Request.Certificate.Verify()`
 
-### Common Exam Scenarios
+### Частые экзаменационные сценарии
 
-**Scenario 1**: "Secure API with certificate-based authentication"
-→ **Answer**: Enable client certificates, use policy to validate `context.Request.Certificate.Thumbprint`
-
-**Scenario 2**: "Accept certificates from trusted partners only"
-→ **Answer**: Upload partner certificates to APIM, validate against `context.Deployment.Certificates`
-
-**Scenario 3**: "Validate certificate is issued by corporate CA"
-→ **Answer**: Check `context.Request.Certificate.Issuer` and use `Verify()`
-
-**Scenario 4**: "Consumption tier certificate authentication not working"
-→ **Answer**: Enable client certificate negotiation in settings
-
-**Scenario 5**: "Check if certificate is expired"
-→ **Answer**: Validate `context.Request.Certificate.NotBefore` and `NotAfter` against `DateTime.UtcNow`
+**Сценарий 1**:  
+"Защитить API с помощью аутентификации на основе сертификатов"  
+→ **Ответ**: Включить client certificates и использовать policy для проверки  
+`context.Request.Certificate.Thumbprint`
 
 ---
 
+**Сценарий 2**:  
+"Разрешить доступ только сертификатам доверенных партнёров"  
+→ **Ответ**: Загрузить сертификаты партнёров в APIM и выполнить проверку через  
+`context.Deployment.Certificates`
+
+---
+
+**Сценарий 3**:  
+"Проверить, что сертификат выпущен корпоративным CA"  
+→ **Ответ**: Проверить `context.Request.Certificate.Issuer` и использовать метод `Verify()`
+
+---
+
+**Сценарий 4**:  
+"Аутентификация по сертификату не работает в Consumption tier"  
+→ **Ответ**: Включить **Negotiate client certificate** в настройках APIM
+
+---
+
+**Сценарий 5**:  
+"Проверить, не истёк ли срок действия сертификата"  
+→ **Ответ**: Проверить `context.Request.Certificate.NotBefore` и `NotAfter` относительно `DateTime.UtcNow`
+
+---
+
+### Экзаменационный фокус
+
+- Проверка сертификата выполняется в разделе `inbound`.
+- Для невалидного сертификата возвращается `403 Forbidden`.
+- Thumbprint используется для точного whitelist-контроля.
+- `Verify()` проверяет цепочку доверия.
+- В Consumption tier требуется дополнительная настройка.
 ## Learn More
 
 - [Mutual TLS Authentication](https://docs.microsoft.com/azure/api-management/api-management-howto-mutual-certificates)

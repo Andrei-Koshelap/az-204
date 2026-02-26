@@ -1,28 +1,67 @@
-# Control Access to Azure Event Grid Events
+# Управление доступом к событиям Azure Event Grid
 
-## Overview
+## Обзор
 
-Azure Event Grid provides robust security mechanisms to control access to events through:
-- **Azure Role-Based Access Control (RBAC)** for authorization
-- **Managed identities** for authentication
-- **Webhook validation** for endpoint verification
-- **Private endpoints** for network isolation
+Azure Event Grid предоставляет несколько механизмов защиты:
+
+- **Azure RBAC** — управление доступом и авторизация
+- **Managed Identities** — безопасная аутентификация
+- **Webhook validation** — подтверждение владения endpoint
+- **Private Endpoints** — сетовая изоляция
+
+Эти механизмы позволяют реализовать принцип **least privilege** и защитить event-driven архитектуру.
 
 ---
 
-## Built-in RBAC Roles
+# Встроенные роли RBAC
 
-Azure Event Grid includes **four built-in RBAC roles** for granular access control.
+Azure Event Grid включает **четыре встроенные роли** для гибкого контроля доступа.
 
-### Event Grid Roles Table
+---
 
-| Role Name | Permissions | Scope | Use Case |
-|-----------|-------------|-------|----------|
-| **Event Grid Subscription Reader** | Read event subscriptions | Subscription | View subscription configuration |
-| **Event Grid Subscription Contributor** | Manage event subscriptions (create, update, delete) | Subscription | Operations team managing subscriptions |
-| **Event Grid Contributor** | Full control over Event Grid resources (topics, subscriptions, domains) | Topic/Domain | Admins managing Event Grid infrastructure |
-| **Event Grid Data Sender** | Publish events to topics | Topic | Applications publishing events |
+## Таблица ролей Event Grid
 
+| Название роли | Разрешения | Область действия | Сценарий использования |
+|---------------|------------|------------------|------------------------|
+| **Event Grid Subscription Reader** | Чтение подписок | Subscription | Просмотр конфигурации |
+| **Event Grid Subscription Contributor** | Управление подписками (создание, обновление, удаление) | Subscription | Операционная команда |
+| **Event Grid Contributor** | Полный контроль над ресурсами (topics, subscriptions, domains) | Topic / Domain | Администраторы |
+| **Event Grid Data Sender** | Публикация событий в topic | Topic | Приложения, публикующие события |
+
+---
+
+## Архитектурное значение
+
+RBAC позволяет разделить ответственность:
+
+- Разработчики публикуют события → **Data Sender**
+- DevOps управляют подписками → **Subscription Contributor**
+- Администраторы управляют инфраструктурой → **Contributor**
+- Аудиторы → **Subscription Reader**
+
+Это повышает безопасность и упрощает контроль.
+
+---
+
+## Best Practices
+
+- Назначайте минимально необходимые права
+- Используйте Managed Identity вместо access keys
+- Разделяйте роли между командами
+- Не давайте Contributor без необходимости
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Data Sender публикует события
+- Subscription Contributor управляет подписками
+- Contributor управляет инфраструктурой
+- Reader — только просмотр
+
+Экзамен часто проверяет выбор правильной RBAC-роли для сценария.
 ### Role Permissions Breakdown
 
 #### Event Grid Subscription Reader
@@ -544,28 +583,89 @@ az eventgrid topic update \
    // ❌ Avoid: Hardcoded keys
    var credential = new AzureKeyCredential("hardcoded-key");
    ```
+## Публикация событий — рекомендации по безопасности
 
-2. **Rotate Access Keys Regularly** (if using keys)
-   - Implement key rotation policy (e.g., every 90 days)
-   - Use Azure Key Vault for key storage
+2️⃣ **Регулярная ротация access keys** (если используются ключи)
 
-3. **Principle of Least Privilege**
-   - Grant only necessary permissions
-   - Use Event Grid Data Sender (not Contributor)
+- Внедрите политику ротации (например, каждые 90 дней)
+- Храните ключи в Azure Key Vault
+- Используйте secondary key для безостановочной ротации
 
-### Receiving Events
+3️⃣ **Принцип наименьших привилегий (Least Privilege)**
 
-1. **Validate Webhook Endpoints** properly
-2. **Use HTTPS Only** for webhooks
-3. **Implement Authentication** (OAuth, API keys)
-4. **Verify Event Signatures** (if available)
+- Назначайте только необходимые разрешения
+- Для публикации используйте **Event Grid Data Sender**, а не Contributor
+- Разделяйте роли для разработки и администрирования
 
-### Network Security
+---
 
-1. **Use Private Endpoints** for sensitive workloads
-2. **Configure IP Filtering** to restrict publishers
-3. **Disable Public Access** when not needed
+## Получение событий
 
+1️⃣ **Корректная валидация Webhook**
+
+- Обрабатывайте validation handshake
+- Подтверждайте владение endpoint
+
+2️⃣ **Используйте только HTTPS**
+
+- Действительный сертификат
+- Современные версии TLS
+
+3️⃣ **Реализуйте аутентификацию**
+
+- OAuth 2.0
+- API keys
+- Managed Identity
+- Custom headers с токенами
+
+4️⃣ **Проверка подписи события** (если используется)
+
+- Проверяйте источник события
+- Не доверяйте payload без валидации
+
+---
+
+## Сетевая безопасность
+
+1️⃣ **Private Endpoints**
+
+- Используйте для чувствительных нагрузок
+- Изолируйте трафик внутри VNet
+
+2️⃣ **IP-фильтрация**
+
+- Ограничивайте доступ publisher’ов
+- Разрешайте только доверенные диапазоны IP
+
+3️⃣ **Отключение публичного доступа**
+
+- Если внешний доступ не требуется
+- Используйте Private Link вместо public endpoint
+
+---
+
+## Архитектурный акцент
+
+Безопасность Event Grid должна охватывать:
+
+- Аутентификацию publisher’ов
+- Авторизацию через RBAC
+- Безопасность доставки (HTTPS, валидация)
+- Сетевую изоляцию
+
+---
+
+## Важно для AZ-204
+
+На экзамене важно помнить:
+
+- Предпочитайте Managed Identity вместо access keys
+- Используйте Event Grid Data Sender для публикации
+- Webhook требует HTTPS и валидации
+- Private Endpoints обеспечивают изоляцию
+- Принцип least privilege — обязательный подход
+
+Вопросы по безопасности часто проверяют правильный выбор механизма защиты.
 ---
 
 ## RBAC Assignment Examples
@@ -618,48 +718,103 @@ az role assignment create \
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204
 
-### Key Concepts to Remember
+## Ключевые концепции
 
-1. **Four RBAC roles**: Subscription Reader, Subscription Contributor, Contributor, Data Sender
-2. **Data Sender role**: Used for publishing events (recommended for apps)
-3. **Subscription permissions**: Different for system topics vs. custom topics
-4. **System topics**: Need Write permission on source resource
-5. **Custom topics**: Need Write permission on Event Grid topic
-6. **Managed Identity**: Recommended over access keys
-7. **Private endpoints**: For network isolation
+1️⃣ **Четыре роли RBAC**
 
-### Common Exam Scenarios
+- Event Grid Subscription Reader
+- Event Grid Subscription Contributor
+- Event Grid Contributor
+- Event Grid Data Sender
 
-**Scenario 1**: Application needs to publish events to custom topic
-- ✅ Grant "Event Grid Data Sender" role
-- ❌ Don't grant "Event Grid Contributor" (too broad)
+2️⃣ **Event Grid Data Sender**
 
-**Scenario 2**: User needs to create subscription to Storage account events
-- ✅ Grant "Event Grid Subscription Contributor" on storage account
-- ❌ Don't grant permission on Event Grid topic (wrong resource)
+- Используется для публикации событий
+- Рекомендуемая роль для приложений
 
-**Scenario 3**: Secure event publishing without keys
-- ✅ Use managed identity with Data Sender role
-- ❌ Don't use access keys in code
+3️⃣ **Права на подписки**
 
-**Scenario 4**: Restrict event sources to specific IPs
-- ✅ Configure IP filtering on Event Grid topic
-- ✅ Use private endpoints for VNet access
+- Различаются для system topics и custom topics
 
-### Remember for Exam
+4️⃣ **System Topics**
 
-- **Event Grid Data Sender**: Publish events only
-- **Event Grid Contributor**: Full control over Event Grid resources
-- **Subscription Contributor**: Manage subscriptions (create, update, delete)
-- **System topic subscriptions**: Permission on source resource
-- **Custom topic subscriptions**: Permission on Event Grid topic
-- **Managed Identity**: Preferred authentication method
-- **Access keys**: Two keys (key1, key2) for rotation
-- **Private endpoints**: Network isolation
-- **IP filtering**: Restrict publisher IPs
+- Требуется разрешение Write на исходный ресурс
 
+5️⃣ **Custom Topics**
+
+- Требуется разрешение Write на Event Grid topic
+
+6️⃣ **Managed Identity**
+
+- Предпочтительнее access keys
+
+7️⃣ **Private Endpoints**
+
+- Используются для сетевой изоляции
+
+---
+
+# Частые экзаменационные сценарии
+
+### Сценарий 1
+Приложение публикует события в custom topic
+
+- ✅ Назначить роль **Event Grid Data Sender**
+- ❌ Не назначать **Event Grid Contributor** (слишком широкие права)
+
+---
+
+### Сценарий 2
+Пользователь создаёт подписку на события Storage Account
+
+- ✅ Назначить **Event Grid Subscription Contributor** на Storage Account
+- ❌ Не назначать права на Event Grid topic (неверный ресурс)
+
+---
+
+### Сценарий 3
+Безопасная публикация без использования ключей
+
+- ✅ Использовать Managed Identity + Data Sender
+- ❌ Не хранить access keys в коде
+
+---
+
+### Сценарий 4
+Ограничить источники событий по IP
+
+- ✅ Настроить IP filtering на Event Grid topic
+- ✅ Использовать Private Endpoints для доступа из VNet
+
+---
+
+# Что обязательно помнить
+
+- **Event Grid Data Sender** — только публикация
+- **Event Grid Contributor** — полный контроль
+- **Subscription Contributor** — управление подписками
+- **System topic subscriptions** — права на исходный ресурс
+- **Custom topic subscriptions** — права на Event Grid topic
+- **Managed Identity** — предпочтительный способ аутентификации
+- **Access keys** — два ключа для ротации (key1, key2)
+- **Private Endpoints** — изоляция на уровне сети
+- **IP filtering** — ограничение IP publisher’ов
+
+---
+
+## Экзаменационный акцент
+
+Если вопрос про:
+
+- публикацию событий → Data Sender
+- создание подписки → Subscription Contributor
+- безопасность без ключей → Managed Identity
+- изоляцию сети → Private Endpoints
+- ограничение источников → IP filtering
+
+RBAC + Managed Identity + Private Endpoint — стандартный безопасный паттерн.
 ### Quick Command Reference
 
 ```bash
@@ -692,31 +847,86 @@ az network private-endpoint create \
 
 ---
 
-## Summary
+# Итоги по управлению доступом в Azure Event Grid
 
-**Access Control Methods:**
-- **RBAC Roles**: Four built-in roles for granular permissions
-- **Managed Identity**: Recommended for publishing events
-- **Access Keys**: Two keys (key1, key2) for authentication
-- **Private Endpoints**: Network-level isolation
-- **IP Filtering**: Restrict publisher IP addresses
+## Методы контроля доступа
 
-**Key RBAC Roles:**
-- **Event Grid Data Sender**: Publish events to topics
-- **Event Grid Subscription Contributor**: Manage event subscriptions
-- **Event Grid Contributor**: Full control over Event Grid resources
-- **Event Grid Subscription Reader**: View subscription configurations
+- **RBAC-роли**  
+  Четыре встроенные роли для точного разграничения прав
 
-**Subscription Permissions:**
-- **System Topics**: Need Write permission on source Azure resource
-- **Custom Topics**: Need Write permission on Event Grid topic
-- **Event Domains**: Domain-level or domain-topic level permissions
+- **Managed Identity**  
+  Рекомендуемый способ аутентификации для публикации событий
 
-**Best Practices:**
-- ✅ Use managed identities instead of access keys
-- ✅ Apply principle of least privilege
-- ✅ Use private endpoints for sensitive workloads
-- ✅ Configure IP filtering to restrict publishers
-- ✅ Rotate access keys regularly (if used)
-- ✅ Use custom headers for webhook authentication
-- ✅ Grant only necessary RBAC roles
+- **Access Keys**  
+  Два ключа (key1, key2) для ротации
+
+- **Private Endpoints**  
+  Изоляция на уровне сети
+
+- **IP Filtering**  
+  Ограничение IP-адресов publisher’ов
+
+---
+
+## Ключевые роли RBAC
+
+- **Event Grid Data Sender**  
+  Публикация событий в topic
+
+- **Event Grid Subscription Contributor**  
+  Управление подписками (создание, обновление, удаление)
+
+- **Event Grid Contributor**  
+  Полный контроль над ресурсами Event Grid
+
+- **Event Grid Subscription Reader**  
+  Просмотр конфигурации подписок
+
+---
+
+## Права для подписок
+
+- **System Topics**  
+  Требуется разрешение Write на исходный Azure-ресурс
+
+- **Custom Topics**  
+  Требуется разрешение Write на Event Grid topic
+
+- **Event Domains**  
+  Права могут назначаться на уровне домена или domain-topic
+
+---
+
+## Best Practices
+
+- ✅ Использовать Managed Identity вместо access keys
+- ✅ Применять принцип least privilege
+- ✅ Использовать Private Endpoints для чувствительных систем
+- ✅ Настраивать IP filtering
+- ✅ Регулярно ротировать access keys (если используются)
+- ✅ Использовать custom headers для защиты webhook
+- ✅ Назначать только необходимые RBAC-роли
+
+---
+
+## Архитектурный акцент
+
+Безопасная конфигурация Event Grid включает:
+
+- Минимальные права (RBAC)
+- Безключевую аутентификацию (Managed Identity)
+- Сетевую изоляцию (Private Endpoint)
+- Ограничение источников (IP filtering)
+
+---
+
+## Что важно для AZ-204
+
+Нужно чётко понимать:
+
+- Какая роль используется для публикации (Data Sender)
+- Где назначаются права для system vs custom topics
+- Почему Managed Identity предпочтительнее ключей
+- Как Private Endpoints усиливают безопасность
+
+Вопросы по безопасности часто проверяют правильный выбор роли и механизма аутентификации.

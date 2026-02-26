@@ -392,6 +392,67 @@ union requests, dependencies, exceptions, traces
 💡 **Color indicators**: Green (healthy), Yellow (warning), Red (critical)
 💡 **Use with distributed tracing** for end-to-end request flows
 
+
+Premium поддерживает:
+
+Redis clustering (шардинг)
+
+RDB persistence
+
+AOF persistence
+
+Большие объёмы данных
+
+Standard этого не поддерживает.
+
+
+📌 Как работают списки (Lists) в Redis
+
+Redis поддерживает структуру данных List — это упорядоченная коллекция элементов.
+
+Есть две основные команды добавления:
+
+🔹 LPUSH
+
+Добавляет элемент в начало списка (left side)
+
+LPUSH mylist "value1"
+🔹 RPUSH ✅
+
+Добавляет элемент в конец списка (right side)
+
+RPUSH mylist "value2"
+
+Если ключ не существует — Redis создаёт список автоматически.
+
+
+IDatabase — это основной интерфейс для работы с Redis.
+
+🔎 Что он делает
+
+Он предоставляет методы, которые являются C#-обёрткой над Redis-командами:
+
+Redis CLI	C# через IDatabase
+SET	db.StringSet(...)
+GET	db.StringGet(...)
+RPUSH	db.ListRightPush(...)
+SADD	db.SetAdd(...)
+
+Все методы работают с типами:
+
+RedisKey
+RedisValue
+
+Border Gateway Protocol (BGP) — это протокол маршрутизации между автономными системами (AS) в интернете.
+
+Он:
+
+обменивается маршрутами между провайдерами
+
+выбирает лучший путь к сети назначения
+
+основывается на атрибутах маршрута (в том числе AS Path)
+
 ---
 
 **📚 Further Reading:**

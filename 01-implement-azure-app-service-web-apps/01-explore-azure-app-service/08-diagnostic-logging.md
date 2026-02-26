@@ -1,37 +1,66 @@
-# Enable Diagnostic Logging
+# Включение диагностического логирования
 
-## Key Concepts
-- **Built-in diagnostics** for debugging and monitoring
-- **Multiple log types** for different purposes
-- **Flexible storage** - File system or Azure Storage
-- **Real-time streaming** and historical access
+## Ключевые понятия
 
-## Log Types Overview
+- **Встроенная диагностика** для отладки и мониторинга
+- **Несколько типов логов** для разных задач
+- **Гибкие варианты хранения** — файловая система или Azure Storage
+- **Доступ в реальном времени** и возможность просмотра истории
 
-| Log Type | Platform | Storage Options | Purpose |
-|----------|----------|-----------------|---------|
-| **Application Logging** | Windows, Linux | File System, Blob Storage (Windows) | App code messages |
-| **Web Server Logging** | Windows | File System, Blob Storage | Raw HTTP requests (W3C format) |
-| **Detailed Error Messages** | Windows | File System | HTML error pages (HTTP 400+) |
-| **Failed Request Tracing** | Windows | File System | IIS request traces |
-| **Deployment Logging** | Windows, Linux | File System | Auto-enabled, not configurable |
+---
+
+## Обзор типов логов
+
+| Тип лога | Платформа | Варианты хранения | Назначение |
+|------------|------------|------------------|------------|
+| **Application Logging** | Windows, Linux | Файловая система, Blob Storage (Windows) | Сообщения из кода приложения |
+| **Web Server Logging** | Windows | Файловая система, Blob Storage | «Сырые» HTTP-запросы (формат W3C) |
+| **Detailed Error Messages** | Windows | Файловая система | HTML-страницы ошибок (HTTP 400+) |
+| **Failed Request Tracing** | Windows | Файловая система | Трассировка запросов IIS |
+| **Deployment Logging** | Windows, Linux | Файловая система | Включается автоматически, не настраивается |
+
+---
 
 ## Application Logging
 
-### Windows Apps
+### Приложения Windows
 
-#### Log Levels
-| Level | Includes |
-|-------|----------|
-| **Disabled** | Nothing |
+#### Уровни логирования
+
+| Уровень | Включает |
+|----------|----------|
+| **Disabled** | Логирование отключено |
 | **Error** | Error, Critical |
 | **Warning** | Warning, Error, Critical |
 | **Information** | Info, Warning, Error, Critical |
 | **Verbose** | Trace, Debug, Info, Warning, Error, Critical |
 
-#### Storage Options
-- **File System**: Temp debugging, **auto-disables after 12 hours**
-- **Blob Storage**: Long-term logging, requires container
+---
+
+### Варианты хранения
+
+- **File System (Файловая система)**  
+  Используется для временной отладки  
+  ⚠️ Автоматически отключается через 12 часов
+
+- **Blob Storage**  
+  Подходит для долгосрочного хранения логов  
+  Требуется предварительно созданный контейнер в Azure Storage
+
+---
+
+### Важно для AZ-204
+
+- File System подходит только для краткосрочной диагностики
+- Для production-сценариев рекомендуется Blob Storage
+- Уровень Verbose используется для глубокой отладки
+- Web Server Logging и Failed Request Tracing доступны только на Windows
+
+Часто в экзаменационных вопросах требуется определить:
+- какой тип логирования включить
+- где хранить логи
+- как обеспечить долгосрочный доступ к данным диагностики
+
 
 ```bash
 # Enable app logging (File System)
@@ -234,21 +263,43 @@ az webapp log config \
   --level verbose
 ```
 
-## Log Retention
+## Хранение логов (Log Retention)
 
-| Storage | Default Retention | Configurable |
-|---------|-------------------|--------------|
-| **File System** | Depends on tier | ✅ Yes |
-| **Blob Storage** | None (forever) | ✅ Yes (lifecycle policies) |
+| Хранилище | Срок хранения по умолчанию | Настраивается |
+|-------------|-----------------------------|---------------|
+| **File System** | Зависит от тарифного плана | ✅ Да |
+| **Blob Storage** | Без ограничений (хранятся постоянно) | ✅ Да (через lifecycle policies) |
 
-## Critical Notes
-- 💡 **File System logging auto-disables after 12 hours** (Windows app logging)
-- 🎯 **Use Blob Storage** for long-term logs
-- ⚠️ **Regenerate storage keys** = Reconfigure logging
-- 📊 **Deployment logging always on** - no configuration needed
-- 🔄 **Buffer causes out-of-order events** in stream
-- 🐧 **Linux has quota and retention settings** (File System)
-- ⏰ **Stream from /LogFiles** directory only
+---
+
+## Важные замечания
+
+- 💡 **Логирование в File System автоматически отключается через 12 часов**  
+  (для Application Logging на Windows)
+
+- 🎯 **Для долгосрочного хранения используйте Blob Storage**
+
+- ⚠️ **При регенерации ключей хранилища** необходимо заново настроить логирование
+
+- 📊 **Deployment Logging включён всегда** — дополнительная настройка не требуется
+
+- 🔄 Использование буфера может привести к **нарушению порядка событий** при потоковом просмотре
+
+- 🐧 На Linux доступны настройки **квот и срока хранения** (для File System)
+
+- ⏰ Потоковый просмотр логов возможен только из каталога **/LogFiles**
+
+---
+
+### Что важно для AZ-204
+
+- File System — временное решение для диагностики
+- Blob Storage — production-подход
+- При изменении ключей Storage логирование перестаёт работать
+- Поток логов не гарантирует строгий порядок сообщений
+
+В экзаменационных вопросах часто проверяют понимание различий между временным и постоянным хранением логов.
+
 
 ## Best Practices
 
@@ -280,5 +331,31 @@ az webapp log config \
 - Web server logging, detailed errors, failed request tracing: Windows only
 - Deployment logging is automatic and always enabled
 - Know how to access logs via URL pattern (`scm.azurewebsites.net`)
+- 
+  | Тип логирования                   | Windows | Linux        | Что логирует                             | Когда использовать   |
+  | --------------------------------- | ------- | ------------ | ---------------------------------------- | -------------------- |
+  | **Application logging**           | ✅       | ✅            | Логи из кода (ILogger, console, log4net) | Debug приложения     |
+  | **Web server logging**            | ✅       | ❌ (IIS only) | Все HTTP-запросы (status codes)          | Анализ трафика       |
+  | **Detailed error logging**        | ✅       | ❌            | Подробные HTTP 4xx/5xx                   | Debug ошибок         |
+  | **Failed request tracing (FREB)** | ✅       | ❌            | Только failed requests (400+)            | Troubleshooting      |
+  | **Container logging**             | ❌       | ✅            | stdout/stderr контейнера                 | Linux container apps |
+  | **Diagnostic logs to Blob**       | ✅       | ✅            | Централизованные логи                    | Продакшен            |
+
+
+Если вопрос про:
+deployment failure
+web app deployment logs
+Ответ обычно:
+
+App Service filesystem (через Kudu)
+
+| Нужно узнать       | Где смотреть    |
+| ------------------ | --------------- |
+| Кто изменил ресурс | Activity Log    |
+| HTTP 500           | Diagnostic Logs |
+| Почему деплой упал | Deployment Logs |
+| Посмотреть файлы   | Kudu            |
+| Ошибки контейнера  | Container logs  |
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/configure-web-app-settings/5-enable-diagnostic-logging)

@@ -605,6 +605,14 @@ Example (East US):
 
 ---
 
+| Критерий       | Azure Logic Apps         | Kubernetes                      |
+| -------------- | ------------------------ | ------------------------------- |
+| Тип            | Интеграционная платформа | Контейнерный оркестратор        |
+| Код            | Low-code                 | Полноценный код                 |
+| Инфраструктура | Управляется Azure        | Управляешь сам (или через AKS)  |
+| Сценарий       | Автоматизация            | Микросервисы                    |
+| Масштаб        | Workflow                 | Полноценная backend-архитектура |
+
 ## Частые экзаменационные ловушки
 
 - «Нужен быстрый запуск без VM» → ACI
@@ -612,5 +620,26 @@ Example (East US):
 - «Несколько контейнеров вместе» → Container Group (Linux)
 - «Оплата только за время выполнения» → ACI
 
+ARM template позволяет:
+Declarative deployment
+Создать storage account
+Создать file share
+Создать container group
+Связать их в одном template
+
+| Если задача            | Ответ          |
+| ---------------------- | -------------- |
+| Создать 1 контейнер    | CLI            |
+| Создать инфраструктуру | ARM template   |
+| Kubernetes             | YAML           |
+| Local multi-container  | Docker Compose |
+
+В ACR namespace создаётся через имя репозитория:
+
+| Требование           | Ответ     |
+| -------------------- | --------- |
+| Versioning           | Tag       |
+| Storage optimization | Layer     |
+| Multi-team isolation | Namespace |
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/create-run-container-images-azure-container-instances/2-azure-container-instances-overview)

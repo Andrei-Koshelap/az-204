@@ -589,4 +589,56 @@ Budget constrained? → YES → Queue Storage
 - Reuse clients for performance
 - Use Azure AD for authentication
 
+
+📌 Как работает geo-filtering в Azure CDN
+
+Geo-filtering позволяет:
+
+ограничивать доступ к контенту
+
+разрешать или блокировать трафик
+
+на основе географического местоположения пользователя
+
+Правила применяются:
+
+к конкретному относительному пути (relative path)
+
+или к рекурсивным папкам
+
+с указанием действия: Allow или Block
+
+И фильтрация выполняется по:
+
+списку стран (countries)
+
+🔎 Почему именно страны
+
+Azure CDN geo-filtering поддерживает:
+ISO-коды сран
+Allow / Block действия
+
+|                          | CDN              | Front Door    | App Gateway     |
+| ------------------------ | ---------------- | ------------- | --------------- |
+| Основная цель            | Кэш              | Глобальный LB | Региональный LB |
+| География                | Edge worldwide   | Global        | Regional        |
+| Кэширование              | Да               | Да            | Нет             |
+| WAF                      | Нет (в классике) | Да            | Да              |
+| Failover между регионами | Нет              | Да            | Нет             |
+| Работает в VNet          | Нет              | Нет           | Да              |
+
+Если нужно:
+
+Быстро отдавать картинки → CDN
+Глобальный failover и routing → Front Door
+Балансировка внутри VNet → App Gateway
+
+
+Перенос в Azure Web Apps позволяет:
+Настраивать HTTP headers
+Добавлять security headers
+Использовать web.config / app settings
+Полный контроль над response
+Это полноценная замена static hosting.
+
 **You're now ready to build reliable, scalable message-based solutions in Azure!** 🎉

@@ -748,4 +748,42 @@ var filter = new SqlRuleFilter("Priority = 'High' AND Region = 'US-West'");
 - **ContentType**: Serialization format
 - **ReplyTo**: Reply address
 
+Dead-letter queue
+Используется для:
+Сообщений с ошибками
+Невалидных сообщений
+Не влияет на порядок.
+
+❌ Message deferral
+озволяет:
+Отложить обработку конкретного сообщения
+Позже получить его по sequence number
+Не гарантирует FIFO.
+
+❌ Scheduled delivery
+Позволяет:
+Отправить сообщение в будущем
+Не гарантирует порядок.
+
+Если видишь:
+FIFO
+Ordered processing
+Strict order
+👉 Ответ почти всегда: Message Sessions
+
+3️⃣ Boolean Filter (TrueFilter / FalseFilter)
+Это специальные фильтры:
+TrueFilter → принимает все сообщения
+FalseFilter → не принимает ничего
+Используются:
+Для SubscriptionA (все сообщения)
+Для отключения подписки
+
+
+Если видишь:
+Multiple subscribers
+Topic
+Fan-out
+Publish/Subscribe
+👉 Ответ: multicast request/reply
 **Use properties for routing, filtering, and implementing messaging patterns like request-reply!

@@ -642,4 +642,63 @@ az containerapp env create \
 - Нужна изоляция → разные environments
 
 
+az aks get-credentials --resource-group <rg> --name <cluster>
+
+az aks get-credentials
+kubectl apply
+
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-azure-container-apps/2-explore-azure-container-apps)
+
+1️⃣ Log Streaming
+📌 Что это
+Просмотр логов контейнера в реальном времени.
+📌 Что показывает
+stdout
+stderr
+системные сообщения
+логи приложения
+
+📌 Когда использовать
+Проверка после деплоя
+Debug “прямо сейчас”
+Проверка, стартовал ли контейнер
+
+az containerapp logs show --follow
+
+2️⃣ Log Analytics (Azure Monitor Logs)
+📌 Что это
+Централизованное хранилище логов с KQL-запросами.
+📌 Что позволяет
+Фильтрацию
+Агрегацию
+Исторический анализ
+Поиск по времени
+Создание алертов
+
+📌 Когда использовать
+Анализ за прошлые часы/дни
+Поиск ошибок
+Метрики и отчёты
+👉 Это не live streaming.
+
+3️⃣ Container Console
+📌 Что это
+Интерактивный shell в контейнере.
+📌 Что можно делать
+Запустить bash
+Проверить файлы
+Выполнить команды
+📌 Это НЕ
+Не лог-сервис
+Не мниторинг
+👉 Это для ручной диагностики.
+
+4️⃣ Diagnostic Logs
+📌 Что это
+Механизм отправки логов в:
+Log Analytics
+Storage Account
+Event Hub
+📌 Это
+Конфигурация маршрутизации логов
+Не инструмент просмотра

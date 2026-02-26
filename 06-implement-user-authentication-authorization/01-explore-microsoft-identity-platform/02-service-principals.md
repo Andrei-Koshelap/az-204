@@ -915,5 +915,22 @@ DisplayName = "App1"
 > Application Object — описание приложения.  
 > Service Principal — объект безопасности, которому назначаются права.
 
+Если видишь:
+“Users log in”
+“On behalf of the user”
+“User credentials”
+👉 Ответ = Delegated
+
+Если видишь:
+“Daemon”
+“Background service”
+“No signed-in user”
+👉 Ответ = Application
+
+| Нужно                   | Ответ      |
+| ----------------------- | ---------- |
+| Inherit parent policies | `<base />` |
+| Conditional execution   | `<when>`   |
+| Control flow            | `<choose>` |
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-microsoft-identity-platform/3-app-service-principals)

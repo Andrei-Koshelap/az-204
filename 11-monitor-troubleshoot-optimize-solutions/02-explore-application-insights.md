@@ -1,18 +1,69 @@
-# Explore Azure Monitor and Application Insights
+# Изучаем Azure Monitor и Application Insights
 
-## Overview
+## Обзор
 
-Application Insights is an extension of Azure Monitor that provides Application Performance Monitoring (APM) capabilities. It's a comprehensive monitoring solution that helps you understand how your applications are performing and proactively identifies issues before they impact users.
+Application Insights — это расширение Azure Monitor, предоставляющее возможности **Application Performance Monitoring (APM)**.
 
-In this unit, you'll learn:
-- Azure Monitor architecture and data types
-- Application Insights features and capabilities
-- How telemetry data is collected and stored
-- Key APM concepts and monitoring tools
+Это комплексное решение для мониторинга, которое позволяет:
 
-## Azure Monitor: The Foundation
+- понимать производительность приложений;
+- выявлять узкие места;
+- обнаруживать аномалии;
+- находить ошибки до того, как они повлияют на пользователей.
 
-Azure Monitor is the unified monitoring platform for all Azure resources, providing a centralized location for metrics, logs, and traces.
+---
+
+## В этом разделе вы изучите
+
+- Архитектуру Azure Monitor и типы данных
+- Возможности Application Insights
+- Как собирается и хранится телеметрия
+- Ключевые концепции APM и инструменты мониторинга
+
+---
+
+# Azure Monitor: Основа мониторинга
+
+Azure Monitor — это единая платформа мониторинга для всех ресурсов Azure.
+
+Он предоставляет централизованное хранилище для:
+
+- Метрик (Metrics)
+- Логов (Logs)
+- Трассировок (Traces)
+
+---
+
+## Что делает Azure Monitor
+
+- Собирает телеметрию из ресурсов Azure
+- Обрабатывает и агрегирует данные
+- Хранит данные в Metrics store и Log Analytics
+- Позволяет анализировать информацию через KQL
+- Поддерживает алерты и автоматические реакции
+
+---
+
+## Архитектурная модель
+
+1. Ресурсы Azure и приложения генерируют телеметрию
+2. Данные поступают в Azure Monitor
+3. Сохраняются в соответствующих хранилищах
+4. Анализируются через инструменты (Metrics Explorer, Log Analytics, Workbooks)
+5. Используются для алертов и автоматизации
+
+---
+
+## Важно для AZ-204
+
+Нужно чётко понимать:
+
+- Azure Monitor — центральная платформа
+- Application Insights — APM-компонент внутри неё
+- Мониторинг охватывает метрики, логи и трассировки
+- Данные можно анализировать через KQL
+
+Экзамен проверяет архитектурное понимание, а не только знание интерфейса портала.
 
 ### Azure Monitor Architecture
 
@@ -872,6 +923,38 @@ In the next unit, you'll learn about:
 - Sampling and filtering strategies
 
 ---
+
+Когда приложение отправляет телеметрию:
+App → Telemetry Initializer → Telemetry Processor → AI backend
+
+1️⃣ Telemetry Initializers
+Добавляют или изменяют свойства
+Например: добавить cloud role name
+Не могут удалить telemetry item
+
+2️⃣ Telemetry Processors
+Это middleware в telemetry pipeline.
+Они могут:
+✔ Фильтровать
+✔ Полностью удалить telemetry item
+✔ Изменить объект перед отправкой
+✔ Реализовать кастомную логику
+
+Distributed tracing:
+Отслеживает зависимые вызовы
+Коррелирует запросы
+Не управляет фильтрацией телеметрии
+
+Funnels
+Аналитика пользовательских потоков
+Не влияет на сбор телеметрии
+
+|                         | Initializer | Processor |
+| ----------------------- | ----------- | --------- |
+| Изменить свойства       | ✅           | ✅         |
+| Отфильтровать / удалить | ❌           | ✅         |
+| Работает до отправки    | ✅           | ✅         |
+| Middleware pipeline     | ❌           | ✅         |
 
 **📚 Further Reading:**
 - [Application Insights Overview](https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview)

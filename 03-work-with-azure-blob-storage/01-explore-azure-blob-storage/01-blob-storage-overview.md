@@ -333,12 +333,52 @@ SKU определяет комбинацию:
 > 🎯 На экзамене часто спрашивают различие между GRS и RA-GRS.
 
 
+В Azure Blob Storage есть три типа blob:
+1️⃣ Block Blob
+для хранения файлов
+документов
+изображений
+видео
+используется чаще всего
+
+2️⃣ Page Blob
+оптимизирован для random read/write
+используется для VHD (виртуальные диски Azure VM)
+
+3️⃣ Append Blob ✅
+
+Специально предназначен для сценариев:
+логирования
+аудита
+трассировки
+append-only workloads
+Особенности:
+данныеможно только добавлять в конец
+нельзя изменять существующие блоки
+идеально подходит для log-файлов
 ---
 
+
+В Azure Blob Storage есть минимальный срок хранения для каждого tier:
+Tier	Минимальный срок хранения
+Hot	нет
+Cool	30 дней
+Archive	180 дней
 ## Additional Resources
+
+
+Когда в Azure Blob Storage включается Static website hosting, автоматически создаётся специальный контейнер:
+$web
+После этого контент становится доступным через:
+https://<storage-account>.zXX.web.core.windows.net
 
 - [Azure Blob Storage documentation](https://learn.microsoft.com/en-us/azure/storage/blobs/)
 - [Storage account overview](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-overview)
 - [Access tiers for blob data](https://learn.microsoft.com/en-us/azure/storage/blobs/access-tiers-overview)
 
 [Microsoft Learn - Explore Azure Blob storage](https://learn.microsoft.com/en-us/training/modules/explore-azure-blob-storage/2-blob-storage-overview)
+
+Blob Storage:
+Использует PUT для загрузки блоба
+Метаданные передаются именно в PUT-запросе
+POST здесь не используется для установки метаданных

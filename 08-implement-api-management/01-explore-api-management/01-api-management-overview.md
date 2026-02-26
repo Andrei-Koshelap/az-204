@@ -1,28 +1,66 @@
-# API Management Service Overview
+# API Management Service — Обзор
 
-## What is Azure API Management?
+## Что такое Azure API Management?
 
-Azure API Management (APIM) is a **fully managed service** that enables organizations to publish, secure, transform, maintain, and monitor APIs. It acts as a facade for backend services, providing a unified entry point for API consumers while decoupling them from backend implementations.
+Azure API Management (APIM) — это **полностью управляемый сервис**, который позволяет организациям публиковать, 
+защищать, трансформировать, сопровождать и мониторить API.
 
-**Key Purpose**: Create consistent, modern API gateways for existing backend services hosted anywhere.
+Он выступает в роли фасада (API Gateway) для backend-сервисов, предоставляя единую точку входа для 
+клиентов и изолируя их от внутренней реализации.
+
+**Ключевая цель**: создать единый, современный API-шлюз для существующих backend-сервисов, 
+независимо от того, где они размещены (Azure, on-premises, другие облака).
+
+> 💡 На экзамене AZ-204 важно понимать, что APIM — это не просто прокси, а полноценный API Gateway 
+> с политиками безопасности, трансформации и мониторинга.
 
 ---
 
-## Core Components
+## Основные компоненты
 
-Azure API Management consists of three main components:
+Azure API Management состоит из трёх ключевых компонентов:
 
 ### 1. **API Gateway (Data Plane)**
 
-The **API gateway** is the runtime component that handles API requests.
 
-**Responsibilities**:
-- ✅ **Routes requests** to appropriate backend services
-- ✅ **Verifies credentials** (API keys, tokens, certificates)
-- ✅ **Enforces quotas** and rate limits
-- ✅ **Transforms requests/responses** based on policies
-- ✅ **Caches responses** to improve performance
-- ✅ **Emits telemetry** (logs, metrics, traces)
+::contentReference[oaicite:0]{index=0}
+
+
+**API Gateway** — это runtime-компонент, который обрабатывает входящие API-запросы.
+
+### Зоны ответственности:
+
+- ✅ **Маршрутизация запросов** к соответствующим backend-сервисам
+- ✅ **Проверка учетных данных** (API keys, JWT-токены, сертификаты)
+- ✅ **Применение квот и rate limiting**
+- ✅ **Трансформация запросов и ответов** через policies
+- ✅ **Кэширование ответов** для повышения производительности
+- ✅ **Генерация телеметрии** (логи, метрики, трассировки)
+
+---
+
+### 🔎 Дополнение для понимания архитектуры
+
+Data Plane отвечает за **обработку трафика**, тогда как управление конфигурацией (создание API, настройка политик и т.д.) происходит через **Control Plane**.
+
+На практике это означает:
+
+- Gateway масштабируется для обработки нагрузки
+- Конфигурация централизованно управляется через Azure Portal, ARM, CLI или REST API
+- Изменения политик применяются без необходимости изменять backend
+
+---
+
+### ⚠️ Важно для AZ-204
+
+Если в вопросе говорится о:
+
+- ограничении количества запросов → **rate-limit policy**
+- защите API через подписку → **subscription key**
+- трансформации JSON ↔ XML → **policy transformation**
+- централизованной публикации API → **API Management**
+
+— почти всегда правильный ответ связан с APIM.
 
 **Architecture**:
 ```
@@ -51,55 +89,82 @@ The **API gateway** is the runtime component that handles API requests.
 
 ### 2. **Management Plane (Azure Portal)**
 
-The **management plane** is the administrative interface for configuring APIM.
 
-**Capabilities**:
-- ✅ **Provision and configure** API Management instance
-- ✅ **Define or import** API schemas (OpenAPI, WADL, WSDL)
-- ✅ **Package APIs** into products
-- ✅ **Configure policies** (quotas, transformations, security)
-- ✅ **Manage users** and subscriptions
-- ✅ **View analytics** and insights
+::contentReference[oaicite:0]{index=0}
 
-**Access Methods**:
+
+**Management Plane** — это административный уровень управления APIM, через который выполняется настройка и конфигурация сервиса.
+
+### Возможности:
+
+- ✅ **Развёртывание и настройка** экземпляра API Management
+- ✅ **Определение или импорт** API-схем (OpenAPI, WADL, WSDL)
+- ✅ **Группировка API в продукты (Products)**
+- ✅ **Настройка политик (policies)** — квоты, трансформации, безопасность
+- ✅ **Управление пользователями** и подписками
+- ✅ **Просмотр аналитики** и метрик
+
+### Способы доступа:
+
 - Azure Portal (GUI)
 - Azure CLI
 - Azure PowerShell
 - REST API
 - ARM Templates / Bicep
 
-### 3. **Developer Portal**
-
-The **developer portal** is an automatically generated, customizable website for API consumers.
-
-**Features for Developers**:
-- ✅ **Read API documentation** (interactive reference)
-- ✅ **Test APIs** via interactive console
-- ✅ **Subscribe to products** to get API keys
-- ✅ **Manage API keys** (regenerate, view usage)
-- ✅ **View analytics** on their own usage
-- ✅ **Download API definitions** (OpenAPI/Swagger)
-
-**Customization**:
-- Branding (logos, colors, themes)
-- Custom pages and content
-- OAuth 2.0 / OpenID Connect integration
-- Self-service account creation
+> 💡 Важно для экзамена:  
+> Management Plane = **Control Plane**.  
+> Он отвечает за конфигурацию, а не за обработку трафика.
 
 ---
 
-## Key Concepts
+### 3. **Developer Portal**
+
+
+::contentReference[oaicite:1]{index=1}
+
+
+**Developer Portal** — это автоматически создаваемый и настраиваемый веб-сайт для потребителей API.
+
+Он служит точкой взаимодействия между разработчиками и опубликованными API.
+
+### Возможности для разработчиков:
+
+- ✅ **Просмотр документации API** (интерактивный reference)
+- ✅ **Тестирование API** через встроенную консоль
+- ✅ **Подписка на продукты** для получения API-ключей
+- ✅ **Управление ключами** (перегенерация, просмотр использования)
+- ✅ **Просмотр собственной статистики использования**
+- ✅ **Скачивание спецификаций API** (OpenAPI / Swagger)
+
+### Кастомизация:
+
+- Брендирование (логотипы, цвета, темы)
+- Добавление пользовательских страниц
+- Интеграция OAuth 2.0 / OpenID Connect
+- Самостоятельная регистрация пользователей (self-service)
+
+> 🔎 На экзамене часто проверяют понимание разницы:
+> - Developer Portal — для **потребителей API**
+> - Management Plane — для **администраторов API**
+
+---
+
+## Ключевые понятия
 
 ### APIs
 
-An **API** in APIM represents a set of operations (endpoints) that can be invoked.
+В контексте APIM, **API** — это логическая группа операций (endpoint’ов), доступных для вызова через шлюз.
 
-**Properties**:
-- Name and description
-- Backend service URL
-- URL path (e.g., `/api/users`)
-- Protocols (HTTP, HTTPS, WebSocket)
-- Operations (GET, POST, PUT, DELETE, etc.)
+### Свойства API:
+
+- Имя и описание
+- URL backend-сервиса
+- Путь (например, `/api/users`)
+- Поддерживаемые протоколы (HTTP, HTTPS, WebSocket)
+- Операции (GET, POST, PUT, DELETE и т.д.)
+
+> 💡 APIM позволяет импортировать существующие API (например, из OpenAPI/Swagger) и «обернуть» их политиками безопасности и управления трафиком без изменения backend-кода.
 
 **Example**:
 ```
@@ -115,18 +180,72 @@ Operations:
 
 ### Products
 
-**Products** are how APIs are surfaced to developers. A product contains one or more APIs.
 
-**Types**:
-- **Open Products**: No subscription required
-- **Protected Products**: Require subscription to access
+::contentReference[oaicite:0]{index=0}
 
-**Product Properties**:
-- Title and description
-- Terms of use
-- Subscription requirement
-- Approval workflow (auto-approve or admin approval)
-- Usage quotas and rate limits
+
+**Products (Продукты)** — это способ публикации API для разработчиков.  
+Продукт объединяет один или несколько API и определяет условия их использования.
+
+Именно через продукты разработчики получают доступ к API (через подписки).
+
+---
+
+### Типы продуктов
+
+- **Open Products (Открытые)**  
+  Доступны без подписки (subscription key не требуется)
+
+- **Protected Products (Защищённые)**  
+  Требуют оформления подписки для получения доступа
+
+> 💡 На экзамене важно помнить:  
+> Доступ к API обычно контролируется через **product subscription**, а не напрямую через сам API.
+
+---
+
+### Свойства продукта
+
+- Заголовок и описание
+- Условия использования (Terms of use)
+- Требование подписки
+- Процесс одобрения (автоматический или через администратора)
+- Квоты и ограничения частоты запросов (rate limits)
+
+---
+
+### Архитектурная логика
+
+Связь выглядит так:
+```
+Developer → Subscribes to Product → Gets Subscription Key → Calls API via Gateway
+```
+
+То есть:
+- API входят в продукт
+- Пользователь подписывается на продукт
+- Подписка генерирует ключ
+- Ключ передаётся в запросе к API
+
+---
+
+### ⚠️ Частые экзаменационные сценарии
+
+**Сценарий**: «Ограничить доступ к API только для зарегистрированных пользователей»  
+→ Использовать **Protected Product** с подпиской
+
+**Сценарий**: «Ограничить 1000 запросов в минуту для клиентов»  
+→ Настроить rate-limit policy на уровне продукта
+
+**Сценарий**: «Предоставить публичный API без ключей»  
+→ Создать **Open Product**
+
+---
+
+### Практическое замечание
+
+Продукты позволяют реализовать монетизацию API, разграничение тарифов (Free / Standard / Premium) и изоляцию клиентов без изменения backend-сервисов.
+
 
 **Example**:
 ```
@@ -147,20 +266,81 @@ Product: Enterprise
 
 ### Groups
 
-**Groups** manage visibility of products to developers.
 
-**Built-in System Groups**:
+::contentReference[oaicite:0]{index=0}
 
-| Group | Description | Membership |
-|-------|-------------|------------|
-| **Administrators** | Manage APIM instance, create APIs/products | Azure subscription admins |
-| **Developers** | Authenticated developer portal users | Registered developers |
-| **Guests** | Unauthenticated portal visitors | Anonymous users |
 
-**Custom Groups**:
-- Create custom groups for specific developer segments
-- Integrate with Microsoft Entra ID (Azure AD) groups
-- Grant different access levels per group
+**Groups (Группы)** управляют видимостью продуктов для разработчиков.  
+Через группы определяется, какие пользователи могут видеть и подписываться на конкретные продукты.
+
+> 💡 Важно: доступ к продукту = членство в группе + подписка (если требуется).
+
+---
+
+## Встроенные системные группы
+
+| Группа | Описание | Членство |
+|--------|----------|----------|
+| **Administrators** | Управляют экземпляром APIM, создают API и продукты | Администраторы подписки Azure |
+| **Developers** | Аутентифицированные пользователи Developer Portal | Зарегистрированные разработчики |
+| **Guests** | Неаутентифицированные посетители портала | Анонимные пользователи |
+
+---
+
+## Пользовательские группы (Custom Groups)
+
+Можно создавать собственные группы для сегментации разработчиков:
+
+- Разделение по партнёрам / клиентам
+- Разные тарифные планы
+- Внутренние vs внешние пользователи
+
+### Возможности:
+
+- Интеграция с **Microsoft Entra ID (Azure AD)** группами
+- Назначение разных уровней доступа к продуктам
+- Централизованное управление доступом через корпоративную директорию
+
+---
+
+## Как это работает вместе
+```
+Group → Has Access to Product → Contains APIs
+User → Member of Group → Can Subscribe to Product
+```
+
+То есть:
+
+- Группа определяет, какие продукты видны
+- Пользователь должен состоять в группе
+- После подписки получает subscription key
+- Затем вызывает API через Gateway
+
+---
+
+## ⚠️ Частые экзаменационные сценарии
+
+**Сценарий**: «Ограничить доступ к API только для внутренней команды»  
+→ Создать custom group и предоставить доступ только ей
+
+**Сценарий**: «Использовать корпоративную аутентификацию»  
+→ Интеграция с Microsoft Entra ID
+
+**Сценарий**: «Сделать API полностью публичным»  
+→ Продукт доступен группе Guests и не требует подписки
+
+---
+
+### Практическое замечание
+
+Groups позволяют реализовать:
+
+- RBAC-модель на уровне API-публикации
+- Разделение партнёров
+- Многоуровневый доступ
+- Enterprise SSO-интеграцию
+
+Это один из ключевых механизмов разграничения доступа в Azure API Management.
 
 **Example**:
 ```
@@ -172,39 +352,111 @@ Group: Premium Partners
 
 ### Developers
 
-**Developers** are user accounts that consume APIs through the developer portal.
 
-**Developer Lifecycle**:
-1. **Sign up** via developer portal (or invited by admin)
-2. **Browse products** and API documentation
-3. **Subscribe** to products to get API keys
-4. **Test APIs** using interactive console
-5. **Integrate** APIs into applications
-6. **Monitor usage** and analytics
+::contentReference[oaicite:0]{index=0}
 
-**Management**:
-- Invite developers via email
-- Assign to groups
-- Approve/reject subscription requests
-- View developer usage and analytics
 
-### Subscriptions
+**Developers (Разработчики)** — это пользовательские учётные записи, которые потребляют API через Developer Portal.
 
-**Subscriptions** provide access to APIs within a product.
+Они не управляют APIM, а используют опубликованные API.
 
-**Subscription Scopes**:
+---
 
-| Scope | Description | Use Case |
-|-------|-------------|----------|
-| **All APIs** | Access to every API in APIM | Admin/testing |
-| **Single API** | Access to one specific API | Limited integration |
-| **Product** | Access to all APIs in a product | Most common (recommended) |
+## Жизненный цикл разработчика
 
-**Subscription Properties**:
-- Primary key and secondary key
-- State (active, suspended, cancelled)
-- Scope (product, API, or all APIs)
-- Owner (developer or group)
+1. **Регистрация (Sign up)** через Developer Portal  
+   *(или приглашение администратором)*
+2. **Просмотр продуктов** и документации API
+3. **Подписка (Subscribe)** на продукт для получения API-ключа
+4. **Тестирование API** через интерактивную консоль
+5. **Интеграция API** в свои приложения
+6. **Мониторинг использования** и аналитики
+
+---
+
+## Управление разработчиками
+
+Администратор может:
+
+- Приглашать разработчиков по email
+- Назначать их в группы
+- Одобрять или отклонять запросы на подписку
+- Просматривать статистику использования API
+
+> 💡 На экзамене важно помнить:  
+> Разработчик получает доступ не к API напрямую, а через **продукт и подписку**.
+
+---
+
+# Subscriptions
+
+
+::contentReference[oaicite:1]{index=1}
+
+
+**Subscriptions (Подписки)** предоставляют доступ к API, входящим в продукт.
+
+Каждая подписка генерирует **два ключа**: primary и secondary.
+
+Это позволяет безопасно выполнять ротацию ключей без простоя.
+
+---
+
+## Области действия подписки (Subscription Scopes)
+
+| Scope | Описание | Сценарий использования |
+|--------|----------|------------------------|
+| **All APIs** | Доступ ко всем API в APIM | Администрирование / тестирование |
+| **Single API** | Доступ к одному конкретному API | Ограниченная интеграция |
+| **Product** | Доступ ко всем API в продукте | Наиболее распространённый вариант (рекомендуется) |
+
+> ✅ В большинстве production-сценариев используется **Product scope**.
+
+---
+
+## Свойства подписки
+
+- **Primary key** и **Secondary key**
+- Статус (active, suspended, cancelled)
+- Scope (product, API или all APIs)
+- Владелец (разработчик или группа)
+
+---
+
+## Как используется subscription key
+
+Ключ передаётся:
+
+- В HTTP-заголовке (обычно `Ocp-Apim-Subscription-Key`)
+- Или как query-параметр
+
+Gateway проверяет ключ и применяет политики (квоты, лимиты и т.д.).
+
+---
+
+## ⚠️ Частые экзаменационные сценарии
+
+**Сценарий**: «Нужно выполнить ротацию ключа без остановки клиентов»  
+→ Использовать secondary key, затем регенерировать primary
+
+**Сценарий**: «Временно заблокировать доступ клиенту»  
+→ Перевести subscription в состояние *suspended*
+
+**Сценарий**: «Дать доступ только к определённому API»  
+→ Создать подписку со scope = Single API
+
+---
+
+### Практическое замечание
+
+Subscriptions — это основной механизм:
+
+- Аутентификации клиентов
+- Отслеживания потребления
+- Ограничения трафика
+- Реализации тарифных планов
+
+Это один из самых часто проверяемых механизмов в вопросах AZ-204.
 
 **Key Rotation**:
 ```bash
@@ -218,21 +470,86 @@ az apim api subscription update \
 
 ### Policies
 
-**Policies** are collections of statements that modify API behavior.
 
-**Common Policy Use Cases**:
-- Rate limiting and quotas
-- Request/response transformation
-- Authentication and authorization
-- Caching
-- Error handling
-- Logging
+::contentReference[oaicite:0]{index=0}
 
-**Policy Scopes** (in order of precedence):
-1. **Global** - Applies to all APIs
-2. **Product** - Applies to all APIs in product
-3. **API** - Applies to all operations in API
-4. **Operation** - Applies to specific operation
+
+**Policies (Политики)** — это набор XML-выражений, которые изменяют поведение API во время обработки запроса.
+
+Они позволяют управлять трафиком, безопасностью и трансформацией данных **без изменения backend-кода**.
+
+> 💡 Ключевая идея: Policies выполняются в API Gateway и формируют полноценный middleware pipeline.
+
+---
+
+## Типичные сценарии использования
+
+- Ограничение частоты запросов (rate limiting) и квоты
+- Трансформация запросов и ответов (JSON ↔ XML, изменение заголовков)
+- Аутентификация и авторизация (JWT validation, OAuth 2.0)
+- Кэширование ответов
+- Обработка ошибок
+- Логирование и отправка телеметрии
+
+---
+
+## Области применения политик (Policy Scopes)
+
+Политики могут применяться на разных уровнях.  
+Если политики заданы на нескольких уровнях, применяется принцип наследования и объединения.
+
+**Порядок приоритета (от общего к частному):**
+
+1. **Global** — применяется ко всем API
+2. **Product** — ко всем API внутри продукта
+3. **API** — ко всем операциям конкретного API
+4. **Operation** — к конкретной операции
+
+> ⚠️ Чем ниже уровень, тем более специфичной является политика.  
+> Operation-level политика позволяет переопределить поведение для одного endpoint.
+
+---
+
+## Pipeline выполнения
+
+Политики выполняются в следующих секциях:
+
+- **Inbound** — до отправки запроса в backend
+- **Backend** — при взаимодействии с backend
+- **Outbound** — перед отправкой ответа клиенту
+- **On-error** — при возникновении ошибки
+
+Это важно для понимания, где именно происходит трансформация или проверка.
+
+---
+
+## Частые экзаменационные сценарии
+
+**Сценарий**: «Ограничить 100 вызовов в минуту для клиентов»  
+→ Использовать `rate-limit` policy
+
+**Сценарий**: «Проверить JWT-токен перед передачей запроса в backend»  
+→ Использовать `validate-jwt` в секции inbound
+
+**Сценарий**: «Изменить структуру ответа API без изменения backend»  
+→ Использовать transformation policy в outbound
+
+**Сценарий**: «Кэшировать GET-запросы для повышения производительности»  
+→ Использовать caching policy
+
+---
+
+### Практическое замечание
+
+Policies — это один из самых мощных механизмов APIM:
+
+- Позволяют реализовать Zero-Trust модель
+- Централизуют безопасность
+- Упрощают версионирование API
+- Исключают необходимость дублирования логики в backend
+
+Вопросы про APIM на AZ-204 очень часто связаны именно с правильным выбором политики и её уровня применения.
+
 
 **Example**:
 ```xml
@@ -256,27 +573,32 @@ az apim api subscription update \
 ```
 
 ---
+## Service Tiers (Тарифные планы)
 
-## Service Tiers
 
-Azure API Management offers multiple pricing tiers:
+::contentReference[oaicite:0]{index=0}
 
-| Tier | Features | Use Case | SLA |
-|------|----------|----------|-----|
-| **Consumption** | Serverless, pay-per-execution | Serverless apps, dev/test | None |
-| **Developer** | Full features, no SLA | Development & testing | None |
-| **Basic** | 2 units, limited features | Small production workloads | 99.95% |
-| **Standard** | 4 units, full features | Medium production workloads | 99.95% |
-| **Premium** | Multi-region, VNet, high scale | Enterprise production | 99.99% |
-| **Isolated** | Dedicated environment | Compliance & isolation | 99.99% |
 
-### Tier Comparison
+Azure API Management предоставляет несколько тарифных планов, ориентированных на разные сценарии — от serverless-разработки до enterprise-уровня.
 
-| Feature | Consumption | Developer | Basic | Standard | Premium | Isolated |
-|---------|-------------|-----------|-------|----------|---------|----------|
-| **Max Units** | Auto-scale | 1 | 2 | 4 | Unlimited | Custom |
-| **Max Throughput** | Variable | 500 req/sec | 1K req/sec | 2.5K req/sec | High | Very High |
-| **SLA** | ❌ None | ❌ None | ✅ 99.95% | ✅ 99.95% | ✅ 99.99% | ✅ 99.99% |
+| Tier | Возможности | Сценарий использования | SLA |
+|------|-------------|------------------------|-----|
+| **Consumption** | Serverless, оплата за выполнение | Serverless-приложения, dev/test | Нет |
+| **Developer** | Полный функционал, без SLA | Разработка и тестирование | Нет |
+| **Basic** | До 2 unit'ов, ограниченные возможности | Небольшие production-нагрузки | 99.95% |
+| **Standard** | До 4 unit'ов, полный функционал | Средние production-нагрузки | 99.95% |
+| **Premium** | Multi-region, VNet, высокая масштабируемость | Enterprise production | 99.99% |
+| **Isolated** | Выделенная среда | Требования комплаенса и изоляции | 99.99% |
+
+---
+
+## Сравнение тарифов
+
+| Функция | Consumption | Developer | Basic | Standard | Premium | Isolated |
+|----------|-------------|-----------|-------|----------|---------|----------|
+| **Max Units** | Автомасштабирование | 1 | 2 | 4 | Без ограничений | Настраивается |
+| **Макс. пропускная способность** | Переменная | ~500 req/sec | ~1K req/sec | ~2.5K req/sec | Высокая | Очень высокая |
+| **SLA** | ❌ Нет | ❌ Нет | ✅ 99.95% | ✅ 99.95% | ✅ 99.99% | ✅ 99.99% |
 | **Multi-region** | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
 | **VNet Integration** | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
 | **Self-hosted Gateway** | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
@@ -284,39 +606,96 @@ Azure API Management offers multiple pricing tiers:
 | **Developer Portal** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Custom Domains** | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **OAuth 2.0** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Cost** | Pay-per-use | $50/month | $150/month | $700/month | $2,800+/month | Custom |
+| **Стоимость** | Pay-per-use | ~$50/мес | ~$150/мес | ~$700/мес | ~$2800+/мес | Индивидуально |
 
-### Choosing a Tier
-
-**Consumption Tier**:
-- ✅ Serverless workloads (Azure Functions, Logic Apps)
-- ✅ Development and testing
-- ✅ Unpredictable or sporadic traffic
-- ❌ No SLA, limited features
-
-**Developer Tier**:
-- ✅ Development and testing
-- ✅ Full feature set for evaluation
-- ❌ No SLA, not for production
-
-**Basic/Standard Tiers**:
-- ✅ Production workloads
-- ✅ Predictable traffic
-- ✅ SLA required
-- ❌ Single region only
-
-**Premium Tier**:
-- ✅ Enterprise production
-- ✅ Multi-region deployment
-- ✅ VNet integration
-- ✅ High availability and performance
-
-**Isolated Tier**:
-- ✅ Compliance requirements
-- ✅ Complete network isolation
-- ✅ Dedicated infrastructure
+> ⚠️ Цены ориентировочные и могут отличаться по региону.
 
 ---
+
+## Как выбрать тариф
+
+### 🔹 Consumption Tier
+
+- ✅ Serverless-сценарии (Azure Functions, Logic Apps)
+- ✅ Непредсказуемый или нерегулярный трафик
+- ✅ Dev/test
+- ❌ Нет SLA
+- ❌ Нет VNet и кэширования
+
+Подходит для облачно-нативных и event-driven архитектур.
+
+---
+
+### 🔹 Developer Tier
+
+- ✅ Полный функционал для тестирования
+- ✅ Оценка возможностей APIM
+- ❌ Нет SLA
+- ❌ Не предназначен для production
+
+Используется как «sandbox».
+
+---
+
+### 🔹 Basic / Standard
+
+- ✅ Production-нагрузки
+- ✅ Предсказуемый трафик
+- ✅ SLA 99.95%
+- ❌ Только один регион
+
+Подходят для малого и среднего бизнеса.
+
+---
+
+### 🔹 Premium
+
+- ✅ Enterprise production
+- ✅ Развёртывание в нескольких регионах
+- ✅ Интеграция с VNet
+- ✅ Высокая доступность
+- ✅ Масштабирование
+
+Часто используется в микросервисной архитектуре и гибридных сценариях.
+
+---
+
+### 🔹 Isolated
+
+- ✅ Строгие требования по безопасности
+- ✅ Полная сетевая изоляция
+- ✅ Выделенная инфраструктура
+
+Подходит для финансового сектора, госорганизаций и компаний с регуляторными требованиями.
+
+---
+
+## ⚠️ Частые экзаменационные сценарии
+
+**Сценарий**: «Нужно multi-region и VNet integration»  
+→ Ответ: **Premium**
+
+**Сценарий**: «Production workload с SLA, но без multi-region»  
+→ Ответ: **Basic или Standard**
+
+**Сценарий**: «Serverless приложение с нерегулярным трафиком»  
+→ Ответ: **Consumption**
+
+**Сценарий**: «Нужна тестовая среда с полным функционалом»  
+→ Ответ: **Developer**
+
+---
+
+### Практическое замечание
+
+Выбор тарифа — это баланс между:
+
+- Требованиями к SLA
+- Масштабируемостью
+- Сетевой интеграцией
+- Стоимостью
+
+На AZ-204 чаще всего проверяется понимание различий между **Consumption**, **Standard** и **Premium**, особенно в контексте VNet и multi-region.
 
 ## Common Use Cases
 
@@ -331,22 +710,36 @@ Mobile App → APIM Gateway → Order Service
                           → Inventory Service
 ```
 
-**Benefits**:
-- Single entry point for consumers
-- Consistent authentication across services
-- Rate limiting per consumer
-- Request/response transformation
+**Преимущества**:
+- Единая точка входа для потребителей
+- Единая (консистентная) аутентификация для всех сервисов
+- Rate limiting для каждого потребителя
+- Трансформация запросов и ответов
 
-### 2. **Legacy API Modernization**
+> 💡 От себя (для практики и AZ-204):
+> - APIM хорошо «прячет» внутреннюю топологию: можно менять backend’ы без изменений у клиентов.
+> - Политики позволяют централизованно применять безопасность и ограничения, не размазывая это по микросервисам.
+> - Для мониторинга почти всегда подключают Application Insights/Log Analytics, чтобы видеть SLA и проблемные места.
 
-**Scenario**: Add modern API features to legacy SOAP services
+---
 
-**APIM Configuration**:
-- Import WSDL from SOAP service
-- Transform SOAP to REST
-- Add OAuth 2.0 authentication
-- Apply rate limiting
-- Cache responses
+### 2. **Модернизация legacy API**
+
+**Сценарий**: добавить современные возможности API для устаревших SOAP-сервисов
+
+**Настройка APIM**:
+- Импортировать WSDL из SOAP-сервиса
+- Трансформировать SOAP в REST
+- Добавить аутентификацию OAuth 2.0
+- Применить rate limiting
+- Кэшировать ответы
+
+> 🔎 Что обычно имеют в виду под «SOAP → REST» в APIM:
+> - фронт для клиентов становится RESTful (понятные URL + JSON),
+> - а внутри APIM может вызывать SOAP backend и/или преобразовывать payload через политики.
+
+> ⚠️ Экзаменационный акцент:
+> Если в вопросе фигурируют **WSDL/WSDL import, SOAP, transformation, OAuth** — APIM почти наверняка правильный сервис.
 
 **Before**:
 ```
@@ -357,29 +750,86 @@ Client → SOAP/XML → Legacy Service
 ```
 Client → REST/JSON → APIM → SOAP/XML → Legacy Service
 ```
+### 3. **Монетизация Partner API**
 
-### 3. **Partner API Monetization**
+**Сценарий**: предоставить партнёрам доступ к API с разными тарифными планами.
 
-**Scenario**: Expose APIs to partners with tiered pricing
+---
 
-**Products**:
-- **Free Tier**: 1,000 calls/month, read-only
-- **Standard Tier**: 100,000 calls/month, read/write
-- **Premium Tier**: Unlimited calls, full access
+## Продукты (тарифная модель)
 
-**Policies**:
-- Subscription keys per tier
-- Usage quotas enforcement
-- Analytics per partner
-- Billing integration
+- **Free Tier** — ограниченный объём вызовов, базовый доступ
+- **Standard Tier** — расширенные лимиты и возможности
+- **Premium Tier** — максимальный доступ и отсутствие ограничений
 
-### 4. **API Versioning**
+Каждый тариф реализуется как отдельный **Product** с индивидуальными настройками доступа.
 
-**Scenario**: Maintain multiple API versions simultaneously
+---
 
-**Versioning Strategies**:
+## Политики и механизмы
 
-**URL Path**:
+- Отдельные subscription keys для каждого тарифа
+- Применение квот (quota)
+- Ограничение частоты запросов (rate limiting)
+- Сбор аналитики по каждому партнёру
+- Интеграция с системой биллинга
+
+---
+
+### Архитектурная логика
+
+- Партнёр подписывается на продукт
+- Получает ключ подписки
+- Выполняет вызовы API через Gateway
+- APIM применяет политики и фиксирует использование
+
+---
+
+### Что важно для AZ-204
+
+- Монетизация реализуется через **Products + Subscriptions + Policies**
+- Квоты ограничивают общее количество вызовов за период
+- Rate limiting ограничивает частоту запросов
+- Аналитика позволяет учитывать использование по подписке
+
+---
+
+## 4. **Версионирование API**
+
+**Сценарий**: поддерживать несколько версий API одновременно без прерывания работы клиентов.
+
+APIM поддерживает механизм **Version Sets**, который позволяет логически объединять версии одного API.
+
+---
+
+## Стратегии версионирования
+
+- Через путь URL
+- Через query-параметр
+- Через HTTP-заголовок
+
+---
+
+## Ключевые моменты для экзамена
+
+- Несколько версий API могут существовать параллельно
+- Версии объединяются в Version Set
+- Backend для разных версий может отличаться
+- Клиенты могут постепенно мигрировать на новую версию
+- Политики можно применять отдельно для каждой версии
+
+---
+
+### Практическое замечание
+
+Корректная стратегия версионирования позволяет:
+
+- Сохранять обратную совместимость
+- Избегать breaking changes
+- Управлять миграцией клиентов
+- Минимизировать риски при обновлении API
+
+Версионирование — частая тема экзаменационных вопросов, особенно в контексте поддержки backward compatibility.
 ```
 https://apim.azure-api.net/v1/users
 https://apim.azure-api.net/v2/users
@@ -414,11 +864,23 @@ Api-Version: 1.0
  Service                       Run
 ```
 
-**Benefits**:
-- Unified API experience
-- Multi-region deployment
-- Self-hosted gateway for on-premises
-- Consistent security and monitoring
+**Преимущества**:
+
+- Единый и унифицированный API-опыт для потребителей
+- Развёртывание в нескольких регионах (multi-region)
+- Возможность использования self-hosted gateway для on-premises инфраструктуры
+- Централизованная безопасность и мониторинг
+
+---
+
+### Дополнительно (важно для понимания архитектуры)
+
+- Централизация управления API снижает сложность распределённых систем
+- Multi-region повышает отказоустойчивость и снижает задержки
+- Self-hosted gateway позволяет применять политики APIM вне Azure
+- Единые механизмы логирования упрощают аудит и диагностику
+
+Эти преимущества часто фигурируют в вопросах, где требуется выбрать решение для enterprise-архитектуры.
 
 ---
 
@@ -566,61 +1028,99 @@ az apim nv create \
   --value "https://backend.mycompany.com"
 ```
 
-### 6. **Monitor API Usage**
+### 6. **Мониторинг использования API**
 
-- Enable Application Insights integration
-- Track API metrics (latency, errors, throughput)
-- Set up alerts for anomalies
-- Review analytics regularly
+
+::contentReference[oaicite:0]{index=0}
+
+
+- Включить интеграцию с Application Insights
+- Отслеживать метрики API (задержка, ошибки, пропускная способность)
+- Настроить оповещения при аномалиях
+- Регулярно анализировать отчёты и статистику
 
 ---
 
-## Exam Tips
+### Что важно понимать
 
-### Key Concepts for AZ-204
+- Метрики позволяют выявлять узкие места и проблемы производительности
+- Логи помогают диагностировать ошибки на уровне Gateway
+- Alerts позволяют реагировать до того, как пользователи заметят проблему
+- Аналитика по подпискам помогает контролировать использование и SLA
 
-1. **Three components**: API Gateway, Management Plane, Developer Portal
+Мониторинг — критически важная часть production-сценариев и частая тема вопросов на экзамене.
 
-2. **Products**: Container for one or more APIs, can be Open or Protected
+---
 
-3. **Subscription scopes**: All APIs, Single API, Product
+# Exam Tips
 
-4. **Groups**: Administrators, Developers, Guests (+ custom groups)
+## Ключевые концепции для AZ-204
+
+1. **Три компонента**: API Gateway, Management Plane, Developer Portal
+
+2. **Products**: контейнер для одного или нескольких API, могут быть Open или Protected
+
+3. **Scopes подписок**: All APIs, Single API, Product
+
+4. **Groups**: Administrators, Developers, Guests (+ пользовательские группы)
 
 5. **Policy scopes**: Global > Product > API > Operation
 
-6. **Tiers**: Consumption (serverless), Developer (no SLA), Basic/Standard (production), Premium (multi-region)
+6. **Тарифы**:
+    - Consumption (serverless)
+    - Developer (без SLA)
+    - Basic/Standard (production)
+    - Premium (multi-region, VNet)
 
-7. **Developer portal**: Auto-generated, customizable, self-service
+7. **Developer Portal**: автоматически создаётся, настраивается, поддерживает self-service
 
-8. **Subscription keys**: Primary and secondary keys per subscription
+8. **Subscription keys**: primary и secondary ключ на каждую подписку
 
-9. **Policies**: Executed in order: inbound → backend → outbound → on-error
+9. **Порядок выполнения политик**: inbound → backend → outbound → on-error
 
-10. **VNet integration**: Only available in Premium and Isolated tiers
+10. **VNet integration**: доступна только в Premium и Isolated
 
-11. **Multi-region**: Only available in Premium and Isolated tiers
+11. **Multi-region**: доступен только в Premium и Isolated
 
-12. **Self-hosted gateway**: Deploy gateway in your own environment (Premium tier)
-
-### Common Exam Scenarios
-
-**Scenario 1**: "Expose multiple backend services through single endpoint"
-→ **Answer**: Use Azure API Management as API gateway
-
-**Scenario 2**: "Control access to APIs with different quota tiers"
-→ **Answer**: Create products with different rate limits and quotas
-
-**Scenario 3**: "Require subscription for production, but allow free testing"
-→ **Answer**: Create Open product (no subscription) and Protected product (subscription required)
-
-**Scenario 4**: "Deploy API gateway to on-premises data center"
-→ **Answer**: Use self-hosted gateway (Premium tier)
-
-**Scenario 5**: "Transform SOAP backend to REST for mobile clients"
-→ **Answer**: Use APIM policies to transform requests/responses
+12. **Self-hosted gateway**: развёртывание gateway в собственной инфраструктуре (Premium tier)
 
 ---
+
+## Частые экзаменационные сценарии
+
+**Сценарий 1**:  
+«Опубликовать несколько backend-сервисов через одну точку входа»  
+→ Использовать Azure API Management как API Gateway
+
+**Сценарий 2**:  
+«Контролировать доступ к API с разными квотами»  
+→ Создать разные продукты с собственными квотами и rate limiting
+
+**Сценарий 3**:  
+«Требовать подписку для production, но разрешить бесплатное тестирование»  
+→ Создать Open product и Protected product
+
+**Сценарий 4**:  
+«Развернуть API gateway в on-premises дата-центре»  
+→ Использовать self-hosted gateway (Premium tier)
+
+**Сценарий 5**:  
+«Трансформировать SOAP backend в REST для мобильных клиентов»  
+→ Использовать политики APIM для трансформации запросов и ответов
+
+---
+
+### Финальный совет
+
+В задачах AZ-204 почти всегда нужно определить:
+
+- Где применяется политика
+- Какой тариф подходит
+- Нужна ли подписка
+- Требуется ли multi-region или VNet
+- Кто управляет доступом (Group / Product / Subscription)
+
+Правильный ответ обычно строится вокруг комбинации **Products + Policies + Tier + Gateway возможностей**.
 
 ## Quick Reference Commands
 
@@ -658,7 +1158,15 @@ az apim update --name <name> --virtual-network External
 # Get API gateway URL
 az apim show --name <name> --query gatewayUrl -o tsv
 ```
+Metric-based alerts
+Activity log alerts
+Log Analytics (KQL) alerts
 
+APIM не обеспечивает полноценную защиту на уровне WAF и расширенную защиту от DDoS-атак.
+Для этого обычно используют внешние сервисы Azure, например:
+Azure Application Gateway (с WAF)
+Azure Front Door
+Azure DDoS Protection
 ---
 
 ## Learn More

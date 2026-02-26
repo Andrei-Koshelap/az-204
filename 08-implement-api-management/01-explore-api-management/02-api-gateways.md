@@ -1,24 +1,103 @@
 # API Gateways
 
-## What is an API Gateway?
+## Что такое API Gateway?
 
-An **API gateway** is a centralized entry point that sits between API clients and backend services. It acts as a reverse proxy, routing requests, enforcing policies, and aggregating results from multiple services.
+**API Gateway** — это централизованная точка входа, расположенная между клиентами API и backend-сервисами. Он работает как reverse proxy: маршрутизирует запросы, применяет политики безопасности, может агрегировать ответы от нескольких сервисов и возвращать единый результат клиенту.
 
-**Core Function**: Decouple API consumers from the implementation details of backend services.
+**Ключевая функция**: отделить (decouple) потребителей API от деталей реализации backend-сервисов.
+
+Иными словами — клиент больше не знает, где именно живёт сервис, на каком порту он работает и как разбита микросервисная архитектура. Всё взаимодействие идёт через единую точку входа.
 
 ---
 
-## Problems Without an API Gateway
+## Проблемы при отсутствии API Gateway
 
-### 1. **Tight Coupling**
+### 1. **Tight Coupling (жёсткая связность)**
 
-**Problem**: Clients directly coupled to backend service URLs
+**Проблема**: Клиенты напрямую привязаны к URL backend-сервисов.
 
+Это означает, что:
+- при изменении адреса сервиса нужно обновлять клиентов;
+- при рефакторинге архитектуры (например, разделении сервиса на два) потребуется изменение клиентского кода;
+- усложняется поддержка версионирования API.
+
+Дополнительно:
+- мобильные и web-клиенты начинают зависеть от внутренней структуры микросервисов;
+- нарушается принцип изоляции доменов;
+- увеличивается технический долг.
+
+---
+
+## Что обычно делает API Gateway (дополнение)
+
+В реальных системах API Gateway также выполняет:
+
+- 🔐 Аутентификацию и авторизацию (JWT, OAuth2)
+- 🚦 Rate limiting (ограничение количества запросов)
+- 📦 Агрегацию данных (Backend for Frontend паттерн)
+- 🔁 Retry и circuit breaker
+- 📊 Логирование и мониторинг
+- 🔀 Маршрутизацию по версиям API
+- 🌍 TLS termination
+
+В контексте AZ-204 важно понимать, что в Azure эту роль часто выполняют:
+- Azure API Management
+- Azure Application Gateway
+- Azure Front Door (в более сложных сценариях)
+
+
+|                            | Application Gateway | APIM Gateway           |
+| -------------------------- | ------------------- | ---------------------- |
+| Уровень                    | Инфраструктура      | API management         |
+| WAF                        | ✅                   | ❌ (нужен WAF отдельно) |
+| Load balancing             | ✅                   | Нет как основная цель  |
+| API keys                   | ❌                   | ✅                      |
+| Rate limit                 | ❌                   | ✅                      |
+| Transform request/response | ❌                   | ✅                      |
+| Developer portal           | ❌                   | ✅                      |
+
+---
+
+## Архитектурный смысл
+
+API Gateway особенно важен в микросервисной архитектуре:
+
+Без него:
 ```
+Client → Service A
+Client → Service B
+Client → Service C
+
+С ним:
+
+Client → API Gateway → Services
+
 Mobile App ──→ https://users.internal.com/api/users
           ──→ https://orders.internal.com/api/orders
           ──→ https://payments.internal.com/api/payments
 ```
+
+
+Это упрощает:
+- эволюцию архитектуры,
+- масштабирование,
+- безопасность,
+- управление трафиком.
+
+---
+
+## Ключевая мысль для экзамена AZ-204
+
+Если в вопросе говорится о:
+- централизованном управлении API,
+- политике безопасности,
+- трансформации запросов,
+- ограничении скорости,
+- версии API,
+- защите backend от прямого доступа,
+
+— скорее всего правильным ответом будет API Gateway или Azure API Management.
+
 
 **Issues**:
 - Client must know multiple service endpoints
@@ -60,17 +139,48 @@ Internet ──→ Backend Services (public IPs)
               - Hard to audit access
 ```
 
-**Issues**:
-- Each service must handle authentication
-- Multiple TLS termination points
-- Inconsistent authorization
-- Difficult to implement rate limiting
-- No centralized logging
-- Hard to detect attacks
+**Проблемы**:
 
-### 4. **Chatty Communication**
+- Каждый сервис должен самостоятельно реализовывать аутентификацию
+- Несколько точек TLS-терминации
+- Несогласованная авторизация
+- Сложно реализовать rate limiting
+- Отсутствие централизованного логирования
+- Трудно обнаруживать атаки
 
-**Problem**: Multiple round trips to gather data
+### Пояснение
+
+При отсутствии API Gateway каждый микросервис вынужден самостоятельно реализовывать механизмы безопасности и кросс-сервисные политики. Это приводит к дублированию логики, разной реализации авторизации, усложнению аудита и повышенному риску уязвимостей.
+
+Такой подход нарушает принцип разделения ответственности: безопасность, контроль трафика и мониторинг должны быть вынесены в отдельный инфраструктурный слой.
+
+---
+
+### 4. **Chatty Communication (избыточное сетевое взаимодействие)**
+
+**Проблема**: Для получения всех необходимых данных клиенту требуется выполнять несколько последовательных сетевых запросов.
+
+### Почему это проблема
+
+- Увеличивается задержка (latency)
+- Возрастает нагрузка на сеть
+- Усложняется клиентская логика
+- Снижается производительность мобильных и распределённых приложений
+
+### Как помогает API Gateway
+
+API Gateway позволяет агрегировать данные из нескольких сервисов и возвращать единый ответ клиенту. Это уменьшает количество сетевых вызовов и упрощает архитектуру взаимодействия.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе акцент делается на:
+- сокращении количества сетевых вызовов,
+- агрегировании данных,
+- оптимизации взаимодействия клиента с микросервисами,
+
+— правильным решением, как правило, будет использование API Gateway или подхода Backend for Frontend.
 
 ```
 Mobile App:
@@ -126,15 +236,57 @@ Mobile App ──→ API Gateway ──→ Service A
                            ──→ Service C
 ```
 
-**Advantages**:
-- Services can be reorganized without client changes
-- Easy to add/remove backend services
-- Gateway handles service discovery
-- Backend URLs can be private
+**Преимущества**:
 
-### ✅ Simplified Client Code
+- Сервисы можно реорганизовывать без изменений на стороне клиента
+- Легко добавлять или удалять backend-сервисы
+- Gateway берёт на себя service discovery
+- Backend-URL могут оставаться приватными
 
-**Benefit**: Cross-cutting concerns handled by gateway
+### Пояснение
+
+API Gateway изолирует клиентов от внутренней структуры системы. Это позволяет:
+
+- менять топологию микросервисов без влияния на потребителей API;
+- скрывать внутренние адреса и порты сервисов;
+- централизованно управлять маршрутизацией;
+- гибко масштабировать backend-компоненты.
+
+Дополнительно это упрощает DevOps-процессы: деплой и масштабирование сервисов становятся прозрачными для клиентов.
+
+---
+
+### ✅ Упрощённый клиентский код
+
+**Преимущество**: Кросс-сервисные задачи (cross-cutting concerns) обрабатываются на уровне gateway.
+
+К таким задачам относятся:
+
+- Аутентификация
+- Авторизация
+- Rate limiting
+- Логирование
+- Мониторинг
+- Трансформация запросов и ответов
+- Версионирование API
+
+В результате клиентская часть:
+
+- содержит меньше инфраструктурной логики;
+- не занимается обработкой токенов или политик доступа;
+- взаимодействует с единым стабильным endpoint.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе упоминается:
+- централизованная обработка политик,
+- упрощение клиентов,
+- скрытие внутренней архитектуры,
+- управление доступом к backend-сервисам,
+
+— правильным выбором будет API Gateway или Azure API Management.
 
 ```
 Client only needs to:
@@ -162,15 +314,58 @@ Client ──HTTPS──> Gateway ──HTTP──> Backend Services
         (encrypted)       (internal network)
 ```
 
-**Advantages**:
-- Reduced SSL overhead on backend services
-- Centralized certificate management
-- Backend services don't need certificates
-- Easier certificate renewal
+**Преимущества**:
 
-### ✅ Authentication & Authorization
+- Снижается нагрузка SSL/TLS на backend-сервисы
+- Централизованное управление сертификатами
+- Backend-сервисам не требуется собственная настройка сертификатов
+- Упрощается процесс продления сертификатов
 
-**Benefit**: Centralized security enforcement
+### Пояснение
+
+API Gateway может выполнять TLS termination — расшифровывать HTTPS-трафик и передавать запросы во внутреннюю сеть по защищённому или внутреннему каналу.
+
+Это даёт следующие преимущества:
+
+- Сервисы не тратят ресурсы на криптографические операции
+- Управление сертификатами сосредоточено в одном месте
+- Уменьшается риск ошибок конфигурации
+- Процесс обновления и продления сертификатов становится проще
+
+В облачных средах это особенно важно при большом количестве микросервисов.
+
+---
+
+### ✅ Аутентификация и авторизация
+
+**Преимущество**: Централизованное применение политик безопасности.
+
+API Gateway может:
+
+- Проверять JWT-токены
+- Интегрироваться с OAuth2 / OpenID Connect
+- Проверять роли и claims
+- Применять политики доступа
+- Блокировать неавторизованные запросы до попадания в backend
+
+Это обеспечивает:
+
+- единые правила безопасности,
+- снижение дублирования кода,
+- уменьшение поверхности атаки,
+- защиту внутренних сервисов от прямого доступа.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- централизованной аутентификации,
+- применении политик безопасности,
+- проверке токенов перед доступом к сервисам,
+- защите backend без изменения их кода,
+
+— корректным решением будет использование API Gateway или Azure API Management.
 
 ```xml
 <policies>
@@ -272,24 +467,69 @@ Client ──HTTPS──> Gateway ──HTTP──> Backend Services
 </policies>
 ```
 
-**Advantages**:
-- Faster response times
-- Reduced backend load
-- Lower costs
-- Better scalability
+**Преимущества**:
 
-### ✅ Monitoring & Analytics
+- Более быстрое время отклика
+- Снижение нагрузки на backend
+- Сокращение затрат
+- Улучшенная масштабируемость
 
-**Benefit**: Centralized observability
+### Пояснение
 
-**Metrics Collected**:
-- Request count
-- Response time (latency)
-- Error rate
-- Throughput
-- Bandwidth usage
-- Top consumers
-- Geographic distribution
+API Gateway может кэшировать ответы, оптимизировать маршрутизацию и централизованно управлять трафиком.
+
+Это приводит к:
+
+- уменьшению количества повторных запросов к backend;
+- снижению потребления вычислительных ресурсов;
+- более эффективному горизонтальному масштабированию;
+- снижению затрат в облачной инфраструктуре.
+
+Дополнительно gateway может применять политики throttling и rate limiting, предотвращая перегрузку сервисов.
+
+---
+
+### ✅ Мониторинг и аналитика
+
+**Преимущество**: Централизованная наблюдаемость (observability).
+
+API Gateway выступает единой точкой контроля трафика, что позволяет собирать метрики по всем API без внедрения логики мониторинга в каждый сервис.
+
+---
+
+### Собираемые метрики
+
+- Количество запросов
+- Время ответа (latency)
+- Процент ошибок (error rate)
+- Пропускная способность (throughput)
+- Использование пропускной способности сети (bandwidth)
+- Топ потребителей API
+- Географическое распределение запросов
+
+---
+
+### Архитектурное значение
+
+Централизованный сбор метрик позволяет:
+
+- быстро выявлять узкие места;
+- анализировать поведение клиентов;
+- обнаруживать аномалии и атаки;
+- принимать решения по масштабированию;
+- формировать SLA и отчётность.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе упоминается:
+- централизованный мониторинг API,
+- анализ использования API,
+- отслеживание производительности,
+- выявление ошибок и аномалий,
+
+— правильным выбором будет API Gateway или Azure API Management.
 
 **Integration**:
 ```bash
@@ -302,21 +542,66 @@ az apim update \
 
 ---
 
-## Gateway Types
+## Типы Gateway
 
-Azure API Management offers two types of gateways:
+Azure API Management предоставляет два типа gateway.
 
-### 1. **Managed Gateway** (Default)
+---
 
-The **managed gateway** is the default gateway hosted in Azure.
+### 1. **Managed Gateway** (по умолчанию)
 
-**Characteristics**:
-- ✅ Fully managed by Microsoft
-- ✅ Hosted in Azure
-- ✅ Auto-scaling
-- ✅ Built-in high availability
-- ✅ No infrastructure management
-- ✅ Integrated with Azure services
+**Managed Gateway** — это стандартный шлюз, размещённый и управляемый в Azure.
+
+### Характеристики
+
+- ✅ Полностью управляется Microsoft
+- ✅ Размещён в Azure
+- ✅ Автоматическое масштабирование
+- ✅ Встроенная высокая доступность (High Availability)
+- ✅ Отсутствие необходимости управлять инфраструктурой
+- ✅ Интеграция с другими сервисами Azure
+
+---
+
+### Пояснение
+
+Managed Gateway — это PaaS-решение. Вам не нужно:
+
+- управлять виртуальными машинами;
+- настраивать балансировку нагрузки;
+- следить за отказоустойчивостью;
+- обновлять инфраструктуру.
+
+Microsoft отвечает за:
+
+- масштабирование,
+- патчи безопасности,
+- обновления платформы,
+- SLA.
+
+Это оптимальный выбор для облачных решений, где backend размещён в Azure или доступен через публичные endpoints.
+
+---
+
+### Когда использовать
+
+Managed Gateway подходит, если:
+
+- вся инфраструктура находится в Azure;
+- не требуется размещение gateway в локальной сети;
+- важна минимизация операционных затрат;
+- нужен быстрый запуск без DevOps-нагрузки.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- полностью управляемом сервисе,
+- автоматическом масштабировании,
+- отсутствии необходимости управлять инфраструктурой,
+
+— речь, скорее всего, идёт о Managed Gateway в Azure API Management.
 
 **Architecture**:
 ```
@@ -485,38 +770,61 @@ spec:
     app: apim-gateway
 ```
 
-**Configuration** (Azure Portal):
-1. Navigate to API Management instance
-2. Go to **Deployment + infrastructure** → **Gateways**
-3. Click **+ Add**
-4. Provide gateway name and location description
-5. Download deployment configuration
-6. Deploy using Docker/Kubernetes/VM
+## Конфигурация (Azure Portal)
+
+1. Перейдите в экземпляр API Management
+2. Откройте раздел **Deployment + infrastructure** → **Gateways**
+3. Нажмите **+ Add**
+4. Укажите имя gateway и описание локации
+5. Скачайте конфигурацию для развёртывания
+6. Разверните gateway с помощью Docker / Kubernetes / VM
+
+### Пояснение
+
+После создания gateway в Azure API Management вы получаете конфигурационные данные, которые используются при запуске контейнера Self-Hosted Gateway.
+
+Развёртывание возможно:
+
+- как Docker-контейнер,
+- в Kubernetes-кластере,
+- на виртуальной машине.
+
+Azure API Management остаётся точкой централизованного управления, а сам gateway выполняет обработку трафика в выбранной инфраструктуре.
 
 ---
 
-## Gateway Comparison
+## Сравнение Gateway
 
-| Feature | Managed Gateway | Self-Hosted Gateway |
-|---------|----------------|---------------------|
-| **Hosting** | Azure | Your infrastructure |
-| **Management** | Fully managed | You manage |
-| **Scaling** | Automatic | Manual |
-| **Updates** | Automatic | Manual |
-| **High Availability** | Built-in | You configure |
-| **Cost** | Included in tier | Infrastructure costs |
-| **Latency** | Azure region | Local to services |
-| **Use Case** | Cloud-native | Hybrid/multi-cloud |
-| **Configuration** | Azure Portal | Container config |
-| **Monitoring** | Built-in | You configure |
-| **Multi-region** | Premium tier | Deploy anywhere |
-| **VNet Integration** | Premium tier | N/A (your network) |
-| **Custom Domains** | Yes | Yes |
-| **Policies** | All policies | All policies |
-| **TLS Termination** | Yes | Yes |
-| **Caching** | Yes | Yes |
-| **Authentication** | All methods | All methods |
+| Возможность | Managed Gateway | Self-Hosted Gateway |
+|-------------|------------------|----------------------|
+| **Размещение** | Azure | Ваша инфраструктура |
+| **Управление** | Полностью управляется | Вы управляете |
+| **Масштабирование** | Автоматическое | Ручное |
+| **Обновления** | Автоматические | Ручные |
+| **Высокая доступность** | Встроенная | Настраивается вами |
+| **Стоимость** | Включена в тариф | Затраты на инфраструктуру |
+| **Задержка (Latency)** | Регион Azure | Локально рядом с сервисами |
+| **Сценарий использования** | Cloud-native | Hybrid / multi-cloud |
+| **Конфигурация** | Через Azure Portal | Через конфигурацию контейнера |
+| **Мониторинг** | Встроенный | Настраивается вами |
+| **Multi-region** | Доступно в Premium | Можно развернуть где угодно |
+| **Интеграция с VNet** | Premium tier | Используется ваша сеть |
+| **Пользовательские домены** | Да | Да |
+| **Политики (Policies)** | Все поддерживаются | Все поддерживаются |
+| **TLS termination** | Да | Да |
+| **Кэширование** | Да | Да |
+| **Аутентификация** | Все методы | Все методы |
 
+---
+
+### Ключевой вывод для AZ-204
+
+- Managed Gateway — выбор по умолчанию для облачных решений в Azure.
+- Self-Hosted Gateway — решение для гибридных, распределённых и multi-cloud архитектур.
+- Premium tier часто упоминается в вопросах, связанных с VNet и multi-region.
+
+Если в задаче требуется минимальное администрирование — выбирайте Managed.  
+Если важна гибкость размещения — Self-Hosted.
 ---
 
 ## Gateway Routing Patterns
@@ -634,18 +942,47 @@ Client → Gateway → Backend (failing)  → Cached response
 
 ## Best Practices
 
-### 1. **Use Managed Gateway for Cloud Workloads**
+### 1. **Используйте Managed Gateway для облачных нагрузок**
 
-✅ **Do**: Use managed gateway for Azure-hosted APIs
-- No infrastructure management
-- Automatic scaling and updates
-- Built-in high availability
+✅ **Рекомендуется**: использовать Managed Gateway для API, размещённых в Azure
 
-❌ **Don't**: Deploy self-hosted gateway for Azure services
+- Отсутствие необходимости управлять инфраструктурой
+- Автоматическое масштабирование и обновления
+- Встроенная высокая доступность
 
-### 2. **Deploy Self-Hosted Gateway Close to Services**
+❌ **Не рекомендуется**: разворачивать Self-Hosted Gateway для сервисов, уже работающих в Azure
 
-✅ **Do**: Deploy self-hosted gateway in same network as backends
+Это создаёт лишнюю операционную нагрузку без архитектурной необходимости.
+
+---
+
+### 2. **Размещайте Self-Hosted Gateway рядом с сервисами**
+
+✅ **Рекомендуется**: разворачивать Self-Hosted Gateway в той же сети, что и backend-сервисы
+
+Это позволяет:
+
+- снизить latency;
+- минимизировать сетевые переходы;
+- повысить производительность;
+- упростить доступ к приватным ресурсам.
+
+Особенно важно в hybrid-сценариях, когда backend находится в on-prem или в изолированной сети.
+
+---
+
+### Архитектурная рекомендация
+
+- Managed Gateway — для cloud-native решений в Azure.
+- Self-Hosted Gateway — когда требуется контроль над размещением, изоляцией сети или минимальной задержкой.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе подчёркивается:
+- минимизация администрирования — выбирайте Managed Gateway;
+- размещение рядом с приватными сервисами — выбирайте Self-Hosted Gateway.
 ```
 On-Premises:
   Self-Hosted Gateway → Internal APIs (low latency)
@@ -700,49 +1037,86 @@ az apim update \
 
 ---
 
-## Exam Tips
+## Советы к экзамену
 
-### Key Concepts for AZ-204
+### Ключевые концепции для AZ-204
 
-1. **Two gateway types**: Managed (Azure-hosted) and Self-hosted (containerized)
+1. **Два типа gateway**:
+    - Managed (размещён в Azure)
+    - Self-hosted (контейнеризированный)
 
-2. **Managed gateway**: Default, fully managed, Azure-hosted, auto-scaling
+2. **Managed Gateway**:  
+   По умолчанию, полностью управляется Microsoft, размещён в Azure, поддерживает авто-масштабирование.
 
-3. **Self-hosted gateway**: Deploy anywhere, containerized, hybrid/multi-cloud
+3. **Self-Hosted Gateway**:  
+   Можно развернуть где угодно, работает в контейнере, подходит для hybrid и multi-cloud сценариев.
 
-4. **Gateway benefits**: Decoupling, SSL termination, authentication, rate limiting, transformation
+4. **Преимущества Gateway**:
+    - Разделение (decoupling) клиентов и backend
+    - TLS termination
+    - Централизованная аутентификация
+    - Rate limiting
+    - Трансформация запросов и ответов
 
-5. **Self-hosted gateway requirement**: Available in Developer, Standard, and Premium tiers
+5. **Доступность Self-Hosted Gateway**:  
+   Поддерживается в тарифах Developer, Standard и Premium.
 
-6. **Multi-region**: Only managed gateway, only in Premium tier
+6. **Multi-region**:  
+   Поддерживается только Managed Gateway и только в Premium tier.
 
-7. **Gateway URL**: https://<apim-name>.azure-api.net
+7. **Gateway URL по умолчанию**:  
+   `https://<apim-name>.azure-api.net`
 
-8. **Self-hosted gateway deployment**: Docker, Kubernetes, VM
+8. **Развёртывание Self-Hosted Gateway**:  
+   Docker, Kubernetes или виртуальная машина.
 
-9. **Configuration sync**: Self-hosted gateway pulls config from Azure
+9. **Синхронизация конфигурации**:  
+   Self-hosted gateway получает конфигурацию из Azure API Management.
 
-10. **Use cases**:
-    - Managed → Cloud-native, Azure-hosted APIs
-    - Self-hosted → Hybrid, on-premises, multi-cloud, edge
+10. **Типовые сценарии использования**:
+    - Managed → Cloud-native решения, API размещены в Azure
+    - Self-hosted → Hybrid, on-premises, multi-cloud, edge-сценарии
 
-### Common Exam Scenarios
+---
 
-**Scenario 1**: "API consumers should not know backend service URLs"
-→ **Answer**: Use API Gateway to decouple clients from backends
+## Частые экзаменационные сценарии
 
-**Scenario 2**: "Reduce latency for on-premises APIs"
-→ **Answer**: Deploy self-hosted gateway on-premises
+**Сценарий 1**:  
+"Потребители API не должны знать URL backend-сервисов"  
+→ **Ответ**: Использовать API Gateway для отделения клиентов от backend.
 
-**Scenario 3**: "Combine responses from multiple backend services"
-→ **Answer**: Use gateway policies with send-request for aggregation
+---
 
-**Scenario 4**: "Deploy API gateway in AWS and Azure"
-→ **Answer**: Use self-hosted gateway (containerized) in both clouds
+**Сценарий 2**:  
+"Необходимо снизить задержку для on-premises API"  
+→ **Ответ**: Развернуть Self-Hosted Gateway в локальной инфраструктуре.
 
-**Scenario 5**: "Automatically scale gateway based on load"
-→ **Answer**: Use managed gateway (auto-scaling built-in)
+---
 
+**Сценарий 3**:  
+"Объединить ответы от нескольких backend-сервисов"  
+→ **Ответ**: Использовать политики gateway (например, send-request) для агрегации.
+
+---
+
+**Сценарий 4**:  
+"Развернуть API gateway в AWS и Azure"  
+→ **Ответ**: Использовать Self-Hosted Gateway (контейнеризированный) в обоих облаках.
+
+---
+
+**Сценарий 5**:  
+"Автоматически масштабировать gateway в зависимости от нагрузки"  
+→ **Ответ**: Использовать Managed Gateway (авто-масштабирование встроено).
+
+---
+
+### Финальный акцент для AZ-204
+
+- Managed = меньше администрирования, больше автоматизации.
+- Self-hosted = гибкость размещения и гибридная архитектура.
+- Premium tier часто является ключевым условием в вопросах про multi-region и VNet.
+- Если в задаче говорится о контейнеризации gateway — это почти всегда Self-Hosted вариант.
 ---
 
 ## Quick Reference Commands

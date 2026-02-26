@@ -172,5 +172,77 @@ App Service = платформа.
 - сетью
 - безопасностью
 - масштабированием
+  Но не VM и не ОС.
 
-Но не VM и не ОС.
+| Что нужно сделать       | Используется         |
+| ----------------------- | -------------------- |
+| Сменить физический хост | Redeploy             |
+| Сменить регион          | Move resources       |
+| Сменить подписку        | Move to subscription |
+| Обновить ОС             | Update management    |
+
+
+
+Что нужно создать?
+✅ 1. An Azure Key Vault
+Это хранилище секретов.
+
+✅ 2. An access policy
+Она даёт ARM template или сервису право:
+читать секрет
+получать пароль
+Почему остальные варианты не подходят?
+
+Azure Storage account — для файлов и blob'ов
+
+Azure AD Identity Protection — для анализа рисков входа
+
+Azure policy — для контроля соответствия
+
+Backup policy — для резервного копирования
+
+| Если в вопросе сказано            | Правильный выбор |
+| --------------------------------- | ---------------- |
+| Hide password in deployment       | secureString     |
+| Store secret securely             | Key Vault        |
+| Access secret without credentials | Managed Identity |
+| Control who can read secret       | Access Policy    |
+
+Если видишь:
+Git integration
+ACR
+Automation
+👉 ACR Tasks + Webhook trigger
+
+В ASP.NET Core используется ILogger<T>
+Типичные уровни логирования:
+LogTrace
+LogDebug
+LogInformation
+LogWarning
+LogError
+LogCritical
+
+
+Если вопрос про:
+ZIP deployment
+Build automation
+Same behavior as Git deployment
+Ответ почти всегда:
+SCM_DO_BUILD_DURING_DEPLOYMENT = true
+
+Политики APIM позволяют:
+<validate-jwt> — OAuth / Entra ID
+<rate-limit-by-key> — защита от злоупотреблений
+<check-header> — дополнительные проверки
+
+Архитектурное правило APIM
+Если нужно:
+Контроль над API surface
+Securty
+Mocking
+Rate limiting
+👉 Используем:
+Blank API
+Явное описание операций
+Policies

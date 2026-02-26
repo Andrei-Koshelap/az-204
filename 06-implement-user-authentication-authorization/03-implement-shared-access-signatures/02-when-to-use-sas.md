@@ -889,6 +889,15 @@ public IActionResult GrantPartnerAccess(string partnerId, string fileId)
 
 ---
 
+Delegated permissions:
+Используются, когда есть signed-in user
+Приложение работает on behalf of user
+Токен содержит scp
+
+Application permissions:
+Используются без пользователя
+Background services / daemons
+Токен содержит roles
 > 🎯 Ключевая идея:  
 > SAS — это инструмент для временного делегирования доступа.  
 > Выбор архитектуры зависит от баланса между контролем, производительностью и стоимостью.

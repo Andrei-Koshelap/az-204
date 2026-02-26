@@ -844,4 +844,22 @@ ReadItemAsync<T>(id, new PartitionKey(pk))
 - Параметры клиента — настройка согласованности, таймаутов и политики повторов на уровне клиента
 
 
+| ApiKind          | Underlying API       |
+| ---------------- | -------------------- |
+| GlobalDocumentDB | NoSQL (Core SQL API) |
+| MongoDB          | MongoDB API          |
+| Cassandra        | Cassandra API        |
+| Table            | Table API            |
+| Gremlin          | Gremlin API          |
+
+
+|              | Cosmos DB NoSQL      | Cosmos DB MongoDB API   |
+| ------------ | -------------------- | ----------------------- |
+| Тип          | Нативный Cosmos API  | MongoDB-совместимый API |
+| Query язык   | SQL-like             | Mongo query syntax      |
+| Драйверы     | Cosmos SDK           | MongoDB drivers         |
+| Протокол     | Cosmos proprietary   | Mongo wire protocol     |
+| Лучший выбор | Новый проект в Azure | Миграция с MongoDB      |
+
+
 [Learn More](https://learn.microsoft.com/en-us/training/modules/work-with-cosmos-db/2-cosmos-db-dotnet-overview)

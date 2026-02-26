@@ -1,32 +1,94 @@
-# Introduction to Monitoring Azure Solutions
+# Введение в мониторинг решений в Azure
 
-## Overview
+## Обзор
 
-Instrumenting and monitoring your applications is critical to maximizing their availability and performance. In production environments, you need visibility into how your applications are performing, whether external services are responding, and how users are interacting with your systems. Azure provides comprehensive monitoring and troubleshooting tools to help you build observable, resilient applications.
+Инструментирование и мониторинг приложений критически важны для обеспечения их доступности и производительности.  
+В production-среде необходимо понимать:
 
-**Learning Objectives:**
+- как работает приложение;
+- отвечают ли внешние сервисы;
+- как пользователи взаимодействуют с системой;
+- где возникают ошибки и узкие места.
 
-After completing this module, you'll be able to:
+Azure предоставляет комплексные инструменты мониторинга и диагностики, позволяющие строить наблюдаемые (observable) и устойчивые (resilient) системы.
 
-- Explain how Azure Monitor operates as the center of monitoring in Azure
-- Describe how Application Insights works and how it collects events and metrics
-- Instrument an app for monitoring and perform availability tests
-- Use Application Map to monitor performance and troubleshoot issues
-- Analyze metrics, logs, and traces to diagnose application problems
-- Implement best practices for monitoring, troubleshooting, and optimizing Azure solutions
+---
 
-## Why Monitoring Matters
+## Цели обучения
 
-### The Observability Challenge
+После прохождения модуля вы сможете:
 
-Modern cloud applications are distributed systems composed of multiple components:
+- Объяснить роль **Azure Monitor** как центрального сервиса мониторинга в Azure
+- Описать работу **Application Insights** и способы сбора метрик и событий
+- Инструментировать приложение и выполнять тесты доступности
+- Использовать Application Map для анализа зависимостей
+- Анализировать метрики, логи и трассировки
+- Применять best practices для мониторинга и оптимизации решений
 
-- **Web frontends** (App Service, Static Web Apps, VMs)
-- **APIs** (Functions, API Management, Logic Apps)
-- **Data stores** (Cosmos DB, SQL Database, Storage)
-- **External dependencies** (Third-party APIs, partner systems)
+---
 
-Without proper monitoring, you're operating blind:
+## Почему мониторинг важен
+
+### Проблема наблюдаемости (Observability Challenge)
+
+Современные облачные приложения — это распределённые системы, состоящие из множества компонентов:
+
+- **Web-фронтенды**  
+  (App Service, Static Web Apps, виртуальные машины)
+
+- **API-слой**  
+  (Azure Functions, API Management, Logic Apps)
+
+- **Хранилища данных**  
+  (Cosmos DB, SQL Database, Storage)
+
+- **Внешние зависимости**  
+  (Сторонние API, партнёрские системы)
+
+---
+
+### Что происходит без мониторинга
+
+Без настроенного мониторинга вы:
+
+- не видите реальных проблем пользователей;
+- не знаете, где возникает деградация производительности;
+- не понимаете, какой компонент даёт сбой;
+- не можете быстро локализовать источник ошибки;
+- реагируете только после жалоб клиентов.
+
+Это приводит к:
+
+- увеличению времени простоя;
+- снижению SLA;
+- ухудшению пользовательского опыта;
+- росту затрат.
+
+---
+
+## Архитектурный смысл мониторинга
+
+Мониторинг — это не просто сбор логов, а реализация трёх ключевых аспектов observability:
+
+- **Metrics** — количественные показатели (CPU, latency, request count)
+- **Logs** — детальные записи событий
+- **Traces** — распределённые трассировки запросов
+
+Azure Monitor объединяет эти источники данных в единую платформу.
+
+---
+
+## Важно для AZ-204
+
+На экзамене важно понимать:
+
+- Azure Monitor — центральный сервис мониторинга
+- Application Insights — мониторинг приложений
+- Разницу между metrics, logs и traces
+- Возможность анализа зависимостей
+- Роль availability tests
+
+Мониторинг — ключевой компонент production-ready архитектуры.
 
 ```
 ❌ No Monitoring                  ✅ With Monitoring
@@ -39,26 +101,97 @@ Without proper monitoring, you're operating blind:
 └──────────────────┘             └──────────────────┘
 ```
 
-### Business Impact
+### Влияние на бизнес
 
-Monitoring directly affects business outcomes:
+Мониторинг напрямую влияет на бизнес-результаты:
 
-| Metric | Without Monitoring | With Application Insights |
-|--------|-------------------|---------------------------|
-| **Mean Time to Detect (MTTD)** | Hours to days | Minutes (Smart Detection) |
-| **Mean Time to Resolve (MTTR)** | Hours to days | Minutes (Application Map, traces) |
-| **User Impact** | Entire user base | Isolated to affected segment |
-| **Revenue Loss** | Unquantified | Tracked via custom metrics |
-| **Customer Satisfaction** | Unknown | Measured via usage analytics |
+| Метрика | Без мониторинга | С Application Insights |
+|----------|-----------------|-------------------------|
+| **MTTD (Mean Time to Detect)** | Часы или дни | Минуты (Smart Detection) |
+| **MTTR (Mean Time to Resolve)** | Часы или дни | Минуты (Application Map, трассировки) |
+| **Влияние на пользователей** | Вся аудитория | Только затронутый сегмент |
+| **Потери выручки** | Неизвестны | Отслеживаются через кастомные метрики |
+| **Удовлетворённость клиентов** | Не измеряется | Анализируется через usage analytics |
 
-**Real-World Example:**
-- E-commerce site experiences 500ms slowdown during peak hours
-- Without monitoring: 15% cart abandonment increase (unknown)
-- With Application Insights: Immediate detection → SQL index missing → Fixed in 10 minutes
+---
 
-## The Azure Monitor Ecosystem
+### Практический пример
 
-Azure Monitor is the unified platform for monitoring all Azure resources and applications:
+Сценарий:
+
+- Интернет-магазин замедляется на 500 мс в часы пик
+- Без мониторинга:  
+  +15% отказов от корзины (причина неизвестна)
+
+- С Application Insights:  
+  Быстрое обнаружение → выявлен отсутствующий индекс в SQL → исправлено за 10 минут
+
+---
+
+### Архитектурный вывод
+
+Мониторинг:
+
+- сокращает время обнаружения инцидентов;
+- уменьшает время восстановления;
+- позволяет изолировать проблему;
+- помогает измерять финансовый эффект;
+- повышает прозрачность системы.
+
+Monitoring — это инструмент управления рисками и затратами.
+
+---
+
+# Экосистема Azure Monitor
+
+**Azure Monitor** — это единая платформа мониторинга для всех ресурсов и приложений в Azure.
+
+Она объединяет:
+
+- Метрики (Metrics)
+- Логи (Logs)
+- Трассировки (Traces)
+- Alerts
+- Dashboard и визуализацию
+
+---
+
+### Компоненты экосистемы
+
+- **Azure Monitor** — центральная платформа
+- **Application Insights** — мониторинг приложений
+- **Log Analytics** — запросы к логам (KQL)
+- **Azure Metrics** — числовые показатели ресурсов
+- **Alerts** — автоматические уведомления
+- **Workbooks** — визуализация данных
+
+---
+
+### Архитектурная модель
+
+Все данные собираются в:
+
+- Metrics store
+- Log Analytics workspace
+
+После этого можно:
+
+- анализировать (KQL);
+- визуализировать;
+- строить алерты;
+- выполнять диагностику.
+
+---
+
+### Важно для AZ-204
+
+Запомните:
+
+- Azure Monitor — центральный сервис мониторинга.
+- Application Insights — для приложений.
+- Smart Detection снижает MTTD.
+- Application Map помогает снижать MTTR.
+- Мониторинг напрямую влияет на SLA и бизнес-метрики.
 
 ```
 ┌─────────────────────── AZURE MONITOR ────────────────────────┐
@@ -98,34 +231,109 @@ Azure Monitor is the unified platform for monitoring all Azure resources and app
 └───────────────────────────────────────────────────────────────┘
 ```
 
-### Key Components
+## Ключевые компоненты экосистемы мониторинга
 
-#### 1. **Azure Monitor** (Platform)
-The foundation that collects and stores data from all Azure resources.
+### 1. **Azure Monitor** (Платформа)
 
-**Capabilities:**
-- Platform metrics (CPU, memory, network)
-- Activity logs (resource operations)
-- Diagnostic settings (resource-specific logs)
-- Custom metrics (application-specific data)
+Базовый сервис, который собирает и хранит данные со всех ресурсов Azure.
 
-#### 2. **Application Insights** (APM)
-Extension of Azure Monitor focused on application performance monitoring (APM).
+### Возможности
 
-**What It Does:**
-- Proactively understand application performance
-- Reactively review execution data to determine incident cause
-- Correlate telemetry across distributed components
-- Provide actionable insights with AI-powered detection
+- **Платформенные метрики**  
+  (CPU, память, сеть, диск)
 
-#### 3. **Log Analytics** (Query Engine)
-Kusto Query Language (KQL) workspace for analyzing collected data.
+- **Activity Logs**  
+  Журнал операций с ресурсами (создание, удаление, изменение)
 
-**Use Cases:**
-- Complex queries across millions of events
-- Correlation between logs and metrics
-- Trend analysis over time
-- Custom dashboards and reports
+- **Diagnostic Settings**  
+  Логи конкретных ресурсов (например, SQL, Storage, App Service)
+
+- **Custom Metrics**  
+  Пользовательские метрики приложения
+
+---
+
+### Архитектурная роль
+
+Azure Monitor — это центральная точка сбора телеметрии:
+
+- данные поступают из ресурсов Azure;
+- агрегируются в metrics store или Log Analytics;
+- используются для построения алертов и отчётов.
+
+---
+
+### 2. **Application Insights** (APM)
+
+Расширение Azure Monitor, ориентированное на **Application Performance Monitoring (APM)**.
+
+---
+
+### Что делает Application Insights
+
+- Проактивно анализирует производительность приложения
+- Позволяет реактивно расследовать инциденты
+- Коррелирует телеметрию между распределёнными компонентами
+- Использует AI для обнаружения аномалий (Smart Detection)
+
+---
+
+### Типы собираемой телеметрии
+
+- Requests
+- Dependencies
+- Exceptions
+- Traces
+- Custom events
+- Availability tests
+
+---
+
+### Архитектурное значение
+
+Application Insights:
+
+- поддерживает distributed tracing;
+- показывает зависимые сервисы (Application Map);
+- снижает MTTD и MTTR;
+- помогает локализовать проблемы в микросервисной архитектуре.
+
+---
+
+### 3. **Log Analytics** (Query Engine)
+
+Рабочая область, использующая **Kusto Query Language (KQL)** для анализа данных.
+
+---
+
+### Сценарии использования
+
+- Выполнение сложных запросов по миллионам событий
+- Корреляция логов и метрик
+- Анализ трендов во времени
+- Создание кастомных дашбордов и отчётов
+
+---
+
+### Архитектурная роль
+
+Log Analytics — это аналитический слой:
+
+- все логи и телеметрия хранятся в workspace;
+- данные анализируются через KQL;
+- на основе запросов строятся алерты и визуализации.
+
+---
+
+## Важно для AZ-204
+
+Нужно чётко различать:
+
+- **Azure Monitor** — платформа сбора данных
+- **Application Insights** — мониторинг приложений
+- **Log Analytics** — анализ данных через KQL
+
+Экзамен часто проверяет, какой компонент использовать для конкретной задачи.
 
 ## Monitoring Approaches
 
@@ -151,27 +359,94 @@ PROACTIVE MONITORING          REACTIVE MONITORING
 └──────────────────┘          └──────────────────┘
 ```
 
-### The Three Pillars of Observability
+## Три столпа Observability
 
-Application Insights implements the industry-standard three pillars:
+Application Insights реализует отраслевой стандарт из трёх ключевых компонентов наблюдаемости.
 
-#### 1. **Metrics** (What's happening?)
-Numerical time-series data aggregated over intervals.
+---
 
-**Examples:**
-- Request rate: 1,247 requests/sec
-- Response time: p50=120ms, p95=850ms, p99=2.3s
-- Failure rate: 2.1%
-- CPU usage: 68%
+### 1️⃣ **Metrics** (Что происходит?)
 
-**Advantages:**
-- Low overhead (preaggregated)
-- Real-time dashboards
-- Fast queries
-- Alerting with minimal lag
+Числовые данные временных рядов, агрегированные по интервалам.
 
-#### 2. **Logs** (Why did it happen?)
-Structured or unstructured text events with rich context.
+---
+
+### Примеры
+
+- Частота запросов: 1 247 запросов/сек
+- Время ответа: p50=120ms, p95=850ms, p99=2.3s
+- Процент ошибок: 2.1%
+- Загрузка CPU: 68%
+
+---
+
+### Преимущества
+
+- Низкие накладные расходы (данные предварительно агрегированы)
+- Подходят для real-time дашбордов
+- Быстро выполняются запросы
+- Позволяют настраивать алерты с минимальной задержкой
+
+---
+
+### Когда использовать Metrics
+
+- Для SLA-мониторинга
+- Для отслеживания производительности
+- Для автоматических алертов
+- Для capacity planning
+
+---
+
+### 2️⃣ **Logs** (Почему это произошло?)
+
+Структурированные или неструктурированные текстовые события с расширенным контекстом.
+
+Logs содержат:
+
+- детали запроса;
+- сообщения об ошибках;
+- stack trace;
+- пользовательские события;
+- дополнительную бизнес-информацию.
+
+---
+
+### Преимущества Logs
+
+- Подробная диагностика
+- Гибкий анализ через KQL
+- Возможность корреляции событий
+- Исторический анализ
+
+---
+
+### Когда использовать Logs
+
+- При расследовании инцидентов
+- Для root cause analysis
+- Для анализа поведения пользователей
+- Для построения сложных отчётов
+
+---
+
+## Архитектурное понимание
+
+- **Metrics** отвечают на вопрос: «Есть ли проблема?»
+- **Logs** отвечают на вопрос: «Почему возникла проблема?»
+
+Обычно диагностика начинается с метрик, затем выполняется углублённый анализ через логи.
+
+---
+
+## Важно для AZ-204
+
+Нужно понимать различие:
+
+- Metrics — быстрые, агрегированные, для алертов
+- Logs — детальные, для расследования
+
+Экзамен может проверять выбор правильного инструмента для диагностики.
 
 **Examples:**
 ```json
@@ -187,14 +462,78 @@ Structured or unstructured text events with rich context.
 }
 ```
 
-**Advantages:**
-- Full context for debugging
-- Root cause analysis
-- User session reconstruction
-- Business event tracking
+### Преимущества Logs
 
-#### 3. **Traces** (How did the request flow?)
-End-to-end tracking of requests across distributed components.
+- Полный контекст для отладки
+- Возможность проведения root cause analysis
+- Восстановление пользовательской сессии
+- Отслеживание бизнес-событий
+
+Logs позволяют увидеть не только технические ошибки, но и бизнес-контекст: какой пользователь, какая операция, какие параметры.
+
+---
+
+### 3️⃣ **Traces** (Как проходил запрос?)
+
+**Traces** обеспечивают сквозное (end-to-end) отслеживание запроса через распределённые компоненты системы.
+
+Если один пользовательский запрос проходит через:
+
+- Web App
+- API
+- Service Bus
+- Базу данных
+- Внешний сервис
+
+— trace связывает все эти вызовы в одну цепочку.
+
+---
+
+### Что показывают Traces
+
+- Время выполнения каждого компонента
+- Зависимости (dependencies)
+- Ошибки в конкретном сервисе
+- Узкие места (bottlenecks)
+- Корреляцию между сервисами
+
+---
+
+### Архитектурное значение
+
+В микросервисной архитектуре один пользовательский запрос может затрагивать десятки компонентов.
+
+Без distributed tracing:
+
+- невозможно понять, где произошёл сбой;
+- трудно выявить проблемный сервис;
+- сложно определить источник задержки.
+
+Traces позволяют:
+
+- видеть полную картину выполнения;
+- быстро локализовать проблему;
+- анализировать latency на каждом этапе.
+
+---
+
+## Итог по трём столпам
+
+- **Metrics** → Что происходит?
+- **Logs** → Почему это произошло?
+- **Traces** → Как это произошло?
+
+Совместное использование всех трёх компонентов обеспечивает полноценную observability.
+
+---
+
+### Важно для AZ-204
+
+На экзамене важно:
+
+- понимать различия между metrics, logs и traces;
+- знать, что Application Insights поддерживает distributed tracing;
+- понимать роль корреляции запросов в микросервисной архитектуре.
 
 **Distributed Tracing Example:**
 ```
@@ -211,107 +550,177 @@ Request ID: req_abc123
 Total: 1,200ms (Payment API is the bottleneck)
 ```
 
-## Monitoring Lifecycle
+## Жизненный цикл мониторинга
 
-### 1. **Instrumentation** (Setup Phase)
-Add monitoring capabilities to your application.
+### 1️⃣ Instrumentation (Этап настройки)
 
-**Methods:**
-- **Autoinstrumentation**: Enable monitoring without code changes (App Service, Functions)
-- **Manual SDK**: Add Application Insights SDK for custom telemetry
-- **OpenTelemetry**: Industry-standard instrumentation libraries
+Добавление возможностей мониторинга в приложение.
 
-### 2. **Collection** (Runtime Phase)
-Gather telemetry data as the application runs.
+### Методы
 
-**Collected Data:**
-- Request rates, response times, failure rates
-- Dependency calls (databases, external APIs, storage)
-- Exceptions with stack traces
-- Page views and AJAX calls
-- Custom events and metrics
-- Performance counters (CPU, memory, network)
+- **Autoinstrumentation**  
+  Включение мониторинга без изменения кода  
+  (App Service, Azure Functions)
 
-### 3. **Analysis** (Investigation Phase)
-Query and visualize data to understand application behavior.
+- **Manual SDK**  
+  Подключение Application Insights SDK для кастомной телеметрии
 
-**Tools:**
-- **Metrics Explorer**: Real-time charts and dashboards
-- **Log Analytics**: KQL queries for deep analysis
-- **Application Map**: Topology visualization
-- **Smart Detection**: AI-powered anomaly detection
+- **OpenTelemetry**  
+  Стандартные отраслевые библиотеки инструментирования
 
-### 4. **Action** (Response Phase)
-React to insights with alerts and automation.
+---
 
-**Actions:**
-- **Alerts**: Email, SMS, webhook, Logic Apps
-- **Autoscale**: Scale resources based on metrics
-- **Runbooks**: Automated remediation scripts
-- **Continuous improvement**: Optimize based on trends
+### 2️⃣ Collection (Этап выполнения)
 
-## Monitoring Strategy
+Сбор телеметрии во время работы приложения.
 
-### What to Monitor (The Four Golden Signals)
+### Собираемые данные
 
-Based on Google's SRE book, focus on:
+- Частота запросов, время ответа, процент ошибок
+- Вызовы зависимостей (БД, внешние API, Storage)
+- Исключения со stack trace
+- Page views и AJAX-вызовы
+- Пользовательские события и метрики
+- Performance counters (CPU, память, сеть)
 
-#### 1. **Latency**
-Time it takes to service a request.
+---
 
-**Key Metrics:**
+### 3️⃣ Analysis (Этап анализа)
+
+Запрос и визуализация данных для понимания поведения приложения.
+
+### Инструменты
+
+- **Metrics Explorer** — графики в реальном времени
+- **Log Analytics** — анализ через KQL
+- **Application Map** — визуализация зависимостей
+- **Smart Detection** — AI-анализ аномалий
+
+---
+
+### 4️⃣ Action (Этап реагирования)
+
+Реакция на выявленные проблемы.
+
+### Возможные действия
+
+- **Alerts** — Email, SMS, webhook, Logic Apps
+- **Autoscale** — масштабирование по метрикам
+- **Runbooks** — автоматическое исправление
+- **Continuous improvement** — оптимизация на основе трендов
+
+---
+
+# Стратегия мониторинга
+
+## Что мониторить (Четыре золотых сигнала)
+
+Основано на книге Google SRE.
+
+---
+
+## 1️⃣ Latency (Задержка)
+
+Время обработки запроса.
+
+### Ключевые метрики
+
 - Response time (p50, p90, p95, p99)
-- Page load time
-- Database query duration
-- External API call duration
+- Время загрузки страницы
+- Длительность запросов к БД
+- Время вызова внешних API
 
-**Targets:**
-- Web pages: < 2 seconds
-- APIs: < 500ms
-- Database queries: < 100ms
+### Целевые значения
 
-#### 2. **Traffic**
-Measure of demand on your system.
+- Веб-страницы: < 2 секунд
+- API: < 500 мс
+- Запросы к БД: < 100 мс
 
-**Key Metrics:**
+---
+
+## 2️⃣ Traffic (Нагрузка)
+
+Объём обращений к системе.
+
+### Ключевые метрики
+
 - Requests per second
-- Active users
+- Количество активных пользователей
 - Page views
-- API calls by endpoint
+- Вызовы API по endpoint
 
-**Why It Matters:**
-- Capacity planning
-- Cost optimization
-- Unusual traffic patterns (attacks, viral content)
+### Почему это важно
 
-#### 3. **Errors**
-Rate of requests that fail.
+- Планирование мощности
+- Оптимизация затрат
+- Выявление аномалий (атаки, всплески популярности)
 
-**Key Metrics:**
-- HTTP 5xx errors
-- HTTP 4xx errors
-- Exceptions (caught and uncaught)
-- Failed dependency calls
+---
 
-**Targets:**
+## 3️⃣ Errors (Ошибки)
+
+Доля неуспешных запросов.
+
+### Ключевые метрики
+
+- HTTP 5xx
+- HTTP 4xx
+- Исключения (caught и uncaught)
+- Ошибки зависимостей
+
+### Целевые показатели
+
 - Error rate: < 0.1%
-- Zero unhandled exceptions in production
+- Отсутствие необработанных исключений в production
 
-#### 4. **Saturation**
-How "full" your service is.
+---
 
-**Key Metrics:**
+## 4️⃣ Saturation (Насыщенность)
+
+Насколько ресурс «загружен».
+
+### Ключевые метрики
+
 - CPU usage
 - Memory usage
 - Disk I/O
 - Network bandwidth
-- Connection pool utilization
+- Использование connection pool
 
-**Targets:**
-- CPU: < 70% sustained
+### Целевые значения
+
+- CPU: < 70% длительно
 - Memory: < 80%
-- Disk/Network: Depends on workload
+- Disk/Network: зависит от нагрузки
 
+---
+
+## Архитектурный вывод
+
+Наблюдаемость должна покрывать:
+
+- Производительность
+- Нагрузку
+- Ошибки
+- Использование ресурсов
+
+Это позволяет:
+
+- снижать MTTR;
+- предотвращать инциденты;
+- масштабировать систему заранее;
+- соблюдать SLA.
+
+---
+
+## Важно для AZ-204
+
+На экзамене нужно понимать:
+
+- различие между Instrumentation, Collection, Analysis, Action;
+- роль Application Insights;
+- четыре золотых сигнала;
+- как использовать метрики для алертов и autoscale.
 ### Monitoring Best Practices
 
 ```
@@ -327,45 +736,99 @@ How "full" your service is.
 • Test your monitoring            • Assume it works
 ```
 
-## AZ-204 Exam Focus
+# Фокус для экзамена AZ-204
 
-For the AZ-204 certification, you need to demonstrate:
+Для успешной сдачи AZ-204 необходимо продемонстрировать понимание мониторинга и инструментирования приложений в Azure.
 
-### Core Skills
+---
 
-1. **Understand Application Insights features**
-   - Live Metrics, Smart Detection, Application Map
-   - Availability tests
-   - Usage analytics
+## Основные навыки
 
-2. **Instrument applications**
-   - Autoinstrumentation vs manual instrumentation
-   - Application Insights SDK
-   - OpenTelemetry integration
+### 1️⃣ Понимание возможностей Application Insights
 
-3. **Analyze telemetry data**
-   - Metrics vs log-based metrics
-   - Kusto Query Language (KQL)
-   - Performance and failure investigation
+Необходимо знать:
 
-4. **Configure monitoring**
-   - Create Application Insights resource
-   - Configure diagnostic settings
-   - Set up availability tests
-   - Create alerts
+- **Live Metrics** — потоковые метрики в реальном времени
+- **Smart Detection** — AI-обнаружение аномалий
+- **Application Map** — визуализация зависимостей
+- **Availability tests** — тестирование доступности
+- **Usage analytics** — анализ поведения пользователей
 
-### Exam Topics
+---
 
-| Topic | Weight | What to Know |
-|-------|--------|--------------|
-| **Application Insights basics** | High | Features, capabilities, pricing |
-| **Instrumentation** | High | SDK, autoinstrumentation, OpenTelemetry |
-| **Metrics and logs** | High | Difference, when to use, querying |
-| **Availability tests** | Medium | Types, configuration, alerts |
-| **Application Map** | Medium | Topology, troubleshooting |
-| **Distributed tracing** | Medium | Correlation, trace ID, span ID |
-| **Alerts** | Medium | Metric alerts, log alerts, action groups |
+### 2️⃣ Инструментирование приложений
 
+Важно различать:
+
+- **Autoinstrumentation**  
+  Включение мониторинга без изменения кода
+
+- **Manual instrumentation (SDK)**  
+  Подключение Application Insights SDK
+
+- **OpenTelemetry**  
+  Индустриальный стандарт трассировки и метрик
+
+---
+
+### 3️⃣ Анализ телеметрии
+
+Нужно понимать:
+
+- Разницу между **metrics** и **log-based metrics**
+- Основы **Kusto Query Language (KQL)**
+- Подход к расследованию проблем производительности
+- Анализ ошибок и зависимостей
+
+---
+
+### 4️⃣ Настройка мониторинга
+
+Необходимо уметь:
+
+- Создать ресурс Application Insights
+- Настроить diagnostic settings
+- Настроить availability tests
+- Создать alerts
+
+---
+
+# Темы экзамена
+
+| Тема | Вес | Что нужно знать |
+|------|------|----------------|
+| **Основы Application Insights** | Высокий | Возможности, функции, тарификация |
+| **Инструментирование** | Высокий | SDK, autoinstrumentation, OpenTelemetry |
+| **Метрики и логи** | Высокий | Различия, сценарии использования, KQL |
+| **Availability tests** | Средний | Типы тестов, настройка, алерты |
+| **Application Map** | Средний | Топология, поиск проблем |
+| **Distributed tracing** | Средний | Корреляция, trace ID, span ID |
+| **Alerts** | Средний | Metric alerts, log alerts, action groups |
+
+---
+
+## Что особенно часто проверяется
+
+- Разница между metrics и logs
+- Когда использовать Application Insights
+- Как настроить availability test
+- Что показывает Application Map
+- Как работает distributed tracing
+- Разница между metric alert и log alert
+
+---
+
+## Финальный акцент
+
+Для AZ-204 важно:
+
+- Понимать архитектуру мониторинга
+- Уметь выбрать правильный инструмент
+- Знать базовые возможности KQL
+- Различать Instrumentation и Diagnostic settings
+- Понимать, как мониторинг снижает MTTR
+
+Экзамен проверяет не просто знание интерфейса портала, а понимание **наблюдаемости и диагностики распределённых систем**.
 ### Common Exam Scenarios
 
 **Scenario 1: Choose instrumentation method**
@@ -397,21 +860,52 @@ What should you use?
 Answer: Log Analytics with KQL query:
 requests | where resultCode == 500 | where timestamp > ago(24h)
 ```
+## Ключевая терминология
 
-## Key Terminology
+| Термин | Определение |
+|--------|-------------|
+| **APM** | Application Performance Monitoring — непрерывный мониторинг производительности приложения |
+| **Telemetry** | Автоматический сбор и передача измерений из удалённых источников |
+| **Instrumentation** | Процесс добавления кода мониторинга в приложение |
+| **Autoinstrumentation** | Включение мониторинга через конфигурацию без изменения кода |
+| **Preaggregation** | Агрегация метрик до сохранения (снижает объём хранения и стоимость) |
+| **Sampling** | Снижение объёма телеметрии за счёт сбора репрезентативной выборки |
+| **Correlation** | Связывание связанной телеметрии между распределёнными компонентами |
+| **Trace ID** | Уникальный идентификатор сквозного (end-to-end) распределённого запроса |
+| **Span ID** | Идентификатор отдельной операции внутри распределённого запроса |
+| **KQL** | Kusto Query Language — язык запросов для Azure Monitor Logs |
 
-| Term | Definition |
-|------|------------|
-| **APM** | Application Performance Monitoring - continuous monitoring of application performance |
-| **Telemetry** | Automated collection and transmission of measurements from remote sources |
-| **Instrumentation** | Process of adding monitoring code to an application |
-| **Autoinstrumentation** | Monitoring enabled via configuration without code changes |
-| **Preaggregation** | Aggregating metrics before storage (reduces storage costs) |
-| **Sampling** | Reducing telemetry volume by collecting a representative subset |
-| **Correlation** | Linking related telemetry across distributed components |
-| **Trace ID** | Unique identifier for an end-to-end distributed request |
-| **Span ID** | Identifier for a single operation within a distributed request |
-| **KQL** | Kusto Query Language - query language for Azure Monitor Logs |
+---
+
+## Что важно понимать для AZ-204
+
+- **APM** — это про производительность приложений (Application Insights).
+- **Telemetry** включает метрики, логи и трассировки.
+- **Instrumentation** бывает автоматическим и ручным (через SDK или OpenTelemetry).
+- **Sampling** используется для снижения стоимости и нагрузки.
+- **Correlation** позволяет отслеживать запрос через несколько сервисов.
+- **Trace ID** объединяет все операции одного пользовательского запроса.
+- **Span ID** — конкретный шаг внутри цепочки.
+- **KQL** используется для анализа логов в Log Analytics.
+
+---
+
+## Архитектурный акцент
+
+В распределённой системе:
+
+- Один пользовательский запрос → один **Trace ID**
+- Каждый сервис в цепочке → свой **Span ID**
+- Все данные связаны через механизм **Correlation**
+
+Это основа distributed tracing и ключ к быстрой диагностике.
+
+---
+
+Запомните:  
+Metrics показывают *что происходит*,  
+Logs объясняют *почему*,  
+Traces показывают *как*.
 
 ## Quick Start: Your First Monitor
 
@@ -445,38 +939,132 @@ az webapp config appsettings set \
   --settings APPINSIGHTS_INSTRUMENTATIONKEY="<key>"
 ```
 
-**Within minutes**, you'll see:
-- Request rates and response times
-- Failed requests
-- Server performance metrics
-- Dependency calls (databases, external APIs)
+**Уже через несколько минут** вы увидите:
 
-## Next Steps
-
-In the following units, you'll learn:
-
-1. **Application Insights deep dive** - Features, architecture, telemetry types
-2. **Metrics types** - Log-based vs standard metrics, performance implications
-3. **Instrumentation methods** - SDK, autoinstrumentation, OpenTelemetry
-4. **Availability tests** - Proactive monitoring of endpoint availability
-5. **Application Map** - Visualizing and troubleshooting distributed apps
-6. **Log Analytics** - Querying with KQL, custom dashboards
-7. **Hands-on exercise** - Deploy and monitor a real application
-8. **Best practices** - Optimization, cost management, exam preparation
-
-## Summary
-
-- **Monitoring is essential** for production applications to ensure availability, performance, and user satisfaction
-- **Azure Monitor** is the unified platform, with **Application Insights** as the APM component
-- **Three pillars**: Metrics (what), Logs (why), Traces (how)
-- **Four golden signals**: Latency, Traffic, Errors, Saturation
-- **Proactive monitoring** prevents issues before users are impacted
-- **AZ-204 exam** focuses on Application Insights features, instrumentation, and telemetry analysis
+- Частоту запросов и время ответа
+- Неуспешные запросы
+- Метрики производительности сервера
+- Вызовы зависимостей (БД, внешние API)
 
 ---
 
-**💡 Exam Tip**: Always consider autoinstrumentation first (App Service, Functions) before adding SDK code. It's the simplest solution and often the correct answer.
+## Следующие шаги
 
-**💡 Remember**: Application Insights is an extension of Azure Monitor - they work together, not as separate services.
+В следующих разделах вы изучите:
 
-**💡 Practice**: Set up Application Insights on a test app and explore Live Metrics, Application Map, and Failures view before the exam.
+1. **Глубокий разбор Application Insights**  
+   Возможности, архитектура, типы телеметрии
+
+2. **Типы метрик**  
+   Log-based vs стандартные метрики, влияние на производительность
+
+3. **Методы инструментирования**  
+   SDK, autoinstrumentation, OpenTelemetry
+
+4. **Availability tests**  
+   Проактивный мониторинг доступности endpoint’ов
+
+5. **Application Map**  
+   Визуализация и диагностика распределённых приложений
+
+6. **Log Analytics**  
+   Запросы с использованием KQL, кастомные дашборды
+
+7. **Практическое задание**  
+   Развёртывание и мониторинг реального приложения
+
+8. **Best practices**  
+   Оптимизация, управление стоимостью, подготовка к экзамену
+
+---
+
+## Итоги
+
+- **Мониторинг обязателен** для production-приложений
+- **Azure Monitor** — единая платформа
+- **Application Insights** — APM-компонент внутри Azure Monitor
+- **Три столпа**:
+    - Metrics (что происходит)
+    - Logs (почему произошло)
+    - Traces (как происходило)
+- **Четыре золотых сигнала**: Latency, Traffic, Errors, Saturation
+- Проактивный мониторинг снижает MTTR и защищает SLA
+- В AZ-204 особое внимание уделяется Application Insights, инструментированию и анализу телеметрии
+
+---
+
+## 💡 Экзаменационные подсказки
+
+- Сначала рассматривайте **autoinstrumentation** (App Service, Functions) перед добавлением SDK.  
+  Это самый простой и часто правильный вариант.
+
+- Application Insights — это **расширение Azure Monitor**, а не отдельный изолированный сервис.
+
+- Обязательно попрактикуйтесь:  
+  подключите Application Insights к тестовому приложению и изучите:
+    - Live Metrics
+    - Application Map
+    - Failures view
+
+Практика значительно повышает понимание и вероятность правильного ответа на экзамене.
+
+Multi-step:
+Нужен для сложных сценариев (логин, форма, последовательность действий)
+Избыточен для простого availability check
+
+
+1️⃣ Adaptive sampling
+Автоматически регулирует процент
+Рекомендуется по умолчанию
+2️⃣ Fixed-rate sampling
+Фиксированный процент
+
+Telemetry Initializers
+Они изменяют свойства телеметрии
+Не уменьшают объём данных
+
+Funnels
+Анализ пользовательского поведения
+Не влияет на сбор телеметрии
+
+Performance
+Это раздел мониторинга
+Не механизм сокращения данных
+
+🎯 Экзаменационное правило
+Если видишь:
+Reduce telemetry
+Lower cost
+Preserve statistical correctness
+👉 Ответ = Sampling
+
+| Feature             | Что делает             |
+| ------------------- | ---------------------- |
+| Sampling            | Уменьшает объём данных |
+| Telemetry Processor | Фильтрует / удаляет    |
+| Initializer         | Добавляет свойства     |
+
+
+Microsoft Entra ID (бывший Azure AD) хранит:
+пользователей
+группы
+роли
+приожения
+directory объекты
+Чтобы получить доступ к этим данным программно, используется:
+👉 Microsoft Graph API
+
+Azure Monitor — это umbrella-сервис:
+Метрики инфраструктуры
+Alerts
+Activity logs
+Но он не даёт:
+Code-level diagnostics
+Dependency tracing
+Distributed tracing
+
+| Если вопрос про           | Ответ                |
+| ------------------------- | -------------------- |
+| Infra metrics             | Azure Monitor        |
+| Log storage & KQL         | Log Analytics        |
+| App-level telemetry & RCA | Application Insights |

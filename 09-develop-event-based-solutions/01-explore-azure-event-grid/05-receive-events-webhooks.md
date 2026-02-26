@@ -1,41 +1,82 @@
-# Receive Events by Using Webhooks in Azure Event Grid
+# Получение событий через Webhooks в Azure Event Grid
 
-## Overview
+## Обзор
 
-**Webhooks** are HTTP/HTTPS endpoints that receive events from Azure Event Grid via POST requests. Event Grid pushes events to your webhook endpoint, making it ideal for custom applications and serverless scenarios.
-
-**Key Features:**
-- **Push delivery**: Event Grid sends events to your endpoint
-- **Endpoint validation**: Prove webhook ownership before receiving events
-- **Flexible hosting**: Any HTTP endpoint (cloud, on-premises, containers)
-- **Automatic retry**: Built-in retry with exponential backoff
-- **Custom authentication**: Add headers for API keys or OAuth tokens
+**Webhook** — это HTTP/HTTPS endpoint, который получает события от Azure Event Grid через POST-запросы.  
+Event Grid использует push-модель доставки, отправляя события напрямую в ваш endpoint.
 
 ---
 
-## Webhook Endpoint Requirements
+## Основные возможности
 
-### Basic Requirements
+- **Push delivery**  
+  Event Grid сам отправляет события
 
-| Requirement | Description |
-|-------------|-------------|
-| **Protocol** | HTTPS (HTTP supported but not recommended) |
-| **Response Time** | Must respond within **30 seconds** |
-| **Response Code** | Return **HTTP 200 OK** for successful processing |
-| **Certificate** | Valid TLS/SSL certificate (no self-signed in production) |
-| **Accessibility** | Publicly accessible or via Azure Relay/Private Endpoint |
-| **Validation** | Must handle endpoint validation handshake |
+- **Endpoint validation**  
+  Подтверждение владения endpoint перед началом доставки
 
-### Certificate Requirements
+- **Гибкость размещения**  
+  Любой HTTP endpoint (cloud, on-premises, контейнеры)
 
-**Production:**
-- ✅ Certificate from commercial certificate authority (CA)
-- ✅ Domain validation or extended validation
-- ❌ No self-signed certificates
+- **Автоматический retry**  
+  Повторная отправка с exponential backoff
 
-**Development/Testing:**
-- ⚠️ Self-signed certificates allowed with Azure CLI flag
-- Not recommended for production
+- **Кастомная аутентификация**  
+  Возможность добавлять заголовки (API keys, OAuth)
+
+---
+
+# Требования к Webhook Endpoint
+
+## Базовые требования
+
+| Требование | Описание |
+|------------|-----------|
+| **Протокол** | HTTPS (HTTP поддерживается, но не рекомендуется) |
+| **Время ответа** | Ответ должен быть отправлен в течение **30 секунд** |
+| **Код ответа** | Для успешной обработки — **HTTP 200 OK** |
+| **Сертификат** | Действительный TLS/SSL сертификат |
+| **Доступность** | Публичный доступ или через Azure Relay / Private Endpoint |
+| **Валидация** | Обработка validation handshake |
+
+---
+
+# Требования к сертификатам
+
+## Production
+
+- ✅ Сертификат от доверенного центра сертификации (CA)
+- ✅ Domain validation или Extended validation
+- ❌ Self-signed сертификаты запрещены
+
+## Development / Testing
+
+- ⚠️ Self-signed сертификаты допускаются (через Azure CLI флаг)
+- Не рекомендуется использовать в production
+
+---
+
+## Архитектурные рекомендации
+
+- Используйте HTTPS всегда
+- Быстро возвращайте 200 OK
+- Переносите тяжёлую обработку в асинхронные процессы
+- Реализуйте идемпотентность
+- Настройте мониторинг DeliveryFailCount
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Webhook использует push-модель
+- Ответ должен быть в течение 30 секунд
+- 200 OK подтверждает успешную доставку
+- Self-signed сертификаты не подходят для production
+- Endpoint должен пройти validation handshake
+
+Вопросы часто проверяют требования к webhook и поведение retry.
 
 ```bash
 # Allow self-signed certificates (development only)
@@ -50,39 +91,85 @@ az eventgrid event-subscription create \
 
 ---
 
-## Webhook Endpoint Validation
+# Валидация Webhook Endpoint
 
-Event Grid requires **endpoint validation** to prove you own the webhook URL before delivering events.
-
-### Validation Purpose
-
-- **Prevent abuse**: Stop malicious actors from sending events to your endpoints
-- **Verify ownership**: Ensure you control the webhook URL
-- **Avoid accidental subscriptions**: Prevent sending events to wrong endpoints
-
-### Auto-Handled Validation
-
-These Azure services **automatically handle validation**:
-
-| Service | Notes |
-|---------|-------|
-| **Azure Functions** | With Event Grid trigger binding |
-| **Logic Apps** | With Event Grid connector |
-| **Azure Automation** | Webhook-triggered runbooks |
-
-**No manual validation code needed for these services!**
+Azure Event Grid требует обязательную **endpoint validation**, чтобы подтвердить, что вы действительно владеете указанным webhook URL.
 
 ---
 
-## Validation Methods
+## Зачем нужна валидация
 
-### Method 1: Synchronous Handshake (Recommended)
+- **Защита от злоупотреблений**  
+  Предотвращает отправку событий на чужие endpoint’ы
 
-**How it works:**
-1. Event Grid sends `SubscriptionValidationEvent` to your endpoint
-2. Your endpoint extracts `validationCode` from event data
-3. Your endpoint responds **synchronously** with the validation code
-4. Subscription becomes active immediately
+- **Подтверждение владения**  
+  Убеждается, что вы контролируете указанный URL
+
+- **Исключение ошибок конфигурации**  
+  Предотвращает подписки на неверные адреса
+
+---
+
+# Автоматическая валидация
+
+Следующие Azure-сервисы выполняют валидацию автоматически:
+
+| Сервис | Примечание |
+|--------|------------|
+| **Azure Functions** | При использовании Event Grid trigger |
+| **Logic Apps** | Через встроенный Event Grid connector |
+| **Azure Automation** | Webhook-triggered runbooks |
+
+Для этих сервисов **не требуется писать код для валидации**.
+
+---
+
+# Методы валидации
+
+## Метод 1: Синхронный Handshake (рекомендуется)
+
+### Как работает
+
+1️⃣ Event Grid отправляет событие типа  
+`SubscriptionValidationEvent`
+
+2️⃣ Ваш endpoint извлекает `validationCode` из `data`
+
+3️⃣ Endpoint возвращает код в ответе **синхронно**
+
+4️⃣ Подписка становится активной сразу
+
+---
+
+## Что важно
+
+- Ответ должен быть HTTP 200
+- Код должен быть возвращён в теле ответа
+- Валидация должна происходить в течение 30 секунд
+- Без корректного ответа подписка не активируется
+
+---
+
+## Архитектурный смысл
+
+Validation handshake:
+
+- предотвращает случайные или вредоносные подписки
+- обеспечивает контроль доступа
+- повышает безопасность webhook-интеграций
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Webhook обязан пройти endpoint validation
+- Используется событие `SubscriptionValidationEvent`
+- Требуется вернуть `validationCode`
+- Azure Functions и Logic Apps обрабатывают это автоматически
+
+Если в вопросе говорится о проблеме активации подписки — почти всегда причина в неправильной обработке validation handshake.
 
 **Validation Event Format:**
 ```json
@@ -272,19 +359,45 @@ az eventgrid event-subscription show \
 # Output: "Succeeded"
 ```
 
-**Validation URL Expiration:**
-- ⏱️ **5 minutes** to complete validation
-- ❌ After 5 minutes, validation URL expires
-- 🔄 Delete and recreate subscription if expired
+## Срок действия Validation URL
 
-**Provisioning States:**
+- ⏱️ **5 минут** на завершение валидации
+- ❌ Через 5 минут validation URL становится недействительным
+- 🔄 Если время истекло — удалите и создайте подписку заново
 
-| State | Description |
-|-------|-------------|
-| `Creating` | Subscription being created |
-| `AwaitingManualAction` | Waiting for manual validation (asynchronous handshake) |
-| `Succeeded` | Subscription active, receiving events |
-| `Failed` | Validation failed or error occurred |
+Важно: если validation handshake не завершён вовремя, подписка не активируется.
+
+---
+
+# Состояния Provisioning подписки
+
+| Состояние | Описание |
+|------------|-----------|
+| `Creating` | Подписка создаётся |
+| `AwaitingManualAction` | Ожидается ручная валидация (асинхронный handshake) |
+| `Succeeded` | Подписка активна и получает события |
+| `Failed` | Ошибка валидации или другая ошибка |
+
+---
+
+## Что это означает
+
+- Если статус `AwaitingManualAction` — webhook не завершил валидацию.
+- Если статус `Failed` — произошла ошибка или истёк срок validation URL.
+- Только статус `Succeeded` означает, что события начнут доставляться.
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- На validation отводится **5 минут**
+- При истечении срока требуется пересоздание подписки
+- Подписка не получает события, пока статус не `Succeeded`
+- `AwaitingManualAction` означает, что handshake не завершён
+
+Частый экзаменационный вопрос — почему подписка не активируется.
 
 ---
 
@@ -588,31 +701,70 @@ public async Task<IActionResult> Post()
 }
 ```
 
-### Security Best Practices
+# Рекомендации по безопасности Webhook
 
-1. **HTTPS Only**: Always use HTTPS endpoints
-2. **Validate Certificates**: Use valid TLS/SSL certificates
-3. **Authenticate Requests**: Use API keys, OAuth, or custom headers
-4. **Validate Event Origin**: Check `aeg-subscription-name` header
-5. **Rate Limiting**: Implement rate limiting to prevent abuse
-6. **Input Validation**: Validate all event data
-7. **Logging**: Log all events for audit and troubleshooting
+1️⃣ **Только HTTPS**  
+Используйте исключительно HTTPS endpoint’ы.
+
+2️⃣ **Проверка сертификатов**  
+Сертификат должен быть действительным и выдан доверенным CA.
+
+3️⃣ **Аутентификация запросов**  
+Используйте:
+- API keys
+- OAuth 2.0
+- Custom headers с токенами
+
+4️⃣ **Проверка источника события**  
+Проверяйте заголовок `aeg-subscription-name`.
+
+5️⃣ **Rate Limiting**  
+Ограничивайте частоту запросов для защиты от перегрузки.
+
+6️⃣ **Валидация входных данных**  
+Проверяйте структуру и содержимое `data`.
+
+7️⃣ **Логирование**  
+Логируйте события для аудита и диагностики.
 
 ---
 
-## Troubleshooting
+# Troubleshooting
 
-### Common Issues
+## Частые проблемы
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| Validation failing | Endpoint not responding correctly | Check validation code logic |
-| Timeout errors | Processing takes > 30 seconds | Implement async processing |
-| Certificate errors | Self-signed or expired certificate | Use valid CA-signed certificate |
-| 401 Unauthorized | Missing/invalid authentication | Check API keys or OAuth config |
-| Events not received | Subscription filters too restrictive | Review filter configuration |
-| Duplicate events | Retries after timeout | Implement idempotent processing |
+| Проблема | Причина | Решение |
+|-----------|----------|----------|
+| Валидация не проходит | Неверная обработка validation event | Проверить логику возврата validationCode |
+| Timeout ошибки | Обработка занимает > 30 секунд | Реализовать асинхронную обработку |
+| Ошибка сертификата | Self-signed или просроченный сертификат | Использовать сертификат от доверенного CA |
+| 401 Unauthorized | Неверная аутентификация | Проверить ключи или OAuth-конфигурацию |
+| События не приходят | Слишком строгие фильтры | Проверить настройки фильтрации |
+| Дублирующиеся события | Retry после таймаута | Реализовать идемпотентную обработку |
 
+---
+
+## Архитектурные рекомендации
+
+- Быстро возвращайте HTTP 200
+- Тяжёлую обработку выносите в очередь
+- Реализуйте idempotency по `id`
+- Настройте мониторинг DeliveryFailCount
+- Проверяйте заголовок `aeg-event-type`
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Webhook должен отвечать в течение 30 секунд
+- Используется модель at-least-once
+- Повторная доставка возможна
+- Validation handshake обязателен
+- HTTPS — обязательное требование
+
+Большинство проблем в вопросах по webhook связаны с валидацией, таймаутами или отсутствием идемпотентности.
 ### Validation Troubleshooting
 
 **Check validation response:**
@@ -652,51 +804,95 @@ az monitor metrics list \
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204
 
-### Key Concepts to Remember
+## Ключевые моменты
 
-1. **Validation required**: All webhooks must validate endpoint ownership
-2. **Two validation methods**: Synchronous (recommended) and asynchronous (manual)
-3. **30-second timeout**: Webhook must respond within 30 seconds
-4. **HTTP 200 response**: Required for successful event processing
-5. **Auto-validation**: Azure Functions, Logic Apps, Automation handle automatically
-6. **5-minute window**: Asynchronous validation must complete within 5 minutes
-7. **HTTPS required**: Valid TLS/SSL certificate (no self-signed in production)
+1️⃣ **Валидация обязательна**  
+Каждый webhook должен подтвердить владение endpoint.
 
-### Common Exam Scenarios
+2️⃣ **Два метода валидации**
+- Синхронный (рекомендуется)
+- Асинхронный (ручной)
 
-**Scenario 1**: Webhook validation failing
-- ✅ Implement synchronous handshake (return validationResponse)
-- ✅ Check if response format is correct
-- ❌ Don't ignore validation event
+3️⃣ **Таймаут 30 секунд**  
+Webhook обязан ответить в течение 30 секунд.
 
-**Scenario 2**: Events timing out
-- ✅ Implement asynchronous processing (queue events)
-- ✅ Return HTTP 200 immediately
-- ❌ Don't process events synchronously if > 30 seconds
+4️⃣ **HTTP 200 OK**  
+Требуется для успешной обработки события.
 
-**Scenario 3**: Secure webhook endpoint
-- ✅ Add custom headers with API keys
-- ✅ Use Azure AD OAuth tokens
-- ❌ Don't rely on URL obscurity alone
+5️⃣ **Автоматическая валидация**  
+Azure Functions, Logic Apps и Automation обрабатывают её автоматически.
 
-**Scenario 4**: Legacy system can't handle validation
-- ✅ Use asynchronous handshake (manual GET request)
-- ⏱️ Complete within 5 minutes
+6️⃣ **Окно 5 минут**  
+Асинхронная валидация должна завершиться в течение 5 минут.
 
-### Remember for Exam
+7️⃣ **HTTPS обязателен**  
+Действительный TLS/SSL сертификат (без self-signed в production).
 
-- **Validation event type**: `Microsoft.EventGrid.SubscriptionValidationEvent`
-- **Response property**: `validationResponse`
-- **Timeout**: 30 seconds
-- **Async validation window**: 5 minutes
-- **Auto-handled**: Functions, Logic Apps, Automation
-- **Required response**: HTTP 200 OK
-- **Certificate**: Valid CA-signed (no self-signed)
-- **Retries**: Automatic with exponential backoff
-- **Idempotency**: Handle duplicate events
+---
 
+# Частые экзаменационные сценарии
+
+### Сценарий 1
+Webhook не проходит валидацию
+
+- ✅ Реализовать синхронный handshake (вернуть `validationResponse`)
+- ✅ Проверить формат ответа
+- ❌ Не игнорировать validation event
+
+---
+
+### Сценарий 2
+События завершаются по таймауту
+
+- ✅ Реализовать асинхронную обработку (например, через очередь)
+- ✅ Немедленно возвращать HTTP 200
+- ❌ Не обрабатывать события синхронно, если это занимает > 30 секунд
+
+---
+
+### Сценарий 3
+Нужно защитить webhook
+
+- ✅ Использовать custom headers с API-ключами
+- ✅ Использовать OAuth (Azure AD)
+- ❌ Не полагаться на «скрытый URL»
+
+---
+
+### Сценарий 4
+Legacy-система не поддерживает синхронную валидацию
+
+- ✅ Использовать асинхронный handshake (ручной GET-запрос)
+- ⏱️ Завершить валидацию в течение 5 минут
+
+---
+
+# Что обязательно помнить
+
+- **Тип validation события**: `Microsoft.EventGrid.SubscriptionValidationEvent`
+- **Поле ответа**: `validationResponse`
+- **Таймаут**: 30 секунд
+- **Окно асинхронной валидации**: 5 минут
+- **Автоматическая обработка**: Functions, Logic Apps, Automation
+- **Требуемый ответ**: HTTP 200 OK
+- **Сертификат**: Действительный CA-signed
+- **Повторы доставки**: Exponential backoff
+- **Идемпотентность**: Обязательна
+
+---
+
+## Экзаменационный акцент
+
+Если в вопросе:
+
+- Подписка не активируется → проблема с validation
+- Таймаут → обработка > 30 секунд
+- Дубли → нет идемпотентности
+- Безопасность → HTTPS + аутентификация
+
+Webhook — одна из самых часто проверяемых тем по Event Grid в AZ-204.
 ### Quick Command Reference
 
 ```bash
@@ -719,30 +915,78 @@ az eventgrid event-subscription show \
 
 ---
 
-## Summary
+# Итоги по Webhooks в Azure Event Grid
 
-**Webhook Endpoint Validation:**
-- **Synchronous handshake**: Return `validationResponse` immediately (recommended)
-- **Asynchronous handshake**: Manual GET request within 5 minutes
-- **Auto-handled**: Azure Functions, Logic Apps, Automation
+## Валидация endpoint
 
-**Webhook Requirements:**
-- HTTPS endpoint with valid certificate
-- Respond within 30 seconds
-- Return HTTP 200 OK
-- Handle validation event
+- **Синхронный handshake**  
+  Немедленно вернуть `validationResponse` (рекомендуется)
 
-**Best Practices:**
-- ✅ Implement asynchronous processing for long-running tasks
-- ✅ Design idempotent event handlers
-- ✅ Use authentication (API keys, OAuth)
-- ✅ Log all events for troubleshooting
-- ✅ Return appropriate status codes (400 for validation, 500 for transient errors)
-- ✅ Implement circuit breakers for downstream dependencies
+- **Асинхронный handshake**  
+  Выполнить ручной GET-запрос в течение 5 минут
 
-**Security:**
-- Use HTTPS only
-- Valid TLS/SSL certificate
-- Authenticate requests (custom headers, OAuth)
-- Validate event origin
-- Implement rate limiting
+- **Автоматическая обработка**  
+  Azure Functions, Logic Apps и Automation выполняют валидацию автоматически
+
+---
+
+# Требования к Webhook
+
+- HTTPS endpoint с действительным сертификатом
+- Ответ в течение 30 секунд
+- Возврат HTTP 200 OK
+- Обработка validation события
+
+---
+
+# Best Practices
+
+- ✅ Использовать асинхронную обработку для долгих операций
+- ✅ Проектировать идемпотентные обработчики
+- ✅ Реализовать аутентификацию (API keys, OAuth)
+- ✅ Логировать все события
+- ✅ Возвращать корректные HTTP-коды
+    - 400 — ошибка валидации
+    - 500 — временная ошибка
+- ✅ Реализовать circuit breaker для зависимостей
+
+---
+
+# Безопасность
+
+- Использовать только HTTPS
+- Действительный TLS/SSL сертификат
+- Аутентификация через custom headers или OAuth
+- Проверка источника события
+- Реализация rate limiting
+
+---
+
+## Ключевые выводы
+
+- Validation обязательна для webhook
+- Таймаут ответа — 30 секунд
+- Возможна повторная доставка (at-least-once)
+- Асинхронная обработка повышает надёжность
+- Идемпотентность обязательна
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Нужно помнить:
+
+- Синхронная валидация — предпочтительный метод
+- Окно асинхронной валидации — 5 минут
+- HTTP 200 — признак успешной обработки
+- Дубли возможны
+- HTTPS обязателен
+
+Webhook — одна из самых часто проверяемых тем в разделе Event Grid.
+
+| Куда доставлять событие       | Когда выбирать                                                                                                                                  | Сильные стороны                                                                          | Минусы / когда НЕ надо                                                                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Webhook (HTTP endpoint)**   | Нужно уведомить **внешний сервис по HTTP** (SaaS/CRM/свой API), “push”, near real-time                                                          | Просто, универсально, подходит для интеграции с любым HTTP                               | Надёжность ограничена (есть ретраи, но нет очереди на стороне получателя), получатель должен быть доступен; нужно делать **idempotency** |
+| **Azure Function**            | Нужна **кастомная обработка кода** (валидировать файл, записать в БД, дернуть API, сгенерить thumbnail)                                         | Минимум инфраструктуры, легко писать код, хорошо масштабируется, удобно для event-driven | Если нужна сложная оркестрация/человеческие approvals — лучше Logic App; для строгих гарантий доставки иногда добавляют очередь          |
+| **Logic App**                 | Нужны **готовые коннекторы** и low-code: O365, Dynamics, SAP, ServiceNow, approvals, расписания, интеграционные пайплайны                       | Быстро собрать интеграцию без кода, богатые коннекторы, удобно для бизнес-процессов      | Может быть дороже/медленнее, сложнее дебажить как код; для high-throughput часто берут Functions                                         |
+| **Service Bus (Queue/Topic)** | Нужно **максимально надёжно**: буферизация, **dead-letter**, контроль нагрузки, очереди, порядок/сессии, “работаем даже если потребитель лежит” | Enterprise-messaging, DLQ, back-pressure, конкурирующие консьюмеры, изоляция от пиков    | Требует consumer’а (Function/worker), чуть больше компонентов и настройки                                                                |

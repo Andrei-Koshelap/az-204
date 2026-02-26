@@ -697,4 +697,22 @@ az containerapp secret set --secrets "key=$SECRET_FROM_ENV"
 - Механизм распределения трафика между ревизиями.
 
 
+
+Azure Container Instances 
+Нет service discovery
+Нет built-in traffic splitting
+Нет revision management
+Нет полноценной event-driven модели
+Это просто контейнеры без orchestration
+
+Azure Container App
+
+| Requirement       | Поддержка     |
+| ----------------- | ------------- |
+| Low cost          | Scale to zero |
+| Service discovery | Built-in Dapr |
+| Traffic splitting | Revisions     |
+| Event-driven      | KEDA          |
+| No direct K8s API | Fully managed |
+
 [Learn More](https://learn.microsoft.com/en-us/training/modules/implement-azure-container-apps/6-container-apps-revisions-secrets)

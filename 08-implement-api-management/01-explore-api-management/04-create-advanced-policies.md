@@ -1,16 +1,46 @@
-# Create Advanced Policies
+# Создание Advanced Policies
 
-## Overview
+## Обзор
 
-**Advanced policies** provide sophisticated control over API behavior, including conditional logic, request routing, concurrency control, logging, mocking, retries, and custom responses.
+**Advanced policies** обеспечивают более сложное и гибкое управление поведением API, включая условную логику, маршрутизацию запросов, контроль конкурентности, логирование, мок-ответы, повторы (retries) и кастомные ответы.
 
-These policies are typically used in the **backend** and **outbound** sections for complex scenarios.
+Такие политики обычно применяются в разделах **backend** и **outbound** для реализации сложных сценариев.
 
 ---
 
 ## 1. Control Flow Policy
 
-The **control-flow** policy applies statements conditionally based on boolean expressions.
+Политики **control-flow** позволяют выполнять набор операторов **условно**, на основе булевых выражений (boolean expressions).
+
+Их используют, когда нужно:
+
+- разветвлять логику обработки запросов/ответов;
+- выбирать backend в зависимости от заголовков/параметров;
+- по-разному обрабатывать пользователей, продукты, подписки;
+- возвращать разные ответы при разных условиях.
+
+---
+
+### Архитектурный смысл (дополнение)
+
+Control-flow — это способ реализовать «умный gateway», не трогая backend-код.
+
+Чаще всего control-flow строится вокруг конструкций вроде:
+
+- условного выбора (if/else логика),
+- остановки pipeline,
+- установки переменных для последующих шагов.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе звучит:
+- “в зависимости от заголовка/параметра сделать X иначе Y”,
+- “маршрутизировать в разные backend по условию”,
+- “для одного продукта вернуть один формат, для другого — другой”,
+
+— это прямой сигнал к применению control-flow логики в policies (обычно через `choose/when/otherwise` и выражения на `context`).
 
 ### Syntax
 
@@ -138,12 +168,54 @@ The **forward-request** policy forwards the request to the backend service speci
 <forward-request timeout="time in seconds" follow-redirects="true | false" />
 ```
 
-### Parameters
+### Параметры
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `timeout` | Maximum wait time for backend response (seconds) | 300 |
-| `follow-redirects` | Follow HTTP redirects from backend | `true` |
+| Параметр | Описание | Значение по умолчанию |
+|-----------|------------|------------------------|
+| `timeout` | Максимальное время ожидания ответа от backend (в секундах) | 300 |
+| `follow-redirects` | Следовать HTTP-редиректам от backend | `true` |
+
+---
+
+### Пояснение
+
+**`timeout`**  
+Определяет, сколько секунд gateway будет ожидать ответа от backend-сервиса.
+
+Если время превышено:
+- запрос завершится ошибкой;
+- управление перейдёт в раздел `on-error` (если он настроен).
+
+Это важно для:
+- предотвращения зависаний;
+- защиты от медленных сервисов;
+- повышения устойчивости системы.
+
+---
+
+**`follow-redirects`**  
+Определяет, будет ли gateway автоматически следовать HTTP-редиректам (например, 301 или 302), возвращённым backend.
+
+- `true` — gateway перейдёт по новому URL
+- `false` — редирект будет возвращён клиенту
+
+---
+
+### Архитектурные рекомендации
+
+- Устанавливайте разумный `timeout` для предотвращения долгих ожиданий.
+- В микросервисной архитектуре лучше минимизировать использование редиректов на уровне backend.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- настройке времени ожидания ответа,
+- обработке таймаутов,
+- контроле поведения при HTTP-редиректах,
+
+— следует обратить внимание на параметры `timeout` и `follow-redirects`.
 
 ### Example 1: Basic Forward with Timeout
 
@@ -215,12 +287,56 @@ The **limit-concurrency** policy prevents more than the specified number of requ
 </limit-concurrency>
 ```
 
-### Parameters
+### Параметры
 
-| Parameter | Description | Required |
-|-----------|-------------|----------|
-| `key` | Expression for concurrency grouping | No (default: per instance) |
-| `max-count` | Maximum concurrent requests | Yes |
+| Параметр | Описание | Обязательный |
+|------------|------------|--------------|
+| `key` | Выражение для группировки конкурентных запросов | Нет (по умолчанию — на экземпляр) |
+| `max-count` | Максимальное количество одновременных запросов | Да |
+
+---
+
+### Пояснение
+
+Эти параметры используются для управления **конкурентностью (concurrency control)** на уровне gateway.
+
+**`max-count`**  
+Определяет максимальное число одновременно выполняемых запросов.  
+Когда лимит превышен — новые запросы будут ожидать или завершаться ошибкой (в зависимости от конфигурации).
+
+**`key`**  
+Позволяет группировать ограничения по определённому признаку.
+
+Например, можно ограничивать:
+
+- по пользователю,
+- по подписке,
+- по региону,
+- по заголовку запроса.
+
+Если `key` не задан, ограничение применяется ко всему экземпляру gateway.
+
+---
+
+### Архитектурное значение
+
+Control concurrency позволяет:
+
+- защитить backend от перегрузки;
+- предотвратить ресурсное истощение;
+- обеспечить стабильную производительность;
+- реализовать «bulkhead»-подобную стратегию изоляции.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- ограничении количества одновременных запросов,
+- защите backend от параллельной нагрузки,
+- управлении конкурентностью,
+
+— решение связано с использованием политики контроля конкурентности и параметра `max-count`.
 
 ### Example 1: Global Concurrency Limit
 
@@ -504,16 +620,90 @@ The **retry** policy executes child policies repeatedly until a condition is met
 </retry>
 ```
 
-### Parameters
+### Параметры
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `condition` | Expression evaluated after each attempt | Required |
-| `count` | Maximum retry attempts | Required |
-| `interval` | Wait time between retries (seconds) | Required |
-| `max-interval` | Maximum wait time (exponential backoff) | Optional |
-| `delta` | Increment for exponential backoff | Optional |
-| `first-fast-retry` | Skip delay for first retry | `false` |
+| Параметр | Описание | Значение по умолчанию |
+|------------|------------|------------------------|
+| `condition` | Выражение, которое проверяется после каждой попытки | Обязательный |
+| `count` | Максимальное количество повторных попыток | Обязательный |
+| `interval` | Интервал ожидания между попытками (в секундах) | Обязательный |
+| `max-interval` | Максимальный интервал ожидания (для exponential backoff) | Необязательный |
+| `delta` | Приращение для exponential backoff | Необязательный |
+| `first-fast-retry` | Пропустить задержку перед первой повторной попыткой | `false` |
+
+---
+
+### Пояснение
+
+Эти параметры используются в политике **retry**, которая позволяет повторять вызов backend при определённых условиях.
+
+---
+
+### `condition`
+
+Булево выражение, которое определяет, нужно ли выполнять повторную попытку.
+
+Обычно проверяется:
+- код ответа (например, 5xx),
+- таймаут,
+- конкретные значения `context.Response.StatusCode`.
+
+---
+
+### `count`
+
+Максимальное число повторных попыток.  
+После достижения лимита запрос завершится ошибкой.
+
+---
+
+### `interval`
+
+Фиксированная задержка между попытками (если не используется exponential backoff).
+
+---
+
+### `max-interval` и `delta`
+
+Используются для реализации **exponential backoff** — увеличения задержки после каждой попытки.
+
+Это снижает нагрузку на нестабильный backend и повышает устойчивость системы.
+
+---
+
+### `first-fast-retry`
+
+Если `true`, первая повторная попытка выполняется без ожидания.  
+Полезно при кратковременных сбоях.
+
+---
+
+### Архитектурное значение
+
+Retry-политика повышает отказоустойчивость системы:
+
+- сглаживает кратковременные сбои;
+- уменьшает вероятность ошибок из-за временной недоступности;
+- снижает нагрузку при использовании exponential backoff;
+- улучшает стабильность интеграций.
+
+Однако чрезмерное использование retry может:
+
+- увеличить задержку ответа;
+- усилить нагрузку на backend;
+- усугубить ситуацию при массовом сбое.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- временных сбоях backend,
+- необходимости повторить запрос при 5xx,
+- реализации exponential backoff,
+- повышении устойчивости API,
+
+— следует использовать политику `retry` с параметрами `condition`, `count` и `interval`.
 
 ### Example 1: Retry on Server Errors
 
@@ -858,47 +1048,83 @@ The **return-response** policy aborts pipeline execution and returns a response 
 
 ---
 
-## Exam Tips
+## Советы к экзамену
 
-### Key Concepts for AZ-204
+### Ключевые концепции для AZ-204
 
-1. **control-flow**: `<choose>`, `<when>`, `<otherwise>` for conditional logic
+1. **control-flow**  
+   Используются конструкции `<choose>`, `<when>`, `<otherwise>` для реализации условной логики.
 
-2. **forward-request**: Send request to backend with timeout parameter
+2. **forward-request**  
+   Отправляет запрос в backend. Позволяет настраивать параметры, включая `timeout`.
 
-3. **limit-concurrency**: Prevent overload, returns 429 if exceeded
+3. **limit-concurrency**  
+   Ограничивает количество одновременных запросов.  
+   При превышении лимита возвращается HTTP 429 (Too Many Requests).
 
-4. **log-to-eventhub**: Send logs to Event Hub, requires logger-id
+4. **log-to-eventhub**  
+   Отправляет логи в Event Hub. Требует указания `logger-id`.
 
-5. **mock-response**: Return mock without calling backend
+5. **mock-response**  
+   Возвращает тестовый (mock) ответ без вызова backend.
 
-6. **retry**: Retry logic with condition, count, interval (exponential backoff)
+6. **retry**  
+   Реализует повторные попытки с параметрами `condition`, `count`, `interval` (возможен exponential backoff).
 
-7. **return-response**: Abort pipeline, return custom response immediately
+7. **return-response**  
+   Немедленно завершает pipeline и возвращает кастомный ответ клиенту.
 
-8. **Common use cases**:
-   - control-flow → Conditional routing, rate limits by user group
-   - limit-concurrency → Protect backend from overload
-   - retry → Handle transient failures
-   - return-response → Maintenance mode, caching, blocking
+8. **Типовые сценарии использования**:
 
-### Common Exam Scenarios
+   - `control-flow` → Условная маршрутизация, разные правила для разных групп пользователей
+   - `limit-concurrency` → Защита backend от перегрузки
+   - `retry` → Обработка временных сбоев (transient failures)
+   - `return-response` → Режим обслуживания, блокировка запросов, кэш-ответ
 
-**Scenario 1**: "Route to different backends based on request header"
-→ **Answer**: Use `<choose>` with `<set-backend-service>` in backend section
+---
 
-**Scenario 2**: "Retry failed requests 3 times with delays"
-→ **Answer**: Use `<retry condition="@(context.Response.StatusCode >= 500)" count="3" interval="5">`
+## Частые экзаменационные сценарии
 
-**Scenario 3**: "Prevent more than 100 concurrent requests to backend"
-→ **Answer**: Use `<limit-concurrency max-count="100">` around `<forward-request>`
+**Сценарий 1**:  
+"Маршрутизировать запросы в разные backend в зависимости от заголовка"  
+→ **Ответ**: Использовать `<choose>` с `<set-backend-service>` в разделе backend
 
-**Scenario 4**: "Log all errors to Event Hub"
-→ **Answer**: Use `<log-to-eventhub logger-id="...">` in `<on-error>` section
+---
 
-**Scenario 5**: "Return maintenance message without calling backend"
-→ **Answer**: Use `<return-response>` in `<inbound>` section
+**Сценарий 2**:  
+"Повторять неудачные запросы 3 раза с задержкой"  
+→ **Ответ**: Использовать  
+`<retry condition="@(context.Response.StatusCode >= 500)" count="3" interval="5">`
 
+---
+
+**Сценарий 3**:  
+"Запретить более 100 одновременных запросов к backend"  
+→ **Ответ**: Использовать `<limit-concurrency max-count="100">` вокруг `<forward-request>`
+
+---
+
+**Сценарий 4**:  
+"Логировать все ошибки в Event Hub"  
+→ **Ответ**: Использовать `<log-to-eventhub logger-id="...">` в разделе `<on-error>`
+
+---
+
+**Сценарий 5**:  
+"Вернуть сообщение о техническом обслуживании без вызова backend"  
+→ **Ответ**: Использовать `<return-response>` в разделе `<inbound>`
+
+---
+
+### Финальный акцент для AZ-204
+
+- Если требуется условная логика → `control-flow`
+- Если нужно защитить backend → `limit-concurrency`
+- Если нужно повысить отказоустойчивость → `retry`
+- Если нужно немедленно вернуть ответ → `return-response`
+- Если требуется централизованное логирование → `log-to-eventhub`
+
+Экзамен проверяет понимание **где и какую политику применять**, а не только знание синтаксиса.
 ---
 
 ## Learn More

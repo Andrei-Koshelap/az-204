@@ -589,7 +589,56 @@ Do you need control over encryption keys?
 - CPK = per-request гранулярность
 ---
 
+❌ E. Kerberos keys
+Используются для аутентификации (например, AD), не для шифрования данных в Blob Storage.
 ## Additional Resources
+
+
+📌 Как это работает в OAuth 2.0 (Microsoft identity platform)
+Когда приложение хочет получить доступ к Microsoft Graph (например, к профилю пользователя), оно должно:
+Перенаправить пользователя на endpoint авторизации.
+Указать в параметре scope нужные разрешения.
+Пример запроса:
+https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize?
+client_id=...
+&response_type=code
+&redirect_uri=...
+&scope=https://graph.microsoft.com/User.Read
+
+🔹 User.Read — это permission для чтения базовой информации профиля.
+🔹 Указывается именно в scope, а не где-то ещё.
+
+
+В MSAL (Microsoft Authentication Library) есть два основных типа приложений:
+1️⃣ Public client
+Используется для:
+desktop apps
+mobile apps
+SPA
+Создаётся через:
+PublicClientApplicationBuilder
+
+2️⃣ Confidential client ✅
+Используется для:
+Web apps
+Web APIs
+Daemons / background services
+Server-side apps
+Такие приложения могут хранить секрет (client secret или сертификат).
+Создаётся через:
+
+ConfidentialClientApplicationBuilder
+
+
+Исторически:
+ADAL (Azure Active Directory Authentication Library) работала с Azure AD.
+Позже Microsoft представила Microsoft Identity Platform, которая расширила возможности:
+поддержка Azure AD
+поддержка personal Microsoft accounts
+поддержка B2C
+поддержка OpenID Connect и OAuth 2.0 стандартов
+доступ к Microsoft Graph
+
 
 - [Azure Storage encryption for data at rest](https://learn.microsoft.com/en-us/azure/storage/common/storage-service-encryption)
 - [Customer-managed keys for Azure Storage encryption](https://learn.microsoft.com/en-us/azure/storage/common/customer-managed-keys-overview)

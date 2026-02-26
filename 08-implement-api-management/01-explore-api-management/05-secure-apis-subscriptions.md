@@ -1,37 +1,76 @@
-# Secure APIs by Using Subscriptions
+# Защита API с помощью Subscriptions
 
-## Overview
+## Обзор
 
-**Subscriptions** are the primary mechanism for securing APIs in Azure API Management. A subscription provides access to APIs within a product and is identified by a **subscription key**.
+**Subscriptions (подписки)** — это основной механизм защиты API в Azure API Management.  
+Подписка предоставляет доступ к API внутри продукта и идентифицируется с помощью **subscription key**.
 
-**Purpose**: Control and authenticate API access without complex OAuth flows.
+**Назначение**: контроль и аутентификация доступа к API без использования сложных OAuth-флоу.
+
+Это простой и эффективный способ защитить API, особенно для внутренних сервисов, партнерских интеграций и публичных API начального уровня.
 
 ---
 
-## What is a Subscription?
+## Что такое Subscription?
 
-A **subscription** is an authorization mechanism that grants access to APIs.
+**Subscription** — это механизм авторизации, который предоставляет доступ к API.
 
-**Key Characteristics**:
-- ✅ Each subscription has a **unique subscription key**
-- ✅ Subscriptions are **scoped** (All APIs, Single API, or Product)
-- ✅ Keys are **auto-generated** by APIM
-- ✅ **Primary and secondary keys** for zero-downtime rotation
-- ✅ Can be **suspended or cancelled**
-- ✅ Tied to a **developer account**
+### Ключевые характеристики
+
+- ✅ Каждая подписка имеет **уникальный subscription key**
+- ✅ Подписки имеют **scope** (All APIs, Single API или Product)
+- ✅ Ключи **автоматически генерируются** Azure API Management
+- ✅ Поддерживаются **primary и secondary ключи** для ротации без downtime
+- ✅ Подписка может быть **приостановлена или отменена**
+- ✅ Подписка привязана к **developer account**
 
 ---
 
 ## Subscription Keys
 
-### What is a Subscription Key?
+### Что такое Subscription Key?
 
-A **subscription key** is a unique string that authenticates API requests.
+**Subscription key** — это уникальная строка, используемая для аутентификации запросов к API.
 
-**Format**: `32-character hexadecimal string`
+- Передаётся в каждом запросе
+- Проверяется на уровне API Gateway
+- Не требует сложной логики на backend
 
-**Example**: `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`
+**Формат**:  
+`32-символьная шестнадцатеричная строка`
 
+**Пример**:  
+`a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`
+
+---
+
+### Архитектурный смысл (дополнение)
+
+Subscription-based security позволяет:
+
+- быстро ограничить доступ к API;
+- управлять доступом без изменения backend-кода;
+- легко отзывать доступ (revocation);
+- применять quota и rate limiting на уровне подписки;
+- различать потребителей API.
+
+Это не замена OAuth/JWT, а **дополнение или более простой альтернативный механизм**, часто используемый:
+
+- для внутренних API;
+- для B2B-интеграций;
+- на ранних этапах API.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- простом механизме защиты API,
+- использовании subscription key,
+- контроле доступа без OAuth,
+- применении quota или rate limit,
+
+— речь идёт о **Subscriptions в Azure API Management**.
 ### How Subscription Keys Work
 
 ```
@@ -62,29 +101,99 @@ A **subscription key** is a unique string that authenticates API requests.
 └────────────────────┘
 ```
 
-### Primary and Secondary Keys
+### Primary и Secondary Keys
 
-Each subscription has **two keys**:
+Каждая подписка содержит **два ключа**:
 
-| Key Type | Purpose | Use Case |
-|----------|---------|----------|
-| **Primary** | Main key for production | Active API calls |
-| **Secondary** | Backup key for rotation | Zero-downtime key updates |
+| Тип ключа | Назначение | Сценарий использования |
+|------------|------------|------------------------|
+| **Primary** | Основной рабочий ключ | Активные вызовы API |
+| **Secondary** | Резервный ключ для ротации | Обновление ключа без downtime |
 
-**Key Rotation Process**:
+---
+
+### Зачем нужны два ключа?
+
+Наличие двух ключей позволяет выполнять **безостановочную ротацию (zero-downtime rotation)**.
+
+Типовой процесс:
+
+1. Клиент использует Primary key
+2. Вы обновляете Secondary key
+3. Клиент переключается на новый Secondary key
+4. Обновляете Primary key
+5. При необходимости снова переключаете клиента
+
+Таким образом можно регулярно менять ключи без остановки сервиса.
+
+---
+
+### Архитектурное значение
+
+Два ключа позволяют:
+
+- повысить безопасность;
+- реализовать безопасную ротацию;
+- минимизировать риски утечки;
+- избежать простоев при обновлении секретов.
+
+Это особенно важно в production-средах и при внешних интеграциях.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- безопасной смене ключей,
+- обновлении ключа без простоя,
+- наличии двух ключей в подписке,
+
+— правильный ответ связан с использованием Primary и Secondary subscription keys.
+
+### Процесс ротации ключей (Zero-Downtime Rotation)
 ```
-Step 1: Client uses Primary Key (Key A)
-Step 2: Admin regenerates Secondary Key (Key B → Key C)
-Step 3: Client updates to use Secondary Key (Key C)
-Step 4: Admin regenerates Primary Key (Key A → Key D)
-Step 5: Client updates to use Primary Key (Key D)
+**Шаг 1:** Клиент использует Primary Key (Key A)  
+
+**Шаг 2:** Администратор регенерирует Secondary Key  
+(Key B → Key C)
+
+**Шаг 3:** Клиент переключается на новый Secondary Key  
+(Key C)
+
+**Шаг 4:** Администратор регенерирует Primary Key  
+(Key A → Key D)
+
+**Шаг 5:** Клиент переключается на обновлённый Primary Key  
+(Key D)
 ```
 
-**Benefits**:
-- ✅ No downtime during key rotation
-- ✅ Gradual migration from old to new key
-- ✅ Rollback capability if issues occur
+### Что происходит в результате
 
+- В каждый момент времени существует хотя бы один валидный ключ
+- Нет перерыва в работе API
+- Можно безопасно менять ключи по регламенту безопасности
+
+---
+
+### Архитектурный смысл
+
+Такая схема позволяет:
+
+- регулярно выполнять ротацию секретов;
+- минимизировать риски при компрометации ключа;
+- соблюдать требования безопасности и комплаенса;
+- поддерживать бесперебойную работу интеграций.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- смене subscription key без остановки сервиса,
+- безопасной ротации ключей,
+- наличии двух активных ключей,
+
+— речь идёт о механизме Primary / Secondary key rotation.
 ---
 
 ## Subscription Scopes
@@ -292,27 +401,69 @@ az apim subscription update \
   --state active
 ```
 
-### 3. **Receive Keys** (Developer)
+### 3. **Получение ключей** (Developer)
 
-After approval, developer receives:
+После одобрения подписки разработчик получает:
+
 - ✅ Primary subscription key
 - ✅ Secondary subscription key
-- ✅ Subscription details (scope, quotas, rate limits)
+- ✅ Детали подписки (scope, квоты, ограничения скорости)
 
-### 4. **Use API**
+Это означает, что доступ к API официально предоставлен и можно начинать интеграцию.
 
-Developer makes API calls with subscription key.
+---
 
-### 5. **Monitor Usage**
+### 4. **Использование API**
 
-Both developers and admins can monitor usage:
-- Request count
-- Error rate
-- Quota consumption
-- Rate limit hits
+Разработчик выполняет вызовы API, передавая subscription key в каждом запросе.
 
-**Azure Portal**: API Management → Subscriptions → Analytics
+Ключ может передаваться:
 
+- в HTTP-заголовке
+- в query-параметре
+
+Проверка ключа выполняется на уровне API Gateway, до передачи запроса в backend.
+
+---
+
+### 5. **Мониторинг использования**
+
+И разработчики, и администраторы могут отслеживать использование API:
+
+- Количество запросов
+- Процент ошибок
+- Использование квоты
+- Срабатывания rate limit
+
+---
+
+### Где смотреть аналитику
+
+**Azure Portal**:  
+API Management → Subscriptions → Analytics
+
+---
+
+### Архитектурное значение
+
+Мониторинг подписок позволяет:
+
+- контролировать нагрузку;
+- выявлять злоупотребления;
+- анализировать потребителей API;
+- принимать решения о масштабировании;
+- управлять тарифными планами.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- контроле использования API по подписке,
+- анализе потребления квот,
+- мониторинге rate limit,
+
+— следует использовать аналитику в Azure API Management.
 ### 6. **Rotate Keys**
 
 **Regenerate Primary Key**:
@@ -355,24 +506,51 @@ az apim subscription update \
 
 ---
 
-## Subscription States
+## Состояния Subscription
 
-| State | Description | API Access |
-|-------|-------------|------------|
-| **submitted** | Awaiting approval | ❌ No |
-| **active** | Approved and active | ✅ Yes |
-| **suspended** | Temporarily disabled | ❌ No |
-| **rejected** | Admin rejected request | ❌ No |
-| **cancelled** | Subscription cancelled | ❌ No |
-| **expired** | Past expiration date | ❌ No |
+| Состояние | Описание | Доступ к API |
+|------------|------------|---------------|
+| **submitted** | Ожидает одобрения | ❌ Нет |
+| **active** | Одобрена и активна | ✅ Да |
+| **suspended** | Временно отключена | ❌ Нет |
+| **rejected** | Запрос отклонён администратором | ❌ Нет |
+| **cancelled** | Подписка отменена | ❌ Нет |
+| **expired** | Истёк срок действия | ❌ Нет |
 
 ---
 
-## Response When Key is Invalid
+### Что важно понимать
 
-When subscription key is missing or invalid:
+Только состояние **active** позволяет выполнять вызовы API.
+
+Все остальные состояния блокируют доступ на уровне API Gateway — запрос не передаётся в backend.
+
+Это означает:
+
+- backend не получает невалидные запросы;
+- безопасность обеспечивается централизованно;
+- администратор может управлять доступом без изменения кода сервисов.
+
+---
+
+## Ответ при неверном или отсутствующем ключе
+
+Если subscription key отсутствует или недействителен:
 
 **HTTP Status**: `401 Unauthorized`
+
+Запрос отклоняется на уровне API Management до передачи в backend.
+
+---
+
+### Важно для AZ-204
+
+Если в вопросе говорится о:
+- недействительном subscription key,
+- приостановленной подписке,
+- истёкшей подписке,
+
+— правильный ответ: API вернёт **401 Unauthorized**, и запрос не будет передан в backend.
 
 **Response Headers**:
 ```
@@ -581,30 +759,67 @@ curl -H "Ocp-Apim-Subscription-Key: key" https://api.contoso.com/users
 curl "https://api.contoso.com/users?subscription-key=key"  # Insecure
 ```
 
-### 3. **Rotate Keys Regularly**
+### 3. **Регулярно выполняйте ротацию ключей**
 
-✅ **Do**: Implement key rotation schedule
+✅ **Рекомендуется**: внедрить регламент регулярной смены ключей
+
 ```
-1. Regenerate secondary key
-2. Update client to use secondary key
-3. Verify client functionality
-4. Regenerate primary key
-5. Update client to use primary key
+Регенерировать secondary key
+
+Переключить клиента на secondary key
+
+Проверить корректность работы клиента
+
+Регенерировать primary key
+
+Переключить клиента обратно на primary key
 ```
 
-### 4. **Use Primary and Secondary Keys**
 
-✅ **Do**: Provide both keys to clients
-- Primary: Active use
-- Secondary: Rotation and backup
+Регулярная ротация:
 
-### 5. **Monitor Subscription Usage**
+- снижает риск компрометации;
+- соответствует требованиям безопасности;
+- позволяет избежать простоев.
 
-✅ **Do**: Enable analytics and alerts
-- Track quota consumption
-- Monitor for unusual patterns
-- Alert on rate limit violations
+---
 
+### 4. **Используйте оба ключа (Primary и Secondary)**
+
+✅ **Рекомендуется**: предоставлять клиентам оба ключа
+
+- **Primary** — основной рабочий ключ
+- **Secondary** — для ротации и резервного использования
+
+Наличие двух ключей — это встроенный механизм безопасного обновления секретов без остановки API.
+
+---
+
+### 5. **Мониторьте использование подписок**
+
+✅ **Рекомендуется**: включить аналитику и оповещения
+
+- Отслеживать потребление квоты
+- Анализировать аномальные паттерны использования
+- Настраивать алерты при превышении rate limit
+
+Это позволяет:
+
+- предотвращать злоупотребления;
+- выявлять утечки ключей;
+- прогнозировать нагрузку;
+- управлять тарифными планами.
+
+---
+
+### Важно для AZ-204
+
+Если в задаче говорится о:
+- безопасной эксплуатации API,
+- управлении доступом по подписке,
+- мониторинге использования,
+
+— правильные действия включают ротацию ключей, использование Primary/Secondary и включение аналитики.
 ### 6. **Implement Approval Workflow**
 
 ✅ **Do**: Require approval for sensitive APIs
@@ -670,48 +885,83 @@ Service: Internal Microservice
 
 ---
 
-## Exam Tips
+## Советы к экзамену
 
-### Key Concepts for AZ-204
+### Ключевые концепции для AZ-204
 
-1. **Subscription key**: Unique 32-character string for authentication
+1. **Subscription key**  
+   Уникальная 32-символьная строка, используемая для аутентификации запросов.
 
-2. **Two keys per subscription**: Primary and secondary (for rotation)
+2. **Два ключа на подписку**  
+   Primary и Secondary — используются для безопасной ротации.
 
-3. **Subscription scopes**: All APIs, Single API, Product (most common)
+3. **Scope подписки**
+    - All APIs
+    - Single API
+    - Product (наиболее распространённый вариант)
 
-4. **Header name**: `Ocp-Apim-Subscription-Key`
+4. **Имя HTTP-заголовка**  
+   `Ocp-Apim-Subscription-Key`
 
-5. **Query parameter**: `subscription-key` (less secure)
+5. **Query-параметр**  
+   `subscription-key` (менее безопасный способ передачи)
 
-6. **401 response**: Returned when key is missing or invalid
+6. **Ответ 401**  
+   Возвращается, если ключ отсутствует или недействителен.
 
-7. **Subscription states**: submitted, active, suspended, cancelled, rejected, expired
+7. **Состояния подписки**  
+   submitted, active, suspended, cancelled, rejected, expired
 
-8. **Product scope**: Recommended for most scenarios
+8. **Product scope**  
+   Рекомендуется для большинства сценариев, особенно при разграничении тарифов.
 
-9. **Key rotation**: Use secondary key during rotation for zero downtime
+9. **Ротация ключей**  
+   Использовать Secondary key во время обновления Primary для zero downtime.
 
-10. **Developer portal**: Self-service subscription management
-
-### Common Exam Scenarios
-
-**Scenario 1**: "Secure API with simple authentication mechanism"
-→ **Answer**: Require subscription key (product-scoped)
-
-**Scenario 2**: "Rotate API keys without downtime"
-→ **Answer**: Use primary/secondary keys, regenerate one at a time
-
-**Scenario 3**: "Grant access to one specific API only"
-→ **Answer**: Create subscription with API scope
-
-**Scenario 4**: "Pass authentication to API"
-→ **Answer**: Use `Ocp-Apim-Subscription-Key` header
-
-**Scenario 5**: "Different access levels (Free, Standard, Premium)"
-→ **Answer**: Create products with different APIs and quotas, subscription per product
+10. **Developer Portal**  
+    Поддерживает self-service управление подписками.
 
 ---
+
+## Частые экзаменационные сценарии
+
+**Сценарий 1**:  
+"Защитить API простым механизмом аутентификации"  
+→ **Ответ**: Требовать subscription key (на уровне Product)
+
+---
+
+**Сценарий 2**:  
+"Сменить API-ключи без простоя"  
+→ **Ответ**: Использовать Primary/Secondary ключи и регенерировать их поочерёдно
+
+---
+
+**Сценарий 3**:  
+"Предоставить доступ только к одному конкретному API"  
+→ **Ответ**: Создать подписку со scope на конкретный API
+
+---
+
+**Сценарий 4**:  
+"Передать ключ аутентификации в API"  
+→ **Ответ**: Использовать заголовок `Ocp-Apim-Subscription-Key`
+
+---
+
+**Сценарий 5**:  
+"Реализовать разные уровни доступа (Free, Standard, Premium)"  
+→ **Ответ**: Создать продукты с разными API и квотами, подписка создаётся на каждый продукт
+
+---
+
+### Финальный акцент для AZ-204
+
+- Subscription key — это простой, но эффективный механизм защиты.
+- Product scope чаще всего используется в реальных сценариях.
+- 401 означает проблему с ключом.
+- Ротация ключей — стандартная практика безопасности.
+- Разные тарифы реализуются через продукты и подписки, а не через отдельные API.---
 
 ## Learn More
 

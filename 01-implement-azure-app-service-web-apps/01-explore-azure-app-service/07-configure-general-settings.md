@@ -505,5 +505,16 @@ var thumbprint = cert?.Thumbprint;
 - HTTP/2 требует TLS.
 - Для production минимальная версия TLS — 1.2.
 
+WebJobs vs Azure Functions
+
+| Критерий          | WebJobs                              | Azure Functions                   |
+| ----------------- | ------------------------------------ | --------------------------------- |
+| Где работает      | Внутри **App Service**               | Отдельный serverless сервис       |
+| Масштабирование   | Вместе с App Service                 | Автоматическое (Consumption plan) |
+| Нужен Web App?    | Да                                   | Нет                               |
+| Billing           | Платишь за App Service               | Платишь за выполнение             |
+| Использует SDK    | WebJobs SDK                          | Functions runtime                 |
+| Типичный use case | Фоновая задача к существующему сайту | Event-driven микросервис          |
+
 
 [Learn More](https://learn.microsoft.com/en-us/training/modules/configure-web-app-settings/3-configure-general-settings)

@@ -619,5 +619,41 @@ Use binding expressions in `path` or other properties:
 - `{propertyName}` — значение свойства из триггера
 
 > 💡 Часто используется для динамического именования blob-файлов и строк таблиц.
+> 
+> 
 
+AzureWebJobsStorage — это основная настройка (Application Setting), которая содержит connection string к Storage Account, используемый самим runtime Azure Functions.
+Этот storage используется для:
+хранения внутренних данных выполнения
+checkpoint’ов (например, для Queue / Event Hub)
+хранения ключей функций
+работы таймеров
+управления масштабированием
+хранения логов (в некоторых сценариях)
+Без этой настройки функция в Consumption и Premium плане просто не сможет корректно работать.
+
+В Azure Functions Timer Trigger используется формат NCrontab с 6 полями:
+{second} {minute} {hour} {day} {month} {day-of-week}
+0 */5 * * * *
+| Поле        | Значение | Что означает          |
+| ----------- | -------- | --------------------- |
+| second      | 0        | запуск на 0-й секунде |
+| minute      | */5      | каждые 5 минут        |
+| hour        | *        | каждый час            |
+| day         | *        | каждый день           |
+| month       | *        | каждый месяц          |
+| day-of-week | *        | любой день недели     |
+
+
+В HTTP trigger параметр authLevel определяет уровень авторизации.
+Если установлено:
+"authLevel": "function"
+это означает:
+для вызова функции требуется Function Key
+запрос должен содержать ключ
+ключ передаётся:
+либо в query string: ?code=...
+либо в заголовке x-functions-key
+
+Без ключа запрос получит 401 Unauthorized.
 [Learn More](https://learn.microsoft.com/en-us/training/modules/develop-azure-functions/3-create-triggers-bindings)

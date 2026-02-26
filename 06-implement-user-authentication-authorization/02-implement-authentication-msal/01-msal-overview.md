@@ -373,6 +373,10 @@ var result = await app.AcquireTokenInteractive(scopes)
 - Подходит для daemon-сценариев.
 - Не поддерживает интерактивную аутентификацию.
 
+Работает без пользователя
+Использует application permissions
+Это machine-to-machine flow.
+
 > 🎯 Частый экзаменационный вопрос:  
 Как реализовать доступ к API без пользователя?  
 Ответ — использовать Client Credentials Flow.

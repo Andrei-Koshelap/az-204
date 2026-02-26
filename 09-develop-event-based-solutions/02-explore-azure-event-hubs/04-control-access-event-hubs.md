@@ -878,3 +878,19 @@ az role assignment create \
 - Rotate keys regularly
 - Store secrets securely (Key Vault)
 - Monitor access and audit logs
+  
+- | Если нужно                               | Используй              |
+  | ---------------------------------------- | ---------------------- |
+  | Простой доступ одного сервиса к ресурсам | **System-assigned MI** |
+  | Одна identity для нескольких сервисов    | User-assigned MI       |
+- 
+- System-assigned managed identity
+Создаётся автоматически вместе с App Service
+Жёстко привязана к ресурсу
+Удаляется автоматически при удалении ресурса
+Нелья удалить отдельно вручную
+
+User-assigned managed identity:
+Создаётся как отдельный ресурс
+Может быть назначена нескольким сервисам
+Может быть удалена отдельно

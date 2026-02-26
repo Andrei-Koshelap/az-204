@@ -1,26 +1,90 @@
-# Event Delivery Durability in Azure Event Grid
+# Надёжность доставки событий в Azure Event Grid
 
-## Overview
+## Обзор
 
-Azure Event Grid provides **durable event delivery** with built-in retry mechanisms, dead-lettering, and configurable delivery options to ensure events reach their destinations reliably.
-
-**Key Features:**
-- **At-least-once delivery**: Events delivered at least once (may be duplicated)
-- **Retry with exponential backoff**: Automatic retries for failed deliveries
-- **Dead-lettering**: Store undeliverable events for later analysis
-- **Output batching**: Deliver multiple events in single request
-- **Delayed delivery**: Automatically pause delivery to unhealthy endpoints
-- **Custom delivery properties**: Add custom headers to event deliveries
+Azure Event Grid обеспечивает **надёжную доставку событий** благодаря встроенным механизмам повторной отправки, dead-lettering и гибким настройкам доставки.
 
 ---
 
-## Retry Mechanism
+## Ключевые возможности
 
-Event Grid automatically retries event delivery when the endpoint doesn't respond successfully or returns specific error codes.
+- **At-least-once delivery**  
+  Событие гарантированно будет доставлено хотя бы один раз  
+  (возможны дубликаты)
 
-### Retry Schedule
+- **Retry с экспоненциальной задержкой**  
+  Автоматические повторные попытки при ошибке доставки
 
-Event Grid uses **exponential backoff** for retries:
+- **Dead-lettering**  
+  Сохранение недоставленных событий для последующего анализа
+
+- **Output batching**  
+  Отправка нескольких событий одним HTTP-запросом
+
+- **Delayed delivery**  
+  Автоматическая пауза при недоступности endpoint
+
+- **Custom delivery properties**  
+  Возможность добавлять пользовательские HTTP-заголовки
+
+---
+
+# Механизм повторной доставки (Retry)
+
+Event Grid автоматически повторяет доставку события, если:
+
+- endpoint не отвечает;
+- возвращается ошибка;
+- происходит таймаут;
+- возвращаются определённые HTTP-коды (например, 5xx).
+
+---
+
+## График повторных попыток
+
+Используется **exponential backoff**:
+
+- первая повторная попытка через ~30 секунд;
+- далее интервал постепенно увеличивается;
+- максимальное время жизни события — до 24 часов (по умолчанию);
+- до 30 попыток доставки.
+
+Если за это время доставка не удалась:
+
+→ событие считается недоставленным  
+→ при наличии настроенного dead-letter оно сохраняется
+
+---
+
+## Что это означает
+
+- Subscriber должен быть **идемпотентным**
+- Нельзя предполагать exactly-once delivery
+- Ошибка 5xx запускает retry
+- 200 OK означает успешную доставку
+
+---
+
+## Архитектурные рекомендации
+
+- Быстро возвращайте HTTP 200
+- Выполняйте тяжёлую обработку асинхронно
+- Реализуйте защиту от дубликатов (через `id`)
+- Настройте dead-letter storage
+
+---
+
+## Важно для AZ-204
+
+На экзамене нужно помнить:
+
+- Модель доставки — **at-least-once**
+- Используется **exponential backoff**
+- По умолчанию: до 30 попыток, TTL — 24 часа
+- Dead-lettering предотвращает потерю событий
+- Subscriber должен корректно обрабатывать дубликаты
+
+Это одна из ключевых тем по Event Grid.
 
 ```
 Attempt    Wait Time       Cumulative Time
@@ -167,36 +231,74 @@ az eventgrid event-subscription update \
 ```
 
 ---
+# Retryable и Non-Retryable ошибки
 
-## Retryable vs. Non-Retryable Errors
+Azure Event Grid по-разному реагирует на различные HTTP-ответы endpoint’а.
 
-### Retryable Errors (Event Grid will retry)
+---
 
-| Error Type | HTTP Code | Description | Retry? |
-|------------|-----------|-------------|--------|
-| Server Error | 500 | Internal server error | ✅ Yes |
-| Service Unavailable | 503 | Service temporarily unavailable | ✅ Yes |
-| Gateway Timeout | 504 | Gateway timeout | ✅ Yes |
-| Request Timeout | 408 | Request timeout | ✅ Yes |
-| Too Many Requests | 429 | Rate limiting | ✅ Yes |
-| Network Errors | N/A | DNS resolution, connection failures | ✅ Yes |
+## Retryable ошибки (Event Grid выполнит повторную попытку)
 
-### Non-Retryable Errors (Event Grid won't retry)
+| Тип ошибки | HTTP-код | Описание | Повтор? |
+|------------|----------|----------|---------|
+| Server Error | 500 | Внутренняя ошибка сервера | ✅ Да |
+| Service Unavailable | 503 | Сервис временно недоступен | ✅ Да |
+| Gateway Timeout | 504 | Таймаут шлюза | ✅ Да |
+| Request Timeout | 408 | Таймаут запроса | ✅ Да |
+| Too Many Requests | 429 | Превышен лимит запросов | ✅ Да |
+| Network Errors | N/A | DNS, проблемы соединения | ✅ Да |
 
-| Error Type | HTTP Code | Description | Retry? |
-|------------|-----------|-------------|--------|
-| Bad Request | 400 | Malformed request or validation error | ❌ No |
-| Unauthorized | 401 | Authentication failed (webhook only) | ❌ No |
-| Not Found | 404 | Endpoint not found | ❌ No |
-| Payload Too Large | 413 | Request entity too large | ❌ No |
-| URI Too Long | 414 | Request URI too long | ❌ No |
-| Unsupported Media Type | 415 | Unsupported content type | ❌ No |
+---
 
-**Important Notes:**
-- **401 Unauthorized**: Non-retryable for webhooks (assume configuration error)
-- **401 for Azure services**: Retryable (temporary Azure AD issues)
-- **Non-2xx responses**: Generally trigger retries unless explicitly non-retryable
-- **Silent failures**: No response from endpoint triggers retry
+## Non-Retryable ошибки (повтор не выполняется)
+
+| Тип ошибки | HTTP-код | Описание | Повтор? |
+|------------|----------|----------|---------|
+| Bad Request | 400 | Неверный формат запроса | ❌ Нет |
+| Unauthorized | 401 | Ошибка аутентификации (webhook) | ❌ Нет |
+| Not Found | 404 | Endpoint не найден | ❌ Нет |
+| Payload Too Large | 413 | Слишком большой размер | ❌ Нет |
+| URI Too Long | 414 | Слишком длинный URI | ❌ Нет |
+| Unsupported Media Type | 415 | Неподдерживаемый тип данных | ❌ Нет |
+
+---
+
+## Важные замечания
+
+- **401 Unauthorized (Webhook)**  
+  Не повторяется — предполагается ошибка конфигурации.
+
+- **401 для Azure-сервисов**  
+  Может повторяться (временные проблемы с Azure AD).
+
+- **Любой non-2xx ответ**  
+  Обычно вызывает retry, если не относится к non-retryable.
+
+- **Отсутствие ответа (silent failure)**  
+  Запускает retry-механизм.
+
+---
+
+## Архитектурные рекомендации
+
+- Возвращайте корректные HTTP-коды.
+- Не используйте 400/401 для временных ошибок.
+- Для перегрузки используйте 429 или 503.
+- Обрабатывайте повторные доставки (идемпотентность).
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- 5xx → повторная попытка
+- 429 → повторная попытка
+- 400/404 → повтор не выполняется
+- Модель доставки — at-least-once
+- Отсутствие ответа = retry
+
+Экзамен часто проверяет понимание различия между retryable и non-retryable ошибками.
 
 ### Handling Non-Retryable Errors
 
@@ -295,14 +397,51 @@ eventgrid-deadletter/
 }
 ```
 
-### Dead-Letter Reasons
+## Причины отправки в Dead Letter
 
-| Reason | Description |
-|--------|-------------|
-| `MaxDeliveryAttemptsExceeded` | Exceeded maximum retry attempts |
-| `EventTimeToLiveExceeded` | Event TTL expired |
-| `DestinationEndpointNotFound` | Endpoint deleted or not found |
-| `EndpointDisabled` | Endpoint disabled by Event Grid |
+Если событие не удалось доставить, Event Grid может сохранить его в настроенном хранилище (Dead Letter Storage).
+
+### Возможные причины
+
+| Причина | Описание |
+|----------|-----------|
+| `MaxDeliveryAttemptsExceeded` | Превышено максимальное количество попыток доставки |
+| `EventTimeToLiveExceeded` | Истёк срок жизни события (TTL) |
+| `DestinationEndpointNotFound` | Endpoint удалён или не существует |
+| `EndpointDisabled` | Endpoint отключён Event Grid |
+
+---
+
+## Что это означает
+
+Dead Letter используется для:
+
+- предотвращения потери событий;
+- анализа ошибок доставки;
+- повторной обработки вручную;
+- расследования проблем конфигурации.
+
+---
+
+## Архитектурные рекомендации
+
+- Всегда настраивайте dead-letter storage для production.
+- Используйте отдельный Blob container.
+- Мониторьте количество событий в dead-letter.
+- Реализуйте процесс повторной обработки.
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Dead Letter защищает от потери событий.
+- Основные причины: превышение retry или истечение TTL.
+- TTL по умолчанию — до 24 часов.
+- MaxDeliveryAttempts по умолчанию — до 30 попыток.
+
+Понимание причин dead-letter — частая тема в вопросах по Event Grid.
 
 ### Processing Dead-Letter Events
 
@@ -355,36 +494,82 @@ public class DeadLetterProcessor
 }
 ```
 
-### Dead-Letter Best Practices
+## Best Practices для Dead Letter
 
-1. **Always configure dead-letter storage** for production subscriptions
-2. **Monitor dead-letter container** with alerts
-3. **Set up automated processing** for common failures
-4. **Investigate patterns** in dead-lettered events
-5. **Clean up old dead-letter events** periodically
+1️⃣ **Всегда настраивайте dead-letter storage** для production-подписок  
+2️⃣ **Мониторьте контейнер dead-letter** через alerts  
+3️⃣ **Автоматизируйте обработку** типовых ошибок  
+4️⃣ **Анализируйте повторяющиеся паттерны** в недоставленных событиях  
+5️⃣ **Регулярно очищайте старые события**
 
 ---
 
-## Delayed Delivery
+### Архитектурные рекомендации
 
-Event Grid automatically **delays delivery** to endpoints that are consistently unhealthy.
+- Используйте отдельный Blob container.
+- Настройте алерт при увеличении количества dead-letter событий.
+- Храните метаданные для диагностики.
+- Автоматизируйте повторную публикацию при временных ошибках.
 
-### Delayed Delivery Behavior
+Dead-letter — это механизм защиты от потери данных, а не просто лог ошибок.
 
-**Trigger Conditions:**
-- Multiple consecutive delivery failures
-- Consistent error responses (500, 503, 504)
-- Network connectivity issues
+---
 
-**Delay Duration:**
-- Starts with **5 minutes**
-- Gradually increases to **maximum of 1 hour**
-- Automatically resumes when endpoint recovers
+# Delayed Delivery
 
-**Benefits:**
-- Reduces load on unhealthy endpoints
-- Allows time for recovery
-- Prevents overwhelming failing services
+Event Grid автоматически **замедляет доставку** событий к endpoint’ам, которые стабильно возвращают ошибки.
+
+---
+
+## Поведение delayed delivery
+
+### Условия срабатывания
+
+- Несколько подряд неудачных попыток доставки
+- Повторяющиеся ошибки (500, 503, 504)
+- Проблемы сетевого подключения
+
+---
+
+### Продолжительность задержки
+
+- Начинается с **5 минут**
+- Постепенно увеличивается
+- Максимум — **1 час**
+- Доставка автоматически возобновляется после восстановления endpoint
+
+---
+
+## Преимущества
+
+- Снижает нагрузку на проблемный сервис
+- Даёт время на восстановление
+- Предотвращает лавинообразные повторные запросы
+- Повышает общую устойчивость системы
+
+---
+
+## Архитектурный смысл
+
+Delayed delivery — это защитный механизм, который:
+
+- уменьшает cascading failures;
+- предотвращает перегрузку;
+- делает систему более отказоустойчивой.
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Dead-letter предотвращает потерю событий
+- Delayed delivery активируется при повторяющихся ошибках
+- Начальная задержка — 5 минут
+- Максимальная — до 1 часа
+- Механизм работает автоматически
+
+Эти механизмы — ключевые элементы надёжности Event Grid.
 
 ### Monitoring Delayed Delivery
 
@@ -577,36 +762,85 @@ az eventgrid event-subscription create \
 }
 ```
 
-### Custom Header Limits
+## Ограничения для пользовательских заголовков
 
-- **Maximum headers**: 10
-- **Maximum header size**: 4096 bytes each
-- **Secret headers**: Can be marked as secret (not displayed in portal)
-
-### Use Cases for Custom Headers
-
-1. **Authentication**: API keys, tokens
-2. **Routing**: Tenant IDs, region identifiers
-3. **Correlation**: Trace IDs, request IDs
-4. **Metadata**: Environment, version, source system
+- **Максимальное количество заголовков**: 10
+- **Максимальный размер одного заголовка**: 4096 байт
+- **Secret headers**: Можно пометить как секретные (не отображаются в портале)
 
 ---
 
-## Monitoring Event Delivery
+## Сценарии использования пользовательских заголовков
 
-### Key Metrics
+1️⃣ **Аутентификация**  
+API-ключи, токены, секреты
 
-| Metric | Description | Alert Threshold |
-|--------|-------------|-----------------|
-| **PublishSuccessCount** | Events successfully published | N/A |
-| **PublishFailCount** | Events failed to publish | > 0 |
-| **MatchedEventCount** | Events matched to subscriptions | Baseline |
-| **DeliverySuccessCount** | Events successfully delivered | Baseline |
-| **DeliveryFailCount** | Events failed delivery | > 10% |
-| **DeadLetterCount** | Events dead-lettered | > 0 |
-| **DroppedEventCount** | Events dropped (no dead-letter) | > 0 |
-| **DestinationProcessingDurationInMs** | Endpoint processing time | > 1000ms |
+2️⃣ **Маршрутизация**  
+Tenant ID, регион, идентификаторы окружения
 
+3️⃣ **Корреляция**  
+Trace ID, Request ID
+
+4️⃣ **Метаданные**  
+Версия приложения, среда (dev/test/prod), источник системы
+
+---
+
+## Архитектурные рекомендации
+
+- Не передавайте чувствительные данные в открытом виде.
+- Используйте secret headers для токенов.
+- Ограничивайте количество заголовков.
+- Для сложной логики используйте structured payload вместо перегрузки заголовков.
+
+---
+
+# Мониторинг доставки событий
+
+## Ключевые метрики
+
+| Метрика | Описание | Порог для алерта |
+|----------|-----------|------------------|
+| **PublishSuccessCount** | Успешно опубликованные события | N/A |
+| **PublishFailCount** | Ошибки публикации | > 0 |
+| **MatchedEventCount** | События, сопоставленные подпискам | Отклонение от baseline |
+| **DeliverySuccessCount** | Успешно доставленные события | Отклонение от baseline |
+| **DeliveryFailCount** | Ошибки доставки | > 10% |
+| **DeadLetterCount** | События в dead-letter | > 0 |
+| **DroppedEventCount** | Потерянные события | > 0 |
+| **DestinationProcessingDurationInMs** | Время обработки endpoint’ом | > 1000 ms |
+
+---
+
+## Что важно мониторить
+
+- Рост DeliveryFailCount
+- Появление DeadLetterCount
+- Увеличение времени обработки
+- Резкие изменения в MatchedEventCount
+
+---
+
+## Архитектурный вывод
+
+Мониторинг Event Grid позволяет:
+
+- выявлять деградацию endpoint’ов;
+- обнаруживать ошибки конфигурации;
+- предотвращать потерю событий;
+- поддерживать SLA.
+
+---
+
+## Важно для AZ-204
+
+На экзамене могут проверить:
+
+- понимание метрик публикации и доставки;
+- роль DeadLetterCount;
+- значение DeliveryFailCount;
+- использование алертов;
+- ограничение на количество и размер custom headers.
 ### Create Delivery Alert (Azure CLI)
 
 ```bash
@@ -634,32 +868,88 @@ AzureDiagnostics
 
 ---
 
-## Best Practices
+# Best Practices для надёжной и эффективной доставки
 
-### Retry Policy Design
+## Проектирование Retry Policy
 
-1. **Production workloads**: Use default retry policy (30 attempts, 24-hour TTL)
-2. **Time-sensitive events**: Reduce TTL (e.g., 60 minutes)
-3. **Idempotency**: Design handlers to handle duplicate deliveries
-4. **Fast failure**: Return 400 for validation errors (don't retry)
-5. **Transient errors**: Return 500 to trigger retry
+1️⃣ **Production-нагрузка**  
+Используйте настройки по умолчанию  
+(30 попыток, TTL — 24 часа)
 
-### Dead-Letter Management
+2️⃣ **События, чувствительные ко времени**  
+Уменьшайте TTL (например, до 60 минут)
 
-1. **Always configure**: Set up dead-letter storage for all subscriptions
-2. **Monitor regularly**: Check dead-letter container daily
-3. **Automated alerts**: Alert on dead-letter events
-4. **Reprocessing pipeline**: Build automated reprocessing for common issues
-5. **Retention policy**: Clean up old dead-letter events (e.g., 90 days)
+3️⃣ **Идемпотентность**  
+Обработчики должны корректно обрабатывать повторные доставки
 
-### Performance Optimization
+4️⃣ **Быстрая ошибка при валидации**  
+Возвращайте 400 для ошибок данных  
+(повторная попытка не требуется)
 
-1. **Enable batching**: For high-volume scenarios (100-1000 events/batch)
-2. **Async processing**: Process events asynchronously
-3. **Quick response**: Return HTTP 200 within 30 seconds
-4. **Parallel handlers**: Scale out handler instances
-5. **Monitor latency**: Track endpoint processing time
+5️⃣ **Временные ошибки**  
+Возвращайте 500 для запуска retry
 
+---
+
+## Управление Dead Letter
+
+1️⃣ **Всегда настраивайте**  
+Dead-letter storage должен быть включён для всех production-подписок
+
+2️⃣ **Регулярный мониторинг**  
+Проверяйте контейнер ежедневно
+
+3️⃣ **Автоматические алерты**  
+Настройте уведомления при появлении событий
+
+4️⃣ **Пайплайн повторной обработки**  
+Автоматизируйте reprocessing для типовых ошибок
+
+5️⃣ **Политика хранения**  
+Удаляйте старые события (например, старше 90 дней)
+
+---
+
+## Оптимизация производительности
+
+1️⃣ **Включайте batching**  
+Для high-volume сценариев (100–1000 событий в batch)
+
+2️⃣ **Асинхронная обработка**  
+Не выполняйте тяжёлую работу в синхронном потоке
+
+3️⃣ **Быстрый ответ**  
+Возвращайте HTTP 200 в течение 30 секунд
+
+4️⃣ **Параллельные обработчики**  
+Масштабируйте экземпляры handler’ов
+
+5️⃣ **Мониторинг задержки**  
+Отслеживайте `DestinationProcessingDurationInMs`
+
+---
+
+## Архитектурные принципы
+
+- Обработчики должны быть идемпотентными
+- Ошибки должны возвращать корректные HTTP-коды
+- Dead-letter обязателен в production
+- Batching снижает сетевые накладные расходы
+- Retry + Dead-letter = надёжность доставки
+
+---
+
+## Важно для AZ-204
+
+На экзамене часто проверяют:
+
+- TTL по умолчанию — 24 часа
+- До 30 попыток доставки
+- Разницу между 400 и 500
+- Идемпотентность обработчиков
+- Настройку dead-letter
+
+Понимание этих best practices критично для вопросов о надёжности Event Grid.
 ### Error Handling
 
 ```csharp
@@ -710,52 +1000,97 @@ public static class EventHandlerPatterns
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204
 
-### Key Concepts to Remember
+## Ключевые концепции
 
-1. **At-least-once delivery**: Events may be delivered multiple times
-2. **Retry policy defaults**: 30 attempts, 24-hour (1440 minutes) TTL
-3. **Exponential backoff**: Starts at 30 seconds, doubles each retry
-4. **Non-retryable errors**: 400, 401 (webhooks), 413
-5. **Dead-lettering**: Requires Azure Storage blob container
-6. **Output batching**: Max 5000 events or 1024 KB
-7. **Custom headers**: Max 10 headers, 4096 bytes each
+1️⃣ **At-least-once delivery**  
+События могут быть доставлены более одного раза.
 
-### Common Exam Scenarios
+2️⃣ **Retry policy по умолчанию**  
+30 попыток, TTL — 24 часа (1440 минут).
 
-**Scenario 1**: Events not being retried
-- ✅ Check if endpoint returns non-retryable status (400, 413)
-- ✅ Verify retry policy configuration
-- ❌ Don't assume all errors trigger retry
+3️⃣ **Exponential backoff**  
+Первая повторная попытка через 30 секунд,  
+затем интервал увеличивается экспоненциально.
 
-**Scenario 2**: Need to minimize costs for high-volume events
-- ✅ Enable output batching
-- ✅ Increase max events per batch
-- ❌ Don't process events individually
+4️⃣ **Non-retryable ошибки**  
+400, 401 (для webhook), 413.
 
-**Scenario 3**: Events disappearing without trace
-- ❌ Dead-letter storage not configured
-- ✅ Configure dead-letter blob container
-- ✅ Monitor dropped event count
+5️⃣ **Dead-lettering**  
+Требует Azure Storage (blob container).
 
-**Scenario 4**: Endpoint overwhelmed by retries
-- ✅ Event Grid uses exponential backoff (automatic)
-- ✅ Consider delayed delivery feature
-- ✅ Scale out endpoint instances
+6️⃣ **Output batching**  
+До 5000 событий или 1024 KB в одном batch.
 
-### Remember for Exam
+7️⃣ **Custom headers**  
+До 10 заголовков, каждый до 4096 байт.
 
-- **Default max attempts**: 30
-- **Default TTL**: 1440 minutes (24 hours)
-- **First retry wait**: 30 seconds
-- **Subsequent retries**: Exponential backoff
-- **Dead-letter format**: JSON in blob storage
-- **Batching max**: 5000 events or 1024 KB
-- **Custom headers**: Up to 10, 4096 bytes each
-- **Non-retryable**: 400, 401 (webhooks), 413, 414, 415
-- **Retryable**: 500, 503, 504, 408, 429
+---
 
+# Частые экзаменационные сценарии
+
+### Сценарий 1
+События не повторяются
+
+- ✅ Проверьте, не возвращает ли endpoint non-retryable код (400, 413)
+- ✅ Проверьте настройки retry policy
+- ❌ Не предполагайте, что любая ошибка вызывает retry
+
+---
+
+### Сценарий 2
+Минимизация стоимости при высоком объёме событий
+
+- ✅ Включить batching
+- ✅ Увеличить количество событий в batch
+- ❌ Не обрабатывать события по одному
+
+---
+
+### Сценарий 3
+События «пропадают»
+
+- ❌ Dead-letter не настроен
+- ✅ Настроить blob container для dead-letter
+- ✅ Мониторить DroppedEventCount
+
+---
+
+### Сценарий 4
+Endpoint перегружен повторными попытками
+
+- ✅ Event Grid использует exponential backoff
+- ✅ Учитывать delayed delivery
+- ✅ Масштабировать endpoint
+
+---
+
+# Что обязательно помнить
+
+- **Максимум попыток по умолчанию**: 30
+- **TTL по умолчанию**: 1440 минут (24 часа)
+- **Первая повторная попытка**: через 30 секунд
+- **Дальнейшие попытки**: экспоненциальная задержка
+- **Формат dead-letter**: JSON в blob storage
+- **Максимум batch**: 5000 событий или 1024 KB
+- **Custom headers**: до 10, по 4096 байт
+- **Non-retryable коды**: 400, 401 (webhook), 413, 414, 415
+- **Retryable коды**: 500, 503, 504, 408, 429
+
+---
+
+## Экзаменационный акцент
+
+Вопросы часто проверяют:
+
+- различие между retryable и non-retryable ошибками;
+- значения TTL и max attempts по умолчанию;
+- необходимость dead-letter;
+- поведение exponential backoff;
+- ограничения batching и custom headers.
+
+Если видите вопрос про «надёжность доставки» — думайте о retry, dead-letter и idempotency.
 ### Quick Command Reference
 
 ```bash
@@ -779,28 +1114,72 @@ az eventgrid event-subscription create \
 
 ---
 
-## Summary
+# Итоги по надёжности доставки событий
 
-**Event Delivery Durability Features:**
-- **Retry mechanism**: Automatic with exponential backoff (30 sec to 13 hours)
-- **Retry policy**: Configurable max attempts (1-30) and TTL (1-1440 min)
-- **Dead-lettering**: Store undeliverable events in blob storage
-- **Output batching**: Deliver up to 5000 events in single request
-- **Delayed delivery**: Automatic pause for unhealthy endpoints
-- **Custom headers**: Add up to 10 custom HTTP headers
+## Возможности Event Grid
 
-**Best Practices:**
-- ✅ Use default retry policy for most scenarios (30 attempts, 24 hours)
-- ✅ Always configure dead-letter storage
-- ✅ Enable batching for high-volume scenarios
-- ✅ Design idempotent event handlers
-- ✅ Return appropriate HTTP status codes (400 for validation, 500 for transient errors)
-- ✅ Monitor delivery metrics and set up alerts
-- ✅ Process dead-lettered events regularly
+- **Retry mechanism**  
+  Автоматические повторные попытки с экспоненциальной задержкой  
+  (от 30 секунд до ~13 часов)
 
-**Key Takeaways:**
-- Event Grid guarantees **at-least-once delivery**
-- Events may be **delivered multiple times** (design for idempotency)
-- **Non-retryable errors** (400, 413) skip retry logic
-- **Dead-letter storage** prevents event loss
-- **Batching** improves throughput and reduces costs
+- **Retry policy**  
+  Настраиваемое количество попыток (1–30)  
+  и TTL (1–1440 минут)
+
+- **Dead-lettering**  
+  Сохранение недоставленных событий в Blob Storage
+
+- **Output batching**  
+  До 5000 событий в одном запросе
+
+- **Delayed delivery**  
+  Автоматическая пауза для нестабильных endpoint’ов
+
+- **Custom headers**  
+  До 10 пользовательских HTTP-заголовков
+
+---
+
+# Best Practices
+
+- ✅ Использовать настройки retry по умолчанию  
+  (30 попыток, 24 часа)
+
+- ✅ Всегда настраивать dead-letter storage
+
+- ✅ Включать batching при высоком объёме событий
+
+- ✅ Проектировать идемпотентные обработчики
+
+- ✅ Возвращать корректные HTTP-коды  
+  400 — ошибки валидации  
+  500 — временные ошибки
+
+- ✅ Мониторить метрики доставки и настраивать алерты
+
+- ✅ Регулярно обрабатывать события из dead-letter
+
+---
+
+# Ключевые выводы
+
+- Event Grid гарантирует **at-least-once delivery**
+- События могут быть доставлены **несколько раз**
+- **Non-retryable ошибки** (400, 413) не вызывают повторную отправку
+- Dead-letter предотвращает потерю событий
+- Batching повышает пропускную способность и снижает стоимость
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Обязательно помнить:
+
+- TTL по умолчанию — 24 часа
+- До 30 попыток доставки
+- Exponential backoff начинается с 30 секунд
+- Модель доставки — at-least-once
+- Обработчики должны быть идемпотентными
+- Dead-letter — обязательный элемент production-архитектуры
+
+Если вопрос о надёжности доставки — думайте о retry, TTL, dead-letter и idempotency.

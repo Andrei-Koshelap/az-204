@@ -1,26 +1,76 @@
-# Event Schemas in Azure Event Grid
+# Схемы событий в Azure Event Grid
 
-## Overview
+## Обзор
 
-Azure Event Grid supports two event schema formats for describing events:
-1. **Event Grid Schema** - Azure's native event format
-2. **CloudEvents Schema** - Industry-standard format (v1.0 specification)
+Azure Event Grid поддерживает два формата схем событий:
 
-Both schemas provide a structured way to describe **what happened**, **when it happened**, and **where it happened**, along with custom data about the event.
+1. **Event Grid Schema** — нативный формат Azure
+2. **CloudEvents Schema** — отраслевой стандарт (спецификация v1.0)
+
+Обе схемы описывают:
+
+- **что произошло**
+- **когда произошло**
+- **где произошло**
+- дополнительные данные события
 
 ---
 
-## CloudEvents v1.0 Schema (Recommended)
+# CloudEvents v1.0 (Рекомендуемый формат)
 
-**CloudEvents** is an open specification for describing event data in a common format. It provides interoperability across services, platforms, and systems.
+**CloudEvents** — это открытая спецификация для описания событий в унифицированном формате.
 
-### Why Use CloudEvents?
+Она обеспечивает совместимость между различными облаками, сервисами и платформами.
 
-- ✅ **Industry Standard**: CNCF (Cloud Native Computing Foundation) specification
-- ✅ **Interoperability**: Works across cloud providers and platforms
-- ✅ **Future-Proof**: Actively maintained and evolving
-- ✅ **Tool Support**: Broad SDK and tooling ecosystem
-- ✅ **Recommended by Microsoft**: Preferred format for new applications
+---
+
+## Почему стоит использовать CloudEvents?
+
+- ✅ **Отраслевой стандарт**  
+  Поддерживается CNCF (Cloud Native Computing Foundation)
+
+- ✅ **Интероперабельность**  
+  Работает в разных облаках и системах
+
+- ✅ **Перспективность**  
+  Активно развивается и поддерживается
+
+- ✅ **Поддержка инструментов**  
+  Широкая экосистема SDK и библиотек
+
+- ✅ **Рекомендован Microsoft**  
+  Предпочтительный формат для новых приложений
+
+---
+
+## Архитектурный смысл
+
+Использование CloudEvents:
+
+- упрощает миграцию между облаками;
+- снижает vendor lock-in;
+- облегчает интеграцию с внешними системами;
+- стандартизирует структуру событий.
+
+---
+
+## Когда выбирать CloudEvents
+
+- При разработке новых решений
+- При интеграции с несколькими облаками
+- В гибридных и multi-cloud архитектурах
+- Если требуется соответствие индустриальным стандартам
+
+---
+
+## Важно для AZ-204
+
+На экзамене важно помнить:
+
+- CloudEvents v1.0 — рекомендуемый формат
+- Event Grid поддерживает оба формата
+- CloudEvents обеспечивает лучшую совместимость
+- Microsoft рекомендует использовать CloudEvents для новых решений
 
 ### CloudEvents Schema Structure
 
@@ -42,31 +92,68 @@ Both schemas provide a structured way to describe **what happened**, **when it h
 }
 ```
 
-### CloudEvents Properties
+## Свойства CloudEvents
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `specversion` | string | ✅ Yes | CloudEvents version (always "1.0") |
-| `type` | string | ✅ Yes | Event type (e.g., "com.example.object.created") |
-| `source` | URI | ✅ Yes | Context in which event occurred |
-| `id` | string | ✅ Yes | Unique identifier for the event |
-| `time` | timestamp | ❌ No | When event occurred (RFC 3339 format) |
-| `subject` | string | ❌ No | Subject of the event in context of source |
-| `datacontenttype` | string | ❌ No | Content type of data (e.g., "application/json") |
-| `dataschema` | URI | ❌ No | Schema that data adheres to |
-| `data` | object | ❌ No | Event-specific data payload |
+| Свойство | Тип | Обязательное | Описание |
+|-----------|------|--------------|-----------|
+| `specversion` | string | ✅ Да | Версия спецификации CloudEvents (всегда `"1.0"`) |
+| `type` | string | ✅ Да | Тип события (например, `"com.example.object.created"`) |
+| `source` | URI | ✅ Да | Контекст, в котором произошло событие |
+| `id` | string | ✅ Да | Уникальный идентификатор события |
+| `time` | timestamp | ❌ Нет | Время события (формат RFC 3339) |
+| `subject` | string | ❌ Нет | Конкретный объект события в контексте source |
+| `datacontenttype` | string | ❌ Нет | Тип содержимого данных (например, `"application/json"`) |
+| `dataschema` | URI | ❌ Нет | Схема, которой соответствует поле data |
+| `data` | object | ❌ Нет | Payload события (бизнес-данные) |
 
-### CloudEvents Property Details
+---
 
-#### specversion
-- **Purpose**: Indicates CloudEvents specification version
-- **Value**: Always `"1.0"`
-- **Example**: `"specversion": "1.0"`
+## Подробности по ключевым свойствам
 
-#### type
-- **Purpose**: Describes the type of event
-- **Format**: Reverse domain notation recommended
-- **Examples**:
+### `specversion`
+
+- **Назначение**: Указывает версию спецификации CloudEvents
+- **Значение**: Всегда `"1.0"`
+- **Пример**:  
+  `"specversion": "1.0"`
+
+Это поле обязательно и позволяет обработчику понять структуру события.
+
+---
+
+### `type`
+
+- **Назначение**: Описывает тип события
+- **Рекомендуемый формат**: Reverse domain notation
+
+Примеры:
+
+- `com.contoso.order.created`
+- `com.example.user.deleted`
+- `com.myapp.payment.completed`
+
+---
+
+### Архитектурный смысл
+
+`type` используется для:
+
+- маршрутизации событий;
+- фильтрации на уровне Event Subscription;
+- определения логики обработки.
+
+Хорошая практика — использовать иерархическую структуру имени типа события.
+
+---
+
+## Важно для AZ-204
+
+Запомните:
+
+- `specversion`, `type`, `source`, `id` — обязательные поля.
+- CloudEvents v1.0 — рекомендуемый стандарт.
+- `type` используется для фильтрации.
+- `id` должен быть уникальным (важно для идемпотентности).
   ```
   "com.microsoft.storage.blobcreated"
   "com.example.orders.ordercreated"
@@ -239,27 +326,38 @@ The **Event Grid Schema** is Azure's native format, supported for backward compa
 }
 ```
 
-### Event Grid Properties
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `topic` | string | ✅ Yes | Full resource path to event source |
-| `subject` | string | ✅ Yes | Publisher-defined path to event subject |
-| `eventType` | string | ✅ Yes | Registered event type for this source |
-| `id` | string | ✅ Yes | Unique identifier for the event |
-| `eventTime` | datetime | ✅ Yes | Event generation time (UTC) |
-| `data` | object | ✅ Yes | Event-specific data |
-| `dataVersion` | string | ✅ Yes | Schema version of data object |
-| `metadataVersion` | string | ❌ No | Schema version of event metadata (read-only) |
+---
 
-### Event Grid Property Details
+### Архитектурный смысл
 
-#### topic
-- **Purpose**: Full resource path to the event source
-- **Set By**: Event Grid (automatically for system topics)
-- **Format**: Azure Resource Manager ID
-- **Example**: 
-  ```
+`topic` позволяет:
+
+- однозначно определить источник события;
+- фильтровать события по ресурсу;
+- отслеживать происхождение события.
+
+---
+
+### Отличие от CloudEvents
+
+- В Event Grid Schema используется `eventType` вместо `type`.
+- Поле `topic` является частью нативной схемы Azure.
+- Все поля, кроме `metadataVersion`, обязательны.
+
+---
+
+## Важно для AZ-204
+
+Нужно понимать:
+
+- Разницу между CloudEvents и Event Grid Schema.
+- В Event Grid Schema все ключевые поля обязательны.
+- `dataVersion` определяет версию структуры payload.
+- `topic` автоматически заполняется для системных событий.
+
+Экзамен может проверять выбор схемы или различие между `type` и `eventType`.
+```
   "/subscriptions/abc123/resourceGroups/myRG/providers/Microsoft.Storage/storageAccounts/mystorage"
   ```
 
@@ -379,35 +477,66 @@ The **Event Grid Schema** is Azure's native format, supported for backward compa
 
 ---
 
-## Schema Comparison
+# Сравнение схем
 
-### CloudEvents vs. Event Grid Schema
+## CloudEvents vs. Event Grid Schema
 
-| Feature | CloudEvents | Event Grid Schema |
-|---------|-------------|-------------------|
-| **Standard** | CNCF open standard | Azure proprietary |
-| **Interoperability** | Cross-platform | Azure-specific |
-| **Required Fields** | 4 (specversion, type, source, id) | 6 (topic, subject, eventType, id, eventTime, data) |
-| **Timestamp Field** | `time` (optional) | `eventTime` (required) |
-| **Type Field** | `type` | `eventType` |
-| **Source Field** | `source` | `topic` |
-| **Data Schema** | `dataschema` | `dataVersion` |
-| **Content Type** | `datacontenttype` | Inferred |
-| **Recommendation** | ✅ Use for new apps | ⚠️ Legacy/compatibility |
+| Характеристика | CloudEvents | Event Grid Schema |
+|---------------|-------------|-------------------|
+| **Стандарт** | CNCF open standard | Собственный формат Azure |
+| **Интероперабельность** | Кросс-платформенная | Azure-специфичная |
+| **Обязательные поля** | 4 (specversion, type, source, id) | 6 (topic, subject, eventType, id, eventTime, data) |
+| **Поле времени** | `time` (необязательное) | `eventTime` (обязательное) |
+| **Поле типа** | `type` | `eventType` |
+| **Источник события** | `source` | `topic` |
+| **Версия схемы данных** | `dataschema` | `dataVersion` |
+| **Тип содержимого** | `datacontenttype` | Определяется автоматически |
+| **Рекомендация** | ✅ Использовать для новых приложений | ⚠️ Для совместимости и legacy |
 
-### Field Mapping
+---
 
-| CloudEvents | Event Grid Schema | Notes |
-|-------------|-------------------|-------|
-| `specversion` | `metadataVersion` | Schema version |
-| `type` | `eventType` | Event type identifier |
-| `source` | `topic` | Event source |
-| `id` | `id` | Unique identifier |
-| `time` | `eventTime` | Timestamp |
-| `subject` | `subject` | Event subject |
-| `data` | `data` | Event payload |
-| `datacontenttype` | N/A | Content type |
-| `dataschema` | `dataVersion` | Data schema version |
+## Соответствие полей
+
+| CloudEvents | Event Grid Schema | Комментарий |
+|-------------|-------------------|-------------|
+| `specversion` | `metadataVersion` | Версия схемы |
+| `type` | `eventType` | Тип события |
+| `source` | `topic` | Источник события |
+| `id` | `id` | Уникальный идентификатор |
+| `time` | `eventTime` | Временная метка |
+| `subject` | `subject` | Объект события |
+| `data` | `data` | Payload события |
+| `datacontenttype` | N/A | Тип содержимого |
+| `dataschema` | `dataVersion` | Версия схемы данных |
+
+---
+
+## Архитектурный вывод
+
+- **CloudEvents** — стандарт для multi-cloud и интеграций.
+- **Event Grid Schema** — нативный формат Azure.
+- CloudEvents обеспечивает лучшую переносимость.
+- Event Grid Schema чаще используется в старых решениях.
+
+---
+
+## Что выбрать?
+
+- Новые приложения → **CloudEvents**
+- Совместимость со старыми Azure-сценариями → Event Grid Schema
+
+---
+
+## Важно для AZ-204
+
+На экзамене важно помнить:
+
+- CloudEvents — рекомендуемый формат.
+- В Event Grid Schema больше обязательных полей.
+- `type` ≠ `eventType`.
+- `source` ≠ `topic`.
+
+Часто проверяется понимание различий и соответствия полей.
 
 ---
 
@@ -433,12 +562,84 @@ Event Size    → Billing Units (64 KB) → Operations Billed
 1 MB (max)    → 16 units (1024 KB)    → 16 operations
 ```
 
-### Size Optimization Tips
+## Оптимизация размера событий
 
-1. **Minimize Data Payload**: Include only necessary information
-2. **Use References**: Store large data elsewhere, pass references
-3. **Compress Data**: Use compression for large payloads
-4. **Batch Events**: Send multiple small events together
+Правильная структура события снижает стоимость и повышает производительность доставки.
+
+---
+
+### 1️⃣ Минимизируйте payload
+
+Включайте только необходимые данные.
+
+Рекомендуется:
+
+- передавать идентификаторы вместо больших объектов;
+- не дублировать информацию;
+- избегать вложенных массивов большого размера.
+
+Помните: максимальный размер события — 1 MB, тарификация блоками по 64 KB.
+
+---
+
+### 2️⃣ Используйте ссылки вместо данных
+
+Если данные большие:
+
+- сохраните их в Blob Storage, базе данных или другом хранилище;
+- передайте в событии ссылку (URI) или ID ресурса.
+
+Это уменьшает:
+
+- размер события;
+- стоимость;
+- время доставки.
+
+---
+
+### 3️⃣ Сжимайте данные
+
+Для крупных payload’ов:
+
+- используйте компрессию;
+- минимизируйте JSON (без лишних полей и пробелов).
+
+Однако лучше избегать больших payload’ов полностью.
+
+---
+
+### 4️⃣ Используйте batch-отправку
+
+Можно отправлять несколько небольших событий в одном HTTP-запросе.
+
+Преимущества:
+
+- меньше сетевых вызовов;
+- снижение накладных расходов;
+- более эффективная обработка.
+
+---
+
+## Архитектурный вывод
+
+Event Grid предназначен для уведомлений о событиях, а не для передачи больших данных.
+
+Оптимальный подход:
+
+- Событие сообщает **что произошло**;
+- Данные хранятся отдельно;
+- Подписчик при необходимости загружает данные по ссылке.
+
+---
+
+## Важно для AZ-204
+
+На экзамене могут проверять:
+
+- лимит 1 MB;
+- тарификацию по 64 KB;
+- best practice: передавать ссылку вместо больших данных;
+- использование batch-публикации для оптимизации.
 
 **Example - Inefficient (large payload):**
 ```json
@@ -689,18 +890,53 @@ except Exception as e:
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204
 
-### Key Concepts to Remember
+## Ключевые моменты, которые нужно запомнить
 
-1. **CloudEvents is recommended** for new applications (v1.0 specification)
-2. **Event Grid schema** supported for backward compatibility
-3. **Maximum event size**: 1 MB
-4. **Billing**: 64 KB increments
-5. **Subject** field enables powerful filtering
-6. **CloudEvents** has 4 required fields; **Event Grid** has 6
-7. **datacontenttype** in CloudEvents; inferred in Event Grid schema
+1️⃣ **CloudEvents рекомендуется** для новых приложений  
+Используется спецификация v1.0.
 
+2️⃣ **Event Grid Schema** поддерживается  
+В основном для обратной совместимости.
+
+3️⃣ **Максимальный размер события — 1 MB**
+
+4️⃣ **Тарификация — блоками по 64 KB**
+
+5️⃣ Поле **`subject`** позволяет выполнять гибкую фильтрацию  
+(по префиксу, суффиксу, шаблону).
+
+6️⃣ В **CloudEvents** — 4 обязательных поля  
+(`specversion`, `type`, `source`, `id`)
+
+В **Event Grid Schema** — 6 обязательных полей  
+(`topic`, `subject`, `eventType`, `id`, `eventTime`, `data`)
+
+7️⃣ В CloudEvents используется поле **`datacontenttype`**  
+В Event Grid Schema тип данных определяется автоматически.
+
+---
+
+## Что чаще всего проверяют
+
+- Разницу между `type` и `eventType`
+- Разницу между `source` и `topic`
+- Какое поле используется для фильтрации
+- Ограничение 1 MB
+- Расчёт стоимости по 64 KB
+
+---
+
+## Экзаменационный лайфхак
+
+Если в вопросе речь о:
+
+- новом приложении → выбирайте **CloudEvents**
+- legacy или совместимости → Event Grid Schema
+- фильтрации → обращайте внимание на `subject`
+
+Понимание различий между схемами — частая тема в вопросах AZ-204.
 ### Schema Selection Decision Tree
 
 ```
@@ -713,64 +949,135 @@ New Application?
    └─ Migrating? → CloudEvents (recommended)
 ```
 
-### Common Exam Scenarios
+## Частые экзаменационные сценарии
 
-**Scenario 1**: Design event schema for multi-cloud application
-- ✅ Use CloudEvents for interoperability
-- ❌ Don't use Event Grid schema (Azure-specific)
+### Сценарий 1
+Проектирование схемы событий для multi-cloud приложения
 
-**Scenario 2**: Minimize event costs
-- ✅ Keep events under 64 KB when possible
-- ✅ Use reference-based data (URLs, IDs)
-- ❌ Don't embed large payloads
-
-**Scenario 3**: Enable complex filtering
-- ✅ Design hierarchical subject structure
-- ✅ Use consistent naming conventions
-- ❌ Don't use flat subject names
-
-### Remember for Exam
-
-- **CloudEvents required fields**: specversion, type, source, id
-- **Event Grid required fields**: topic, subject, eventType, id, eventTime, data
-- **Content-Type header**: `application/cloudevents+json` for CloudEvents
-- **Maximum size**: 1 MB per event
-- **Billing increment**: 64 KB
-- **Subject filtering**: Use `subjectBeginsWith` and `subjectEndsWith`
-- **dataVersion**: Track schema evolution in Event Grid
-- **dataschema**: Define schema URI in CloudEvents
-
-### Quick Comparison
-
-| Question | CloudEvents | Event Grid |
-|----------|-------------|------------|
-| Industry standard? | ✅ Yes (CNCF) | ❌ Azure-only |
-| Recommended? | ✅ Yes | ⚠️ Legacy |
-| Required fields | 4 | 6 |
-| Schema versioning | dataschema (URI) | dataVersion (string) |
-| Content type | Explicit | Inferred |
+- ✅ Использовать CloudEvents (интероперабельность)
+- ❌ Не использовать Event Grid Schema (Azure-специфичная)
 
 ---
 
-## Summary
+### Сценарий 2
+Минимизация стоимости событий
 
-**Event Schemas:**
-- **CloudEvents v1.0**: Industry-standard, recommended for new apps
-- **Event Grid Schema**: Azure-native, backward compatibility
+- ✅ Держать размер события менее 64 KB при возможности
+- ✅ Использовать ссылочную модель (URL, ID)
+- ❌ Не встраивать большие payload’ы
 
-**Key Differences:**
-- CloudEvents has **fewer required fields** (4 vs 6)
-- CloudEvents is **cross-platform compatible**
-- CloudEvents specifies **content type explicitly**
+---
 
-**Best Practices:**
-- ✅ Use **CloudEvents** for new applications
-- ✅ Design **hierarchical subjects** for filtering
-- ✅ Keep events **under 64 KB** to minimize cost
-- ✅ Use **references** instead of embedding large data
-- ✅ Include **dataVersion** or **dataschema** for versioning
+### Сценарий 3
+Реализация сложной фильтрации
 
-**Size Limits:**
-- Maximum event size: **1 MB**
-- Billing increments: **64 KB**
-- Batch size: **1 MB total**
+- ✅ Проектировать иерархическую структуру `subject`
+- ✅ Использовать единые соглашения об именовании
+- ❌ Не использовать плоские и неструктурированные subject
+
+---
+
+## Что помнить на экзамене
+
+- **Обязательные поля CloudEvents**:  
+  `specversion`, `type`, `source`, `id`
+
+- **Обязательные поля Event Grid Schema**:  
+  `topic`, `subject`, `eventType`, `id`, `eventTime`, `data`
+
+- **Content-Type для CloudEvents**:  
+  `application/cloudevents+json`
+
+- **Максимальный размер события**: 1 MB
+
+- **Тарификация**: блоками по 64 KB
+
+- **Фильтрация по subject**:  
+  `subjectBeginsWith`, `subjectEndsWith`
+
+- **`dataVersion`**: отслеживание версии схемы в Event Grid Schema
+- **`dataschema`**: URI схемы в CloudEvents
+
+---
+
+## Быстрое сравнение
+
+| Вопрос | CloudEvents | Event Grid |
+|--------|-------------|------------|
+| Отраслевой стандарт? | ✅ Да (CNCF) | ❌ Только Azure |
+| Рекомендуется? | ✅ Да | ⚠️ Для legacy |
+| Обязательных полей | 4 | 6 |
+| Версионирование схемы | `dataschema` (URI) | `dataVersion` (string) |
+| Content-Type | Явно указан | Определяется автоматически |
+
+---
+
+# Итоги
+
+## Схемы событий
+
+- **CloudEvents v1.0** — отраслевой стандарт, рекомендован для новых решений
+- **Event Grid Schema** — нативный формат Azure для обратной совместимости
+
+---
+
+## Ключевые различия
+
+- В CloudEvents меньше обязательных полей (4 против 6)
+- CloudEvents поддерживает multi-cloud
+- CloudEvents явно определяет Content-Type
+
+---
+
+## Best Practices
+
+- ✅ Использовать **CloudEvents** для новых приложений
+- ✅ Проектировать **иерархический subject**
+- ✅ Держать события **менее 64 KB**
+- ✅ Передавать **ссылки вместо больших данных**
+- ✅ Использовать `dataVersion` или `dataschema` для версионирования
+
+---
+
+## Ограничения
+
+- Максимальный размер события: **1 MB**
+- Тарификация: блоками по **64 KB**
+- Общий размер batch-запроса: **до 1 MB**
+
+---
+
+### Экзаменационный акцент
+
+Если в вопросе:
+
+- multi-cloud → CloudEvents
+- новое приложение → CloudEvents
+- legacy Azure → Event Grid Schema
+- оптимизация стоимости → уменьшение payload
+
+Различие между схемами — частая проверяемая тема в AZ-204.
+| Сервис                 | Очередь | FIFO | Размер        | Назначение           |
+| ---------------------- | ------- | ---- | ------------- | -------------------- |
+| Storage Queues         | ✅       | ❌    | Очень большой | Simple queue         |
+| **Service Bus Queues** | ✅       | ✅    | **до 80 GB**  | Enterprise messaging |
+| Event Hubs             | ❌       | ❌    | Huge          | Streaming            |
+| Event Grid             | ❌       | ❌    | N/A           | Event routing        |
+
+Event Hubs — это сервис для:
+массового приёма событий (telemetry ingestion)
+высокой пропускной способности
+потоковой обработки
+сценариев IoT / device data
+
+Devices → Event Hubs → (consumer) → Blob Storage
+
+Экзаменационное правило
+Если видишь:
+telemetry
+много устройств/источников
+поток событий
+ingestion
+👉 выбирай Azure Event Hubs (или IoT Hub, если он среди вариантов).
+
+Интеграция Service Bus с Event Grid поддерживается только в Premium tier.

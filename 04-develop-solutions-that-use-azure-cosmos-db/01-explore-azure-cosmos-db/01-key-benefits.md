@@ -605,5 +605,147 @@ var item = await container.ReadItemAsync<Product>(
 
 ---
 
+Azure Storage Explorer ❌
+→ Работает с Blob / Table / Queue, не Mongo.
 
+AzCopy ❌
+→ Копирует blob-файлы, не Mongo базы.
+
+No change required ❌
+→ Data Management Gateway тут не подходит.
+
+Cosmos DB with MongoDB API
+Mongo tools работают
+Можно использовать mongodump/mongorestore
+
+
+| API           | Тип модели  | Когда выбирать    |
+| ------------- | ----------- | ----------------- |
+| SQL API       | Document    | Новая разработка  |
+| Mongo API     | Document    | Миграция Mongo    |
+| Cassandra API | Wide-column | Time-series / IoT |
+| Gremlin API   | Graph       | Связанные данные  |
+
+
+| Нужно узнать | Команда                |
+| ------------ | ---------------------- |
+| Publisher    | Get-AzVMImagePublisher |
+| Offer        | Get-AzVMImageOffer     |
+| SKU          | Get-AzVMImageSku       |
+| Image        | Get-AzVMImage          |
+
+AD Connect — это синхронизация on-prem AD с Azure AD.
+
+| SKU      | Storage  | Performance  | Geo-replication | Private endpoint |
+| -------- | -------- | ------------ | --------------- | ---------------- |
+| Basic    | 10–20 GB | Низкая       | ❌               | ❌                |
+| Standard | 100 GB   | Выше         | ❌               | ❌                |
+| Premium  | 500 GB   | Максимальная | ✅               | ✅                |
+
+
+
+Если для оптимизации нужен composite index, то:
+в Azure Portal → Query → Index Advisor
+система предложит добавить соответствующий composite index
+его можно применить автоматически
+
+
+В Azure Cosmos DB (SQL API) UDF:
+выполняются на уровне запроса
+не используют индекс
+обрабатываются построчно (per document)
+Если UDF используется в WHERE, например:
+SELECT * FROM c
+WHERE udf.isValid(c.Name)
+то:
+Cosmos DB сначала считывает документы
+затем применяет UDF
+индекс при этом не используется эффективно
+увеличивается потребление RU
+запрос становится медленным и дорогим
+Поэтому Microsoft рекомендует избегать UDF в WHERE, если это влияет на фильтрацию больших объёмов данных.
+
+Change Feed Processor library
+Это рекомендуемый механизм для production-сценариев:
+автоматически распределяет partition между несколькими host-инстансами
+обеспечивает масштабируемую параллельную обработку
+хранит lease-информацию
+устойчив к сбоям
+поддерживает replay
+
+Глобальный порядок требует централизованной координации.
+Централизация убивает масштабирование.
+
+Cosmos DB — это massively distributed система.
+Поэтому она гарантирует порядок там, где это дешёво — внутри partition.
+
+❌ A. Shared + autoscale на каждом контейнере
+Autoscale на shared не применяется “на каждый контейнер” — autoscale применяется к shared throughput на уровне базы.
+
+🟢 Почему Dedicated throughput (вариант B) правильный
+Dedicated throughput означает:
+у каждого контейнера свой RU пул
+нет конкуренции
+гарантированная производительность
+предсказуемый latency
+Да, это дороже.
+
+
+Как работают уровни консистентности в Cosmos DB
+От самого строгого к самому слабому:
+Strong
+
+Bounded staleness
+
+Session
+
+Consistent prefix
+
+Eventual ← самый слабый
+
+Eventual consistency:
+❌ Не гарантирует порядок
+❌ Не гарантирует read-your-writes
+✅ Даёт максимальную доступность
+✅ Минимальную задержку
+✅ Лучший SLA по availability
+
+| Требование            | Ответ    |
+| --------------------- | -------- |
+| Max throughput        | Eventual |
+| Highest availability  | Eventual |
+| No ordering guarantee | Eventual |
+| Read-your-writes      | Session  |
+| Strict consistency    | Strong   |
+
+| Уровень               | Гарантии                                       | Latency          | Throughput      | Availability    | Когда использовать    |
+| --------------------- | ---------------------------------------------- | ---------------- | --------------- | --------------- | --------------------- |
+| **Strong**            | Полная линейная согласованность                | 🔴 Самая высокая | 🔴 Самый низкий | Ниже            | Банковские транзакции |
+| **Bounded Staleness** | Ограниченная задержка (K versions / T seconds) | 🔴 Высокая       | 🔴 Низкий       | Ниже            | Финансовые системы    |
+| **Session**           | Read-your-writes                               | 🟡 Средняя       | 🟡 Хороший      | Высокая         | Web / mobile apps     |
+| **Consistent Prefix** | Порядок операций сохраняется                   | 🟢 Низкая        | 🟢 Высокий      | Очень высокая   | Логи, события         |
+| **Eventual**          | Нет гарантий порядка                           | 🟢 Самая низкая  | 🟢 Максимальный | 🟢 Максимальная | IoT, analytics        |
+
+1️⃣ Monitored container
+– Это контейнер, за которым мы следим (где данные меняются)
+
+2️⃣ Lease container
+– Это контейнер, который:
+Хранит состояние обработки
+Отслеживает progress
+Делит работу между несколькими инстансами
+
+| Компонент           | Назначение                |
+| ------------------- | ------------------------- |
+| Monitored container | Источник изменений        |
+| Lease container     | Хранит checkpoint / state |
+| Delegate            | Твоя бизнес-логика        |
+| Compute instance    | Где исполняется код       |
+
+
+Cosmos DB Change Feed tuning =
+игра с параметрами:
+feedPollDelay
+lease configuration
+batch size
 [Learn More](https://learn.microsoft.com/en-us/training/modules/explore-azure-cosmos-db/2-cosmos-db-benefits)
