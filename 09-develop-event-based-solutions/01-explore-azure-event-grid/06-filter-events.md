@@ -1,13 +1,47 @@
-# Filter Events in Azure Event Grid
+# Фильтрация событий в Azure Event Grid
 
-## Overview
+## Обзор
 
-**Event filtering** allows you to control which events are delivered to each subscription endpoint, reducing unnecessary traffic and processing costs.
+**Фильтрация событий (Event filtering)** позволяет управлять тем, какие события будут доставлены в конкретную подписку (subscription endpoint).  
+Это помогает:
 
-**Three Filtering Types:**
-1. **Event Type Filtering** - Filter by event type
-2. **Subject Filtering** - Filter by subject patterns
-3. **Advanced Filtering** - Filter by event data fields
+- уменьшить лишний сетевой трафик
+- снизить нагрузку на обработчики
+- сократить вычислительные затраты
+- повысить производительность системы
+- упростить логику downstream-сервисов
+
+Фактически, фильтрация — это первый уровень оптимизации событийно-ориентированной архитектуры (event-driven architecture) в Azure.
+
+---
+
+## Типы фильтрации
+
+### 1. Фильтрация по типу события (Event Type Filtering)
+
+Позволяет доставлять только события определённого типа (`eventType`).
+
+Пример:
+- `Microsoft.Storage.BlobCreated`
+- `Microsoft.Storage.BlobDeleted`
+
+Используется, когда:
+- сервису нужны только события создания объектов
+- логика обработки зависит строго от типа события
+
+💡 **Практический совет:**  
+Лучше сразу ограничивать подписку конкретными типами событий, чем фильтровать их уже в коде обработчика.
+
+---
+
+### 2. Фильтрация по Subject (Subject Filtering)
+
+Позволяет фильтровать события по полю `subject`, используя:
+- `beginsWith`
+- `endsWith`
+
+`subject` обычно содержит путь к ресурсу.
+
 
 ---
 
@@ -70,18 +104,35 @@ az eventgrid event-subscription create \
 ```
 *Empty array = all event types*
 
-### Common Azure Event Types
+### Распространённые типы событий Azure Event Grid
 
-| Azure Service | Event Types |
-|--------------|-------------|
-| **Blob Storage** | `Microsoft.Storage.BlobCreated`, `Microsoft.Storage.BlobDeleted`, `Microsoft.Storage.BlobTierChanged` |
-| **Resource Manager** | `Microsoft.Resources.ResourceWriteSuccess`, `Microsoft.Resources.ResourceDeleteSuccess`, `Microsoft.Resources.ResourceActionSuccess` |
-| **Event Hubs** | `Microsoft.EventHub.CaptureFileCreated` |
-| **IoT Hub** | `Microsoft.Devices.DeviceCreated`, `Microsoft.Devices.DeviceDeleted`, `Microsoft.Devices.DeviceConnected`, `Microsoft.Devices.DeviceDisconnected` |
-| **Container Registry** | `Microsoft.ContainerRegistry.ImagePushed`, `Microsoft.ContainerRegistry.ImageDeleted`, `Microsoft.ContainerRegistry.ChartPushed` |
-| **Media Services** | `Microsoft.Media.JobStateChange`, `Microsoft.Media.JobOutputStateChange`, `Microsoft.Media.LiveEventEncoderConnected` |
-| **Service Bus** | `Microsoft.ServiceBus.ActiveMessagesAvailableWithNoListeners`, `Microsoft.ServiceBus.DeadletterMessagesAvailableWithNoListener` |
-| **App Configuration** | `Microsoft.AppConfiguration.KeyValueModified`, `Microsoft.AppConfiguration.KeyValueDeleted` |
+Ниже приведены наиболее часто встречающиеся типы событий, которые различные сервисы Azure публикуют в Azure Event Grid.  
+Эти события часто встречаются в сценариях интеграции и могут появляться в вопросах экзамена AZ-204.
+
+| Azure Service | Типы событий |
+|--------------|--------------|
+| **Blob Storage** | `Microsoft.Storage.BlobCreated` — создание Blob<br>`Microsoft.Storage.BlobDeleted` — удаление Blob<br>`Microsoft.Storage.BlobTierChanged` — изменение уровня хранения |
+| **Resource Manager** | `Microsoft.Resources.ResourceWriteSuccess` — успешное создание или обновление ресурса<br>`Microsoft.Resources.ResourceDeleteSuccess` — успешное удаление ресурса<br>`Microsoft.Resources.ResourceActionSuccess` — успешное выполнение действия над ресурсом |
+| **Event Hubs** | `Microsoft.EventHub.CaptureFileCreated` — создан файл Capture |
+| **IoT Hub** | `Microsoft.Devices.DeviceCreated` — устройство создано<br>`Microsoft.Devices.DeviceDeleted` — устройство удалено<br>`Microsoft.Devices.DeviceConnected` — устройство подключено<br>`Microsoft.Devices.DeviceDisconnected` — устройство отключено |
+| **Container Registry** | `Microsoft.ContainerRegistry.ImagePushed` — образ загружен<br>`Microsoft.ContainerRegistry.ImageDeleted` — образ удалён<br>`Microsoft.ContainerRegistry.ChartPushed` — Helm-чарт загружен |
+| **Media Services** | `Microsoft.Media.JobStateChange` — изменение состояния задания<br>`Microsoft.Media.JobOutputStateChange` — изменение состояния результата задания<br>`Microsoft.Media.LiveEventEncoderConnected` — подключение энкодера к Live Event |
+| **Service Bus** | `Microsoft.ServiceBus.ActiveMessagesAvailableWithNoListeners` — есть активные сообщения без подписчиков<br>`Microsoft.ServiceBus.DeadletterMessagesAvailableWithNoListener` — есть сообщения в DLQ без подписчиков |
+| **App Configuration** | `Microsoft.AppConfiguration.KeyValueModified` — значение ключа изменено<br>`Microsoft.AppConfiguration.KeyValueDeleted` — значение ключа удалено |
+
+---
+
+## Что важно для AZ-204
+
+- Blob Storage и Resource Manager — самые часто встречающиеся сервисы в вопросах.
+- IoT Hub и Container Registry часто используются в интеграционных и DevOps-сценариях.
+- Service Bus события связаны с мониторингом и обработкой сообщений.
+- App Configuration полезен в сценариях динамического изменения конфигурации приложений.
+
+📌 На экзамене не требуется запоминать все типы событий дословно, но важно понимать:
+- какой сервис какие события генерирует
+- в каком сценарии эти события используются
+- как их можно фильтровать через Event Grid
 
 ### Custom Event Types
 
@@ -240,39 +291,65 @@ az eventgrid event-subscription create \
 
 ---
 
-## Advanced Filtering
+## Расширенная фильтрация (Advanced Filtering)
 
-Filter events based on **data field values** using comparison operators.
+Позволяет фильтровать события на основе **значений полей внутри `data`**, используя операторы сравнения.
 
-### Advanced Filter Operators
+Это самый гибкий механизм фильтрации в Azure Event Grid.  
+Фильтрация выполняется на стороне сервиса, до доставки события в подписку.
 
-| Operator | Data Types | Description |
-|----------|-----------|-------------|
-| `NumberIn` | Number | Value in list |
-| `NumberNotIn` | Number | Value not in list |
-| `NumberLessThan` | Number | Value < specified |
-| `NumberLessThanOrEquals` | Number | Value ≤ specified |
-| `NumberGreaterThan` | Number | Value > specified |
-| `NumberGreaterThanOrEquals` | Number | Value ≥ specified |
-| `BoolEquals` | Boolean | Value equals true/false |
-| `StringIn` | String | Value in list |
-| `StringNotIn` | String | Value not in list |
-| `StringBeginsWith` | String | Value starts with |
-| `StringEndsWith` | String | Value ends with |
-| `StringContains` | String | Value contains substring |
-| `StringNotContains` | String | Value doesn't contain |
-| `StringNotBeginsWith` | String | Value doesn't start with |
-| `StringNotEndsWith` | String | Value doesn't end with |
-| `IsNullOrUndefined` | Any | Field is null or undefined |
-| `IsNotNull` | Any | Field is not null |
+---
 
-### Advanced Filter Limits
+### Операторы расширенной фильтрации
 
-- **Maximum filters per subscription**: 25
-- **Maximum values per array operator (In/NotIn)**: 25
-- **Maximum characters per string value**: 512
-- **Maximum key length**: 64 characters
+| Оператор | Тип данных | Описание |
+|-----------|------------|----------|
+| `NumberIn` | Число | Значение входит в список |
+| `NumberNotIn` | Число | Значение не входит в список |
+| `NumberLessThan` | Число | Значение меньше указанного |
+| `NumberLessThanOrEquals` | Число | Значение меньше или равно указанному |
+| `NumberGreaterThan` | Число | Значение больше указанного |
+| `NumberGreaterThanOrEquals` | Число | Значение больше или равно указанному |
+| `BoolEquals` | Boolean | Значение равно true или false |
+| `StringIn` | Строка | Значение входит в список |
+| `StringNotIn` | Строка | Значение не входит в список |
+| `StringBeginsWith` | Строка | Значение начинается с указанной строки |
+| `StringEndsWith` | Строка | Значение заканчивается указанной строкой |
+| `StringContains` | Строка | Значение содержит подстроку |
+| `StringNotContains` | Строка | Значение не содержит подстроку |
+| `StringNotBeginsWith` | Строка | Значение не начинается с указанной строки |
+| `StringNotEndsWith` | Строка | Значение не заканчивается указанной строкой |
+| `IsNullOrUndefined` | Любой | Поле равно null или отсутствует |
+| `IsNotNull` | Любой | Поле не равно null |
 
+---
+
+### Ограничения расширенной фильтрации
+
+- **Максимальное количество фильтров на одну подписку**: 25
+- **Максимальное количество значений для операторов In / NotIn**: 25
+- **Максимальная длина строкового значения**: 512 символов
+- **Максимальная длина ключа (имени поля)**: 64 символа
+
+---
+
+## Практические замечания
+
+- Все условия работают по принципу **AND** — событие должно соответствовать всем заданным фильтрам.
+- Поля указываются относительно объекта `data` (например, `data.propertyName`).
+- Если поле отсутствует в событии, оператор может не сработать так, как ожидается — это важно учитывать при проектировании схемы событий.
+- Расширенная фильтрация особенно полезна в высоконагруженных системах и serverless-сценариях, где важно минимизировать лишние вызовы обработчиков.
+
+---
+
+## Что важно помнить для AZ-204
+
+- Advanced Filtering применяется к данным события (`data`), а не к `eventType` или `subject`.
+- Поддерживаются числовые, строковые и логические операторы.
+- Существуют ограничения на количество условий и длину значений.
+- Фильтрация выполняется до доставки события конечной точке.
+
+Расширенная фильтрация — ключевой инструмент для построения эффективной событийной архитектуры в Azure.
 ### Number Filtering Examples
 
 **Example 1: Filter by Blob Size**
@@ -579,15 +656,51 @@ az eventgrid event-subscription create \
 
 ---
 
-## Filter Evaluation Order
+## Порядок применения фильтров (Filter Evaluation Order)
 
-Filters are evaluated in this order:
+Фильтры в Azure Event Grid применяются в следующем порядке:
 
-1. **Event Type Filter** - Fastest, checked first
-2. **Subject Filter** - String prefix/suffix matching
-3. **Advanced Filters** - Most expensive, evaluated last
+1. **Фильтр по типу события (Event Type Filter)** — самый быстрый, проверяется первым
+2. **Фильтр по Subject (Subject Filter)** — сопоставление по префиксу / суффиксу строки
+3. **Расширенные фильтры (Advanced Filters)** — наиболее ресурсоёмкие, выполняются последними
 
-**Optimization Tip:** Use event type and subject filters when possible for better performance.
+---
+
+## Почему это важно
+
+Azure Event Grid оптимизирует обработку событий, начиная с самых дешёвых операций:
+
+- Проверка `eventType` — простое сравнение строки
+- Проверка `subject` — сопоставление начала или конца строки
+- Advanced Filtering — анализ значений внутри `data`, потенциально с несколькими условиями
+
+Чем раньше событие будет «отфильтровано», тем меньше ресурсов потребуется системе.
+
+---
+
+## Рекомендация по оптимизации
+
+**Старайтесь использовать фильтрацию по типу события и Subject там, где это возможно.**
+
+Это позволяет:
+
+- уменьшить нагрузку на Event Grid
+- повысить производительность
+- сократить задержки доставки событий
+- минимизировать вычислительные затраты
+
+Расширенную фильтрацию имеет смысл применять только тогда, когда более простые механизмы недостаточны.
+
+---
+
+## Что помнить для AZ-204
+
+- Фильтры выполняются последовательно
+- Event Type — самый быстрый уровень фильтрации
+- Advanced Filtering — самый «дорогой» по вычислениям
+- Правильная комбинация фильтров влияет на производительность архитектуры
+
+Понимание порядка выполнения фильтров помогает выбирать наиболее эффективную стратегию обработки событий.
 
 ---
 
@@ -716,46 +829,95 @@ az eventgrid event-subscription create \
 
 ---
 
-## Exam Tips for AZ-204
+## Советы к экзамену AZ-204
 
-### Key Concepts to Remember
+## Ключевые концепции, которые нужно помнить
 
-1. **Three filter types**: Event type, subject, advanced
-2. **Subject filters**: `subjectBeginsWith`, `subjectEndsWith`
-3. **Advanced filters**: 25 max per subscription
-4. **Filter evaluation order**: Event type → subject → advanced
-5. **Case sensitivity**: Subject filters are case-sensitive
-6. **Advanced filter operators**: NumberGreaterThan, StringContains, BoolEquals, etc.
+1. **Три типа фильтрации**:
+    - по типу события (Event Type)
+    - по subject
+    - расширенная (Advanced)
 
-### Common Exam Scenarios
+2. **Фильтры subject**:
+    - `subjectBeginsWith`
+    - `subjectEndsWith`
 
-**Scenario 1**: Filter .jpg images from specific container
-- ✅ Use `subjectBeginsWith` for container + `subjectEndsWith` for `.jpg`
-- ❌ Don't use advanced filters (less efficient)
+3. **Расширенная фильтрация**:
+    - максимум 25 условий на одну подписку
 
-**Scenario 2**: Filter events by data field value
-- ✅ Use advanced filters with appropriate operator
-- ❌ Don't try to use subject filters for data fields
+4. **Порядок применения фильтров**:  
+   Event Type → Subject → Advanced
 
-**Scenario 3**: Optimize performance
-- ✅ Use event type filter first (fastest)
-- ✅ Use subject filters over advanced filters
-- ❌ Don't use 25 advanced filters if simpler options exist
+5. **Чувствительность к регистру**:  
+   фильтры subject **чувствительны к регистру**
 
-**Scenario 4**: Multiple conditions
-- ✅ Combine event type + subject + advanced filters
-- ✅ All conditions must match (AND logic)
+6. **Операторы расширенной фильтрации**:  
+   `NumberGreaterThan`, `StringContains`, `BoolEquals`, `StringIn`, `IsNullOrUndefined` и другие
 
-### Remember for Exam
+---
 
-- **Event type**: Most efficient filter
-- **Subject**: Case-sensitive prefix/suffix matching
-- **Advanced**: 25 filters max, most expensive
-- **Operators**: NumberGreaterThan, StringContains, StringIn, BoolEquals, IsNullOrUndefined
-- **Evaluation order**: Type → Subject → Advanced
-- **All filters**: AND logic (all must match)
-- **Empty event types**: Matches all events
+## Типовые экзаменационные сценарии
 
+### Сценарий 1: Отфильтровать `.jpg` изображения из конкретного контейнера
+
+✔ Использовать `subjectBeginsWith` для контейнера  
+✔ Использовать `subjectEndsWith` для `.jpg`  
+✘ Не использовать advanced-фильтры (менее эффективно)
+
+Почему: subject-фильтры быстрее и дешевле по вычислениям.
+
+---
+
+### Сценарий 2: Фильтрация по значению поля внутри `data`
+
+✔ Использовать расширенные фильтры с подходящим оператором  
+✘ Не пытаться использовать subject-фильтры для полей `data`
+
+Почему: subject работает только с полем `subject`, а не с содержимым события.
+
+---
+
+### Сценарий 3: Оптимизация производительности
+
+✔ Сначала ограничить события по типу (самый быстрый фильтр)  
+✔ Использовать subject вместо advanced, если возможно  
+✘ Не использовать 25 advanced-фильтров, если задачу можно решить проще
+
+На экзамене часто проверяется умение выбрать **самый эффективный вариант**, а не просто «работающий».
+
+---
+
+### Сценарий 4: Несколько условий
+
+✔ Можно комбинировать Event Type + Subject + Advanced  
+✔ Все условия должны выполняться (логика AND)
+
+Важно: если хотя бы одно условие не выполняется — событие не будет доставлено.
+
+---
+
+## Что обязательно запомнить
+
+- **Event Type** — самый эффективный фильтр
+- **Subject** — чувствителен к регистру, работает по префиксу/суффиксу
+- **Advanced** — максимум 25 условий, самый ресурсоёмкий
+- **Операторы** — знать базовые:  
+  `NumberGreaterThan`, `StringContains`, `StringIn`, `BoolEquals`, `IsNullOrUndefined`
+- **Порядок выполнения** — Type → Subject → Advanced
+- **Все фильтры работают по логике AND**
+- Если список типов событий пуст — будут приниматься **все типы событий**
+
+---
+
+## Финальный совет
+
+В вопросах AZ-204 почти всегда нужно выбрать:
+
+- наиболее производительный вариант
+- минимально сложную конфигурацию
+- правильный тип фильтра для конкретного поля
+
+Думайте не только «работает ли», но и «оптимально ли».
 ### Quick Command Reference
 
 ```bash
@@ -774,34 +936,70 @@ az eventgrid event-subscription create \
 
 ---
 
-## Summary
+## Итог
 
-**Filter Types:**
-- **Event Type**: Filter by event type (fastest)
-- **Subject**: Filter by subject prefix or suffix
-- **Advanced**: Filter by data field values (most flexible)
+## Типы фильтрации
 
-**Subject Filtering:**
-- `subjectBeginsWith`: Prefix matching (e.g., container path)
-- `subjectEndsWith`: Suffix matching (e.g., file extension)
-- Case-sensitive string matching
+- **Event Type** — фильтрация по типу события (самый быстрый вариант)
+- **Subject** — фильтрация по префиксу или суффиксу поля `subject`
+- **Advanced** — фильтрация по значениям полей внутри `data` (самый гибкий механизм)
 
-**Advanced Filtering:**
-- **Operators**: Number (>, <, =), String (contains, begins/ends with), Boolean, Null
-- **Limits**: 25 filters max per subscription
-- **Data Fields**: Filter by any field in event data
+---
 
-**Best Practices:**
-- ✅ Design hierarchical subjects for flexible filtering
-- ✅ Use event type filters when possible (most efficient)
-- ✅ Combine filters for precise routing
-- ✅ Test filters with sample events
-- ✅ Use multiple subscriptions for different endpoints
-- ❌ Avoid complex filtering in handler code
-- ❌ Don't exceed 25 advanced filters per subscription
+## Фильтрация по Subject
 
-**Common Patterns:**
-- Images only: `--subject-ends-with .jpg`
-- Specific container: `--subject-begins-with /blobServices/default/containers/images/`
-- Large files: `--advanced-filter data.contentLength NumberGreaterThan 1048576`
-- Specific content type: `--advanced-filter data.contentType StringIn image/jpeg`
+- `subjectBeginsWith` — сопоставление по префиксу (например, путь контейнера)
+- `subjectEndsWith` — сопоставление по суффиксу (например, расширение файла)
+- Сопоставление строк **чувствительно к регистру**
+
+Subject-фильтрация особенно эффективна, если структура `subject` продумана заранее.
+
+---
+
+## Расширенная фильтрация (Advanced)
+
+- **Операторы**:
+    - Числовые (>, <, ≥, ≤, In, NotIn)
+    - Строковые (contains, beginsWith, endsWith, In)
+    - Boolean
+    - Проверка на null
+
+- **Ограничения**:
+    - максимум 25 условий на подписку
+
+- **Поля данных**:  
+  Можно фильтровать по любому полю внутри `data` события.
+
+---
+
+## Лучшие практики
+
+✅ Проектируйте иерархические `subject`, чтобы упростить фильтрацию  
+✅ Используйте фильтр по типу события, когда это возможно (самый эффективный способ)  
+✅ Комбинируйте фильтры для точной маршрутизации  
+✅ Тестируйте фильтры на примерах событий  
+✅ Используйте несколько подписок для разных конечных точек
+
+❌ Не переносите сложную фильтрацию в код обработчика  
+❌ Не превышайте лимит в 25 advanced-фильтров на подписку
+
+---
+
+## Распространённые паттерны
+
+- Только изображения: фильтрация по суффиксу `.jpg`
+- Конкретный контейнер: фильтрация по префиксу пути контейнера
+- Большие файлы: фильтрация по `data.contentLength` с условием больше заданного значения
+- Определённый тип контента: фильтрация по `data.contentType` с использованием строкового оператора
+
+---
+
+## Ключевая идея
+
+Всегда выбирайте:
+
+- самый простой возможный фильтр
+- самый ранний уровень фильтрации (Type → Subject → Advanced)
+- минимально необходимое количество условий
+
+Эффективная фильтрация — это не только корректность, но и производительность архитектуры.

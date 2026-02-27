@@ -1,30 +1,78 @@
 # Event Hubs Capture
 
-## What is Event Hubs Capture?
+## Что такое Event Hubs Capture?
 
-**Event Hubs Capture** is an integrated feature that automatically captures streaming data from Event Hubs and delivers it to **Azure Blob Storage** or **Azure Data Lake Storage** in **Apache Avro** format.
+**Event Hubs Capture** — встроенная функция, которая автоматически сохраняет потоковые данные из Event Hubs в:
 
-### Key Benefits
+- **Azure Blob Storage**
+- **Azure Data Lake Storage**
 
-- **Automatic**: No code required, enable via Azure Portal or CLI
-- **Scalable**: Handles millions of events per second
-- **Cost-Effective**: Uses Event Hubs' internal storage (bypasses TU egress quota)
-- **Time-Based**: Capture based on time window or data size
-- **Durable**: Long-term storage for batch processing and compliance
-- **Flexible**: Process captured files with any Avro-compatible tool
+Данные сохраняются в формате **Apache Avro**.
 
-### Use Cases
-
-| Use Case | Description | Example |
-|----------|-------------|---------|
-| **Data Lake** | Build data lake for analytics | Store IoT telemetry for ML training |
-| **Compliance** | Long-term retention for regulatory requirements | Financial transaction logs (7 years) |
-| **Batch Processing** | Periodic batch analytics | Daily aggregation with Spark/Databricks |
-| **Backup** | Archive streaming data | Disaster recovery, replay scenarios |
-| **Cold Storage** | Cost-effective long-term storage | Archive old events to Cool/Archive tier |
-| **Hybrid Processing** | Combine real-time + batch (Lambda architecture) | Real-time alerts + daily reports |
+Capture работает без написания кода — достаточно включить его в настройках.
 
 ---
+
+# Ключевые преимущества
+
+- **Автоматическая работа**  
+  Включается через Azure Portal или CLI
+
+- **Масштабируемость**  
+  Поддерживает миллионы событий в секунду
+
+- **Экономичность**  
+  Использует внутреннее хранилище Event Hubs  
+  (не расходует TU egress)
+
+- **Триггер по времени или размеру**  
+  Захват по таймеру или при достижении объёма данных
+
+- **Надёжность**  
+  Подходит для долгосрочного хранения
+
+- **Гибкость**  
+  Файлы можно обрабатывать любыми Avro-совместимыми инструментами
+
+---
+
+# Сценарии использования
+
+| Сценарий | Описание | Пример |
+|------------|-----------|---------|
+| **Data Lake** | Построение аналитического хранилища | Хранение IoT-телеметрии для ML |
+| **Compliance** | Долгосрочное хранение | Финансовые транзакции (7 лет) |
+| **Batch Processing** | Периодическая аналитика | Ежедневная агрегация через Spark |
+| **Backup** | Архивация потоков | Disaster recovery |
+| **Cold Storage** | Дешёвое долгосрочное хранение | Перенос в Cool/Archive tier |
+| **Hybrid Processing** | Real-time + batch | Мгновенные алерты + ежедневные отчёты |
+
+---
+
+## Архитектурный акцент
+
+Event Hubs Capture используется в:
+
+- Lambda architecture
+- Streaming + Data Lake pipeline
+- Архивировании потоковых данных
+- Replay-сценариях
+
+Это способ превратить поток в файловое хранилище.
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Capture сохраняет данные в Avro
+- Работает с Blob Storage и Data Lake
+- Не требует кода
+- Не расходует egress TU
+- Может запускаться по времени или размеру
+
+Если в вопросе говорится об автоматической архивации потоков — правильный ответ — Event Hubs Capture.
 
 ## How Event Hubs Capture Works
 
@@ -80,37 +128,87 @@
         └────────────────────────────────────┘
 ```
 
-### Capture Process Flow
+# Процесс работы Event Hubs Capture
 
-1. **Events Arrive**: Producers send events to Event Hubs
-2. **Internal Storage**: Events stored in Event Hubs internal time-retention store
-3. **Capture Trigger**: Time window OR size threshold reached (first wins)
-4. **File Creation**: Events written to Avro file
-5. **Upload**: File uploaded to Blob Storage or Data Lake
-6. **Empty Files**: Empty file created if no events during time window
+## Flow Capture
 
-**Important Notes:**
-- ⚠️ Capture does NOT consume throughput units (egress quota)
-- ✅ Capture operates directly from internal storage
-- ✅ No impact on real-time consumers
-- ✅ Capture happens per partition independently
+1️⃣ **События поступают**  
+Producers отправляют события в Event Hubs.
+
+2️⃣ **Внутреннее хранение**  
+События сохраняются во внутреннем time-retention store.
+
+3️⃣ **Триггер Capture**  
+Срабатывает при:
+- достижении временного окна  
+  или
+- достижении порога по размеру  
+  (что наступит раньше)
+
+4️⃣ **Создание файла**  
+События записываются в файл формата Avro.
+
+5️⃣ **Загрузка**  
+Файл отправляется в:
+- Azure Blob Storage  
+  или
+- Azure Data Lake Storage
+
+6️⃣ **Пустые файлы**  
+Если в течение временного окна не было событий, создаётся пустой файл.
 
 ---
 
-## Apache Avro Format
+## Важные замечания
 
-**Apache Avro** is a compact, fast, binary data serialization format with inline schema.
+- ⚠️ Capture **не расходует Throughput Units (egress)**
+- ✅ Работает напрямую из внутреннего хранилища
+- ✅ Не влияет на real-time consumers
+- ✅ Выполняется **независимо для каждой partition**
 
-### Why Avro?
+---
 
-| Feature | Benefit |
-|---------|---------|
-| **Compact** | Binary format (smaller than JSON/XML) |
-| **Fast** | Efficient serialization/deserialization |
-| **Schema Evolution** | Add/remove fields without breaking compatibility |
-| **Self-Describing** | Schema embedded in file |
-| **Cross-Language** | Supported by many languages (C#, Java, Python, etc.) |
-| **Splittable** | Works well with MapReduce/Spark |
+# Формат Apache Avro
+
+**Apache Avro** — компактный бинарный формат сериализации данных со встроенной схемой.
+
+---
+
+## Почему используется Avro?
+
+| Свойство | Преимущество |
+|------------|--------------|
+| **Компактность** | Бинарный формат меньше JSON/XML |
+| **Производительность** | Быстрая сериализация и десериализация |
+| **Эволюция схемы** | Можно добавлять/удалять поля без нарушения совместимости |
+| **Self-Describing** | Схема встроена в файл |
+| **Кросс-платформенность** | Поддержка C#, Java, Python и др. |
+| **Splittable** | Подходит для MapReduce и Spark |
+
+---
+
+## Архитектурный смысл
+
+Avro + Capture позволяет:
+
+- Строить Data Lake
+- Поддерживать replay сценарии
+- Реализовать batch analytics
+- Обеспечить compliance-хранение
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Capture создаёт Avro-файлы
+- Работает по времени или размеру
+- Не использует egress TU
+- Выполняется по partition
+- Создаёт пустые файлы при отсутствии событий
+
+Если в вопросе речь об автоматическом архивировании потоков в Data Lake — это Event Hubs Capture.
 
 ### Avro File Structure
 
@@ -179,26 +277,66 @@
 }
 ```
 
-**Field Descriptions:**
+# Описание полей Avro-файла Capture
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `SequenceNumber` | long | Unique sequence number within partition |
-| `Offset` | string | Event offset in partition log |
-| `EnqueuedTimeUtc` | string | UTC timestamp when event was enqueued |
-| `SystemProperties` | map | System-assigned properties |
-| `Properties` | map | User-defined application properties |
-| `Body` | bytes | Event body (payload) |
+| Поле | Тип | Описание |
+|------|------|-----------|
+| `SequenceNumber` | long | Уникальный порядковый номер события внутри partition |
+| `Offset` | string | Смещение события в журнале partition |
+| `EnqueuedTimeUtc` | string | Время добавления события (UTC) |
+| `SystemProperties` | map | Системные свойства, назначенные Event Hubs |
+| `Properties` | map | Пользовательские свойства приложения |
+| `Body` | bytes | Тело события (payload) |
 
 ---
 
-## Capture Configuration
+## Что важно понимать
 
-### Capture Windowing
+- `SequenceNumber` и `Offset` используются для отслеживания позиции
+- `EnqueuedTimeUtc` важен для аналитики по времени
+- `SystemProperties` содержит служебную информацию
+- `Properties` — custom metadata
+- `Body` — фактические данные события
 
-**Capture triggers** based on **first wins policy**:
-- **Time Window**: Capture after X minutes (1-15 minutes)
-- **Size Window**: Capture after X MB (10-500 MB)
+---
+
+# Настройка Capture
+
+## Windowing (Окна захвата)
+
+Capture использует принцип **first wins policy**:
+
+Файл создаётся при наступлении первого из условий:
+
+- **Time Window**  
+  Захват через X минут  
+  (от 1 до 15 минут)
+
+- **Size Window**  
+  Захват при достижении X MB  
+  (от 10 до 500 MB)
+
+---
+
+## Архитектурный смысл
+
+- Маленькое time window → больше файлов
+- Большое size window → меньше файлов, выше задержка
+- Выбор зависит от аналитических требований
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Capture работает по принципу «что наступит раньше»
+- Time window: 1–15 минут
+- Size window: 10–500 MB
+- Capture выполняется отдельно для каждой partition
+- Формат хранения — Avro
+
+Если в вопросе говорится о периодическом создании файлов из потока — это Capture + windowing.
 
 **Example Scenarios:**
 
@@ -250,32 +388,67 @@ You can add a custom prefix:
 → mydata/{Namespace}/{EventHub}/{PartitionId}/{Year}/{Month}/{Day}/{Hour}/{Minute}/{Second}
 ```
 
-### Configuration Parameters
+### Параметры конфигурации (Event Hubs Capture)
 
-| Parameter | Description | Range | Recommendation |
-|-----------|-------------|-------|----------------|
-| **Time Window** | Minutes between captures | 1-15 minutes | 5-10 min (balance latency & file count) |
-| **Size Window** | MB before capture | 10-500 MB | 100-300 MB (optimize for processing) |
-| **Skip Empty** | Create empty files? | true/false | false (maintain predictable cadence) |
+| Параметр | Описание | Диапазон | Рекомендация |
+|-----------|----------|-----------|---------------|
+| **Time Window** | Интервал времени между операциями захвата (capture) | 1–15 минут | 5–10 минут (баланс между задержкой и количеством файлов) |
+| **Size Window** | Размер данных (в МБ), после которого выполняется захват | 10–500 МБ | 100–300 МБ (оптимально для последующей обработки) |
+| **Skip Empty** | Создавать ли пустые файлы при отсутствии событий | true / false | false (предсказуемая структура и отсутствие лишних файлов) |
 
 ---
 
-## Enable Capture
+## Включение Capture
 
-### Azure Portal
+Event Hubs Capture позволяет автоматически сохранять поток событий в:
 
-1. Navigate to Event Hubs namespace
-2. Select your Event Hub
-3. Select **Capture** under Settings
-4. Toggle **On**
-5. Configure:
-   - **Time window**: 5 minutes (example)
-   - **Size window**: 100 MB (example)
-   - **Capture provider**: Azure Storage Blob or Data Lake
-   - **Storage account**: Select or create
-   - **Container**: Specify container name
-   - **Naming format**: Default or custom
-6. Click **Save**
+- Azure Storage Blob
+- Azure Data Lake
+
+Это часто используется для:
+- аналитики
+- архивирования
+- последующей batch-обработки
+- интеграции с системами обработки больших данных
+
+---
+
+### Настройка через Azure Portal
+
+1. Перейдите в **Event Hubs namespace**
+2. Выберите нужный **Event Hub**
+3. В разделе **Settings** выберите **Capture**
+4. Включите переключатель **On**
+5. Настройте параметры:
+
+    - **Time window**: 5 минут (пример)
+    - **Size window**: 100 МБ (пример)
+    - **Capture provider**: Azure Storage Blob или Data Lake
+    - **Storage account**: выбрать существующий или создать новый
+    - **Container**: указать имя контейнера
+    - **Naming format**: использовать стандартный или задать пользовательский
+
+6. Нажмите **Save**
+
+---
+
+## Практические рекомендации для AZ-204
+
+- Capture работает на уровне Event Hub (не namespace).
+- Файл создаётся при достижении **Time Window ИЛИ Size Window** (что произойдёт раньше).
+- Включённый Skip Empty = false помогает поддерживать регулярный график файлов.
+- Capture используется для интеграции с аналитическими сервисами (например, Spark, Synapse).
+
+---
+
+## Что важно запомнить
+
+- Capture — это автоматический механизм сохранения потока событий.
+- Поддерживается Blob Storage и Data Lake.
+- Конфигурация включает временное окно и размер окна.
+- Файлы формируются по принципу "что наступит раньше — время или размер".
+
+Эта тема часто встречается в вопросах про потоковую обработку и интеграцию Event Hubs с аналитическими системами.
 
 ### Azure CLI
 
@@ -664,89 +837,114 @@ AzureDiagnostics
 
 ---
 
-## Best Practices
+## Лучшие практики (Event Hubs Capture)
 
-### Configuration
+### Конфигурация
 
-1. **Time Window**
-   - Shorter (1-5 min): Lower latency, more files
-   - Longer (10-15 min): Fewer files, higher latency
-   - **Recommendation**: 5 minutes for most scenarios
+1. **Time Window (временное окно)**
+    - Короткое (1–5 мин): ниже задержка, больше файлов
+    - Длинное (10–15 мин): меньше файлов, выше задержка
+    - **Рекомендация**: 5 минут для большинства сценариев
 
-2. **Size Window**
-   - Smaller (10-50 MB): More files, faster processing startup
-   - Larger (100-500 MB): Fewer files, better batch efficiency
-   - **Recommendation**: 100-300 MB for Spark/Databricks
+2. **Size Window (размер окна)**
+    - Малый размер (10–50 МБ): больше файлов, быстрее старт обработки
+    - Большой размер (100–500 МБ): меньше файлов, выше эффективность batch-обработки
+    - **Рекомендация**: 100–300 МБ для Spark / Databricks
 
-3. **Empty Files**
-   - Keep enabled (skipEmptyArchives = false)
-   - Provides predictable cadence
-   - Easier monitoring and automation
+3. **Пустые файлы (Empty Files)**
+    - Рекомендуется оставить создание пустых файлов включённым (`skipEmptyArchives = false`)
+    - Обеспечивает предсказуемую периодичность
+    - Упрощает мониторинг и автоматизацию
 
-4. **Partitions**
-   - Each partition creates separate files
-   - More partitions = more files
-   - Balance partition count with processing parallelism
-
-### Processing
-
-1. **Incremental Processing**
-   - Track last processed file timestamp
-   - Process only new files
-   - Use watermarking in Spark Structured Streaming
-
-2. **Parallel Processing**
-   - Process partitions in parallel
-   - Use Spark/Databricks for scalability
-   - One executor per partition for optimal performance
-
-3. **Error Handling**
-   - Handle corrupted/incomplete files
-   - Implement retry logic
-   - Log failed files for manual review
-
-4. **Schema Evolution**
-   - Use Avro schema evolution features
-   - Handle backward/forward compatibility
-   - Version your schemas
-
-### Cost Optimization
-
-1. **Storage Tier**
-   - Use lifecycle management
-   - Cool tier for 30-90 day retention
-   - Archive tier for compliance (>90 days)
-
-2. **Compression**
-   - Avro files are already compressed
-   - Consider gzip for additional compression
-   - Trade-off: storage vs CPU
-
-3. **Retention**
-   - Delete old files if not needed
-   - Balance between retention requirements and cost
-
-4. **Naming Convention**
-   - Use consistent naming for easier management
-   - Include metadata in folder structure
-   - Optimize for query patterns (partition by date)
+4. **Партиции (Partitions)**
+    - Каждая партиция создаёт отдельные файлы
+    - Больше партиций → больше файлов
+    - Важно балансировать количество партиций и уровень параллелизма обработки
 
 ---
 
-## Troubleshooting
+## Обработка данных (Processing)
 
-### Common Issues
+1. **Инкрементальная обработка**
+    - Отслеживайте timestamp последнего обработанного файла
+    - Обрабатывайте только новые файлы
+    - Используйте watermarking в Spark Structured Streaming
 
-**Issue 1: No files created**
+2. **Параллельная обработка**
+    - Обрабатывайте партиции параллельно
+    - Используйте Spark / Databricks для масштабируемости
+    - Оптимально — один executor на партицию
 
-**Symptoms:**
-- Capture enabled, but no files in storage
+3. **Обработка ошибок**
+    - Обрабатывайте повреждённые или неполные файлы
+    - Реализуйте retry-логику
+    - Логируйте проблемные файлы для ручного анализа
 
-**Possible Causes:**
-- No events published to Event Hub
-- Storage account connection issues
-- Incorrect permissions
+4. **Эволюция схемы (Schema Evolution)**
+    - Используйте возможности Avro для эволюции схем
+    - Обеспечивайте backward / forward compatibility
+    - Версионируйте схемы
 
+---
+
+## Оптимизация затрат (Cost Optimization)
+
+1. **Storage Tier**
+    - Используйте lifecycle management
+    - Cool tier — для хранения 30–90 дней
+    - Archive tier — для длительного хранения (> 90 дней, compliance)
+
+2. **Сжатие (Compression)**
+    - Avro уже использует встроенное сжатие
+    - Можно дополнительно применять gzip
+    - Балансируйте экономию хранения и нагрузку на CPU
+
+3. **Retention**
+    - Удаляйте старые файлы при отсутствии требований к хранению
+    - Балансируйте требования по хранению и стоимость
+
+4. **Именование файлов (Naming Convention)**
+    - Используйте единый стандарт именования
+    - Добавляйте метаданные в структуру папок
+    - Оптимизируйте структуру под шаблоны запросов (например, партиционирование по дате)
+
+---
+
+## Устранение проблем (Troubleshooting)
+
+### Распространённые проблемы
+
+---
+
+### Проблема 1: Файлы не создаются
+
+**Симптомы:**
+- Capture включён
+- В хранилище отсутствуют файлы
+
+**Возможные причины:**
+
+- В Event Hub не публикуются события
+- Проблемы подключения к Storage Account
+- Недостаточные права доступа
+
+**Что проверить:**
+
+- Поступают ли события в Event Hub (метрики Incoming Messages)
+- Корректность connection string / managed identity
+- Наличие прав на запись в контейнер
+- Не превышены ли квоты Storage
+
+---
+
+## Что важно для AZ-204
+
+- Capture работает на уровне Event Hub
+- Файлы создаются по принципу: **Time Window ИЛИ Size Window (что раньше)**
+- Количество партиций влияет на количество создаваемых файлов
+- Capture часто используется для интеграции с аналитическими системами
+
+Понимание конфигурации Capture и её влияния на производительность и стоимость — важный аспект потоковой архитектуры в Azure.
 **Resolution:**
 ```bash
 # Check Event Hub metrics
@@ -767,31 +965,68 @@ az eventhubs eventhub show \
   --query captureDescription
 ```
 
-**Issue 2: Capture lag**
+---
 
-**Symptoms:**
-- Events captured with significant delay
+### Проблема 2: Задержка Capture (Capture Lag)
 
-**Possible Causes:**
-- Time window too long
-- Size window too large
-- Low throughput
+**Симптомы:**
+- События сохраняются в хранилище с заметной задержкой
+- Файлы появляются позже ожидаемого времени
 
-**Resolution:**
-- Reduce time window (e.g., 5 min → 2 min)
-- Reduce size window (e.g., 500 MB → 100 MB)
-- Monitor "CaptureBacklog" metric
+**Возможные причины:**
 
-**Issue 3: Cannot read Avro files**
+- Слишком большое значение **Time Window**
+- Слишком большой **Size Window**
+- Низкая пропускная способность (low throughput) — данные медленно накапливаются
 
-**Symptoms:**
-- Errors when reading Avro files
+**Решение:**
 
-**Possible Causes:**
-- Incorrect Avro library version
-- File not fully written
-- Corrupted file
+- Уменьшить временное окно (например, с 5 мин → до 2 мин)
+- Уменьшить размер окна (например, с 500 МБ → до 100 МБ)
+- Отслеживать метрику **CaptureBacklog** в Azure Monitor
+- Проверить метрики Incoming Messages и Throughput Units
 
+📌 Важно понимать: файл создаётся только при достижении Time Window или Size Window.  
+Если поток событий небольшой, Size Window может долго не достигаться.
+
+---
+
+### Проблема 3: Невозможно прочитать Avro-файлы
+
+**Симптомы:**
+- Ошибки при чтении Avro-файлов
+- Ошибки десериализации
+- Исключения при загрузке в Spark / Databricks
+
+**Возможные причины:**
+
+- Используется несовместимая версия Avro-библиотеки
+- Файл ещё не полностью записан (процесс Capture не завершён)
+- Файл повреждён
+
+**Решение:**
+
+- Проверить совместимость версии Avro (особенно при использовании schema evolution)
+- Убедиться, что файл полностью сформирован перед чтением
+- Проверить размер файла (не нулевой ли он)
+- Перепроверить корректность lifecycle и прав доступа
+- Использовать инструменты проверки Avro (например, avro-tools)
+
+📌 Для production-сценариев рекомендуется:
+- Реализовать retry при чтении
+- Игнорировать частично записанные файлы
+- Логировать проблемные файлы для последующего анализа
+
+---
+
+## Что важно для AZ-204
+
+- Capture может создавать задержку при больших окнах
+- Метрики (особенно CaptureBacklog) помогают диагностировать проблему
+- Avro используется по умолчанию для хранения событий
+- Нужно учитывать совместимость схем и корректность обработки файлов
+
+Понимание причин задержек и проблем с Avro-файлами — важная часть диагностики потоковых решений в Azure.
 **Resolution:**
 ```python
 # Check file size (incomplete files may be 0 bytes)
@@ -813,51 +1048,99 @@ except Exception as e:
 
 ---
 
-## Exam Tips for AZ-204
+## Советы к экзамену AZ-204 (Event Hubs Capture)
 
-### Key Concepts to Remember
+## Ключевые концепции
 
-1. **Capture** = automatic capture to storage (no code required)
-2. **Format** = Apache Avro (compact, fast, binary with schema)
-3. **Windowing** = time OR size (first wins policy)
-4. **No TU cost** = Capture bypasses egress quota
-5. **Destinations** = Azure Blob Storage or Data Lake Storage
-6. **Naming** = `{Namespace}/{EventHub}/{PartitionId}/{Year}/{Month}/{Day}/{Hour}/{Minute}/{Second}`
-7. **Empty files** = Created when no events (predictable cadence)
+1. **Capture** — автоматическое сохранение событий в хранилище  
+   (не требует написания кода)
 
-### Common Exam Scenarios
+2. **Формат** — Apache Avro
+    - компактный
+    - быстрый
+    - бинарный
+    - содержит схему (self-describing)
 
-**Scenario 1**: Need long-term storage for compliance
-- ✅ Enable Event Hubs Capture
-- ✅ Configure retention period
-- ✅ Use lifecycle management (Cool/Archive tiers)
+3. **Оконная модель (Windowing)** —  
+   используется правило **Time OR Size (что наступит раньше)**
 
-**Scenario 2**: Build data lake for analytics
-- ✅ Capture to Data Lake Storage
-- ✅ Process with Databricks/Synapse
-- ✅ Query with Spark SQL
+4. **Нет дополнительных TU-затрат** —  
+   Capture не расходует egress-квоту Throughput Units
 
-**Scenario 3**: Lambda architecture (real-time + batch)
-- ✅ Real-time consumers for immediate processing
-- ✅ Capture for batch analytics
-- ✅ Both read same events independently
+5. **Назначение (Destinations)** —
+    - Azure Blob Storage
+    - Azure Data Lake Storage
 
-**Scenario 4**: Optimize capture costs
-- ✅ Capture bypasses TU egress quota (no additional TU cost)
-- ✅ Use storage lifecycle management
-- ✅ Balance time/size window for file count
+6. **Формат именования файлов** —  
+   `{Namespace}/{EventHub}/{PartitionId}/{Year}/{Month}/{Day}/{Hour}/{Minute}/{Second}`
 
-### Remember for Exam
+7. **Пустые файлы** —  
+   создаются даже при отсутствии событий (для предсказуемой периодичности)
 
-- **Avro format**: Compact, fast, self-describing
-- **Time window**: 1-15 minutes
-- **Size window**: 10-500 MB
-- **First wins**: Time OR size (whichever comes first)
-- **No TU impact**: Capture uses internal storage
-- **Per partition**: Each partition creates separate files
-- **Empty files**: Maintain predictable cadence
-- **Destinations**: Blob Storage or Data Lake
+---
 
+## Типовые экзаменационные сценарии
+
+### Сценарий 1: Долгосрочное хранение (compliance)
+
+✔ Включить Event Hubs Capture  
+✔ Настроить retention-политику  
+✔ Использовать lifecycle management (Cool / Archive tiers)
+
+---
+
+### Сценарий 2: Построение Data Lake для аналитики
+
+✔ Включить Capture в Data Lake Storage  
+✔ Обрабатывать данные через Databricks / Synapse  
+✔ Выполнять запросы через Spark SQL
+
+---
+
+### Сценарий 3: Lambda-архитектура (real-time + batch)
+
+✔ Реалтайм-консьюмеры для немедленной обработки  
+✔ Capture для batch-аналитики  
+✔ Оба механизма читают одни и те же события независимо
+
+Важно: Capture не мешает обычным consumer group.
+
+---
+
+### Сценарий 4: Оптимизация затрат
+
+✔ Capture не потребляет TU egress-квоту  
+✔ Использовать lifecycle management для хранения  
+✔ Балансировать Time Window и Size Window для контроля количества файлов
+
+---
+
+## Что обязательно помнить на экзамене
+
+- **Avro** — компактный, быстрый, со встроенной схемой
+- **Time Window**: 1–15 минут
+- **Size Window**: 10–500 МБ
+- Принцип: **Time ИЛИ Size (что раньше)**
+- Capture не влияет на Throughput Units
+- Каждая партиция создаёт отдельные файлы
+- Пустые файлы обеспечивают предсказуемую периодичность
+- Поддерживаемые назначения: Blob Storage или Data Lake
+
+---
+
+## Экзаменационный лайфхак
+
+Если в вопросе говорится о:
+
+- долгосрочном хранении
+- построении Data Lake
+- batch-аналитике
+- compliance
+- необходимости сохранять все события без написания кода
+
+— почти всегда правильный ответ связан с **Event Hubs Capture**.
+
+Понимание разницы между real-time consumer и Capture — ключевой момент для AZ-204.
 ### Quick Command Reference
 
 ```bash
@@ -889,31 +1172,56 @@ az eventhubs eventhub show \
 
 ---
 
-## Summary
+## Итог
 
-**Event Hubs Capture** automatically captures streaming data to storage for long-term retention and batch analytics.
+**Event Hubs Capture** автоматически сохраняет потоковые данные в хранилище для долгосрочного хранения и batch-аналитики.
 
-**Key Features:**
-- Automatic capture (no code)
-- Apache Avro format
-- Time OR size windowing (first wins)
-- No TU egress cost
-- Blob Storage or Data Lake destinations
+---
 
-**Configuration:**
-- Time window: 1-15 minutes
-- Size window: 10-500 MB
-- Naming: Standard or custom format
-- Empty files: Maintain predictable cadence
+## Ключевые возможности
 
-**Use Cases:**
-- Data lake for batch analytics
-- Compliance and archiving
-- Lambda architecture (real-time + batch)
-- Replay and reprocessing scenarios
+- Автоматический захват событий (без написания кода)
+- Формат Apache Avro
+- Оконная модель: **Time ИЛИ Size (что раньше)**
+- Нет затрат на TU egress
+- Назначение: Blob Storage или Data Lake Storage
 
-**Benefits:**
-- Cost-effective (bypasses TU egress quota)
-- Scalable (millions events/second)
-- Durable (long-term storage)
-- Flexible (process with any Avro-compatible tool)
+---
+
+## Конфигурация
+
+- **Time window**: 1–15 минут
+- **Size window**: 10–500 МБ
+- **Именование**: стандартный или пользовательский формат
+- **Пустые файлы**: обеспечивают предсказуемую периодичность
+
+---
+
+## Основные сценарии использования
+
+- Построение Data Lake для batch-аналитики
+- Долгосрочное хранение и соответствие требованиям compliance
+- Lambda-архитектура (real-time + batch)
+- Повторное воспроизведение и повторная обработка данных
+
+---
+
+## Преимущества
+
+- Экономичность (не расходует TU egress-квоту)
+- Масштабируемость (поддержка миллионов событий в секунду)
+- Надёжность (долговременное хранение)
+- Гибкость (обработка любыми инструментами с поддержкой Avro)
+
+---
+
+## Главное, что нужно помнить для AZ-204
+
+Если требуется:
+
+- сохранять все события автоматически
+- построить аналитическое хранилище
+- обеспечить долгосрочное хранение
+- реализовать batch-обработку
+
+— правильным решением почти всегда будет **Event Hubs Capture**.

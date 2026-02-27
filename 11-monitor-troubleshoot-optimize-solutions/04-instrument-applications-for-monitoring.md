@@ -683,44 +683,68 @@ cartValueMetric.TrackValue(89.50, "USD", "1");
 // Automatically aggregated and sent as single metric point
 ```
 
-## Key Takeaways
+## Основные выводы
 
-✅ **Autoinstrumentation** is the easiest approach (App Service, Functions) - no code changes
+✅ **Autoinstrumentation** — самый простой способ подключения (App Service, Azure Functions), не требует изменений кода
 
-✅ **Manual SDK** provides full control and custom telemetry capabilities
+✅ **Manual SDK** даёт полный контроль и возможность отправлять кастомную телеметрию
 
-✅ **OpenTelemetry** is the vendor-neutral future of observability
+✅ **OpenTelemetry** — vendor-neutral будущее observability
 
-✅ **GetMetric()** is preferred over TrackMetric() for custom metrics (efficient, preaggregated)
+✅ **GetMetric()** предпочтительнее, чем TrackMetric() (эффективнее, использует предагрегацию)
 
-✅ **Telemetry processors** filter and enrich telemetry before sending
+✅ **Telemetry Processors** позволяют фильтровать и обогащать телеметрию перед отправкой
 
-✅ **Correlation** is automatic for HTTP requests, manual for custom dependencies
+✅ **Correlation** работает автоматически для HTTP-запросов, но для кастомных зависимостей требуется ручная настройка
 
-✅ **Sampling** reduces data volume (adaptive sampling recommended)
+✅ **Sampling** снижает объём данных (рекомендуется adaptive sampling)
 
-## AZ-204 Exam Tips
+---
 
-💡 **Autoinstrumentation first**: For App Service/Functions, always choose autoinstrumentation if possible
+## Советы для экзамена AZ-204
 
-💡 **Connection String**: New standard (replaces instrumentation key)
+💡 **Сначала Autoinstrumentation**  
+Если речь идёт об App Service или Functions — чаще всего правильный выбор именно autoinstrumentation.
 
-💡 **TelemetryClient**: Inject via DI in ASP.NET Core (singleton lifetime)
+💡 **Connection String**  
+Современный способ подключения (заменяет instrumentation key).
 
-💡 **Custom Events**: TrackEvent() for business events, GetMetric() for metrics
+💡 **TelemetryClient**  
+В ASP.NET Core внедряется через DI (обычно с lifetime singleton).
 
-💡 **OpenTelemetry**: Know it's supported but Application Insights SDK is still valid
+💡 **Custom Events и Metrics**
+- `TrackEvent()` — для бизнес-событий
+- `GetMetric()` — для кастомных метрик
 
-💡 **Filtering**: Use ITelemetryProcessor to exclude unwanted telemetry
+💡 **OpenTelemetry**  
+Поддерживается, но Application Insights SDK по-прежнему актуален.
 
-## Next Steps
+💡 **Фильтрация телеметрии**  
+Используйте `ITelemetryProcessor` для исключения ненужных данных.
 
-In the next unit, you'll learn:
-- Availability test types and configuration
-- Creating standard tests
+---
+
+## Что дальше
+
+В следующем разделе вы изучите:
+
+- Типы Availability Tests и их настройку
+- Создание Standard tests
 - Custom TrackAvailability tests
-- Multi-region testing
-- Alert configuration
+- Тестирование из нескольких регионов
+- Настройку alert’ов
+
+---
+
+### Экзаменационный акцент
+
+Если в вопросе:
+- нужен самый простой способ подключения → Autoinstrumentation
+- требуется кастомная логика телеметрии → SDK
+- стоит задача снизить стоимость → Sampling + GetMetric()
+- нужно исключить часть телеметрии → Telemetry Processor
+
+Ключ к успеху в AZ-204 — выбирать самый простой и управляемый вариант, если он покрывает требования задачи.
 
 ---
 

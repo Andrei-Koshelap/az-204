@@ -1,29 +1,39 @@
-# Exercise: Send and Receive Messages from Queue Storage
+# Практическое задание: Отправка и получение сообщений в Queue Storage
 
-## Overview
+## Обзор
 
-In this hands-on exercise, you'll create an Azure Storage account with Queue Storage, send messages to a queue, and receive messages using the Azure SDK for .NET. You'll also implement a poison message queue and monitor queue metrics.
+В этом практическом задании вы:
 
-**What you'll learn:**
-- Create storage account and queue
-- Send messages to queue
-- Receive and process messages
-- Handle failed messages (poison queue)
-- Update message visibility timeout
-- Monitor queue depth
-- Clean up resources
+- создадите Azure Storage Account с Queue Storage
+- отправите сообщения в очередь
+- получите и обработаете сообщения через Azure SDK для .NET
+- реализуете обработку ошибок через poison message queue
+- научитесь обновлять visibility timeout
+- промониторите глубину очереди и метрики
+- удалите ресурсы после завершения
 
-**Estimated time:** 20-30 minutes
+**Оценочное время:** 20–30 минут
 
 ---
 
-## Prerequisites
+## Чему вы научитесь
 
-- Azure subscription
-- Azure CLI installed
-- .NET 6.0 or later installed
-- Code editor (VS Code, Visual Studio, or similar)
+- Создавать storage account и очередь
+- Отправлять сообщения в очередь
+- Получать и обрабатывать сообщения
+- Обрабатывать неуспешные сообщения (poison queue)
+- Обновлять visibility timeout сообщения
+- Отслеживать глубину очереди (queue depth)
+- Удалять ресурсы
 
+---
+
+## Предварительные требования
+
+- Подписка Azure
+- Установленный Azure CLI
+- .NET 6.0 или новее
+- Редактор кода (VS Code, Visual Studio и т.п.)
 ---
 
 ## Architecture
@@ -714,46 +724,66 @@ await queueClient.DeleteMessageAsync(message.MessageId, message.PopReceipt);
 ```
 
 ---
+# Ключевые выводы
 
-## Key Takeaways
-
-✅ **Created Azure Queue Storage**
-- Storage account with queues
-- Main queue and poison queue
-
-✅ **Sent messages to queue**
-- Single and batch messages
-- Messages with custom TTL
-- Got message receipts
-
-✅ **Received and processed messages**
-- Two-step dequeue pattern (receive, delete)
-- Visibility timeout prevents double processing
-- Automatic retry on failure
-
-✅ **Handled poison messages**
-- Tracked delivery count
-- Moved to poison queue after 5 retries
-- Processed and logged poison messages
-
-✅ **Extended visibility timeout**
-- Updated message during long processing
-- Prevented timeout expiration
-
-✅ **Monitored queue metrics**
-- Checked message count
-- Alerted on backlog
+## ✅ Создали Azure Queue Storage
+- Storage account с поддержкой очередей
+- Основная очередь и отдельная poison queue
 
 ---
 
-## Exam Tips
+## ✅ Отправили сообщения в очередь
+- Одиночные и batch-сообщения
+- Сообщения с настраиваемым TTL
+- Получены message receipts
 
-1. **Receive makes message invisible** for 30 seconds (default)
-2. **Delete requires MessageId and PopReceipt**
-3. **DequeueCount tracks delivery attempts** - use for poison queue logic
-4. **Update can extend visibility timeout** during processing
-5. **Max 32 messages per receive** operation
-6. **TTL default is 7 days** but can be unlimited
-7. **Always delete after successful processing** to prevent redelivery
+---
 
-**Remember:** The two-step pattern (receive → process → delete) ensures at-least-once delivery with automatic retry on failure!
+## ✅ Получили и обработали сообщения
+- Использован двухшаговый паттерн (receive → delete)
+- Visibility timeout предотвращает повторную обработку
+- При ошибке сообщение автоматически становится доступным повторно
+
+---
+
+## ✅ Обработали poison messages
+- Использовали `DequeueCount` для отслеживания попыток
+- После 5 неудачных попыток переместили сообщение в poison queue
+- Зафиксировали и залогировали проблемные сообщения
+
+---
+
+## ✅ Продлили visibility timeout
+- Обновили сообщение во время длительной обработки
+- Предотвратили истечение времени и повторную доставку
+
+---
+
+## ✅ Мониторили метрики очереди
+- Проверили количество сообщений
+- Настроили контроль backlog
+
+---
+
+# Советы для экзамена AZ-204
+
+1. **Receive делает сообщение невидимым** на 30 секунд (по умолчанию)
+2. **Delete требует MessageId и PopReceipt**
+3. **DequeueCount отслеживает попытки доставки** — используется для poison queue
+4. **UpdateMessageAsync может продлить visibility timeout**
+5. **Максимум 32 сообщения за один receive**
+6. **TTL по умолчанию — 7 дней**, возможно без ограничения
+7. **Всегда удаляйте сообщение после успешной обработки**
+
+---
+
+## Главное, что нужно запомнить
+
+Модель работы очереди:
+
+**Receive → Process → Delete**
+
+Если сообщение не удалено — оно будет доставлено повторно  
+(модель at-least-once delivery с автоматическим retry).
+
+Понимание этого жизненного цикла — обязательный элемент темы Azure Queue Storage для AZ-204.

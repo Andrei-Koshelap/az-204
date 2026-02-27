@@ -1,21 +1,158 @@
-# Exercise: Route Custom Events to Webhook Endpoint
+# Практическое задание: Маршрутизация пользовательских событий в Webhook Endpoint
 
-## Exercise Overview
+## Обзор упражнения
 
-In this hands-on exercise, you will:
-1. Create a custom Event Grid topic
-2. Deploy a webhook endpoint (Azure Function)
-3. Create an event subscription with filters
-4. Publish custom events
-5. Verify event delivery
-6. Test filtering and retry mechanisms
+В этом практическом задании вы выполните полный цикл работы с Azure Event Grid:
 
-**Estimated Time:** 30-40 minutes
+1. Создадите пользовательский Topic (Custom Event Grid Topic)
+2. Развернёте webhook endpoint (Azure Function)
+3. Создадите подписку на события с фильтрацией
+4. Опубликуете пользовательские события
+5. Проверите доставку событий
+6. Протестируете фильтрацию и механизм повторных попыток (retry)
 
-**Prerequisites:**
-- Azure subscription
-- Azure CLI installed
-- Basic knowledge of Azure Functions
+**Оценочное время выполнения:** 30–40 минут
+
+---
+
+## Предварительные требования
+
+- Активная подписка Azure
+- Установленный Azure CLI
+- Базовые знания Azure Functions
+- Понимание принципов event-driven архитектуры
+
+---
+
+## Шаг 1. Создание Custom Event Grid Topic
+
+Создайте пользовательский Topic — это источник событий.
+
+Что важно:
+
+- Custom Topic используется для публикации собственных (application-generated) событий
+- В отличие от системных тем (System Topics), вы полностью контролируете структуру событий
+- Topic будет выступать в роли Publisher в архитектуре
+
+Проверьте после создания:
+- имя ресурса
+- endpoint URL
+- access key (понадобится для публикации событий)
+
+---
+
+## Шаг 2. Развёртывание Webhook Endpoint (Azure Function)
+
+Создайте Azure Function с HTTP-триггером.
+
+Важно:
+
+- Event Grid выполняет проверку endpoint (validation handshake)
+- Функция должна корректно обрабатывать событие валидации
+- Endpoint должен быть публично доступен
+
+После деплоя получите URL функции — он понадобится при создании подписки.
+
+---
+
+## Шаг 3. Создание Event Subscription с фильтрацией
+
+Создайте подписку на события для вашего Custom Topic.
+
+Настройте:
+
+- Тип события (если требуется)
+- Фильтрацию по `subject`
+- При необходимости — Advanced Filtering
+
+Помните:
+
+- Фильтры применяются в порядке: Type → Subject → Advanced
+- Все условия работают по логике AND
+- Максимум 25 advanced-фильтров
+
+На экзамене AZ-204 часто проверяется понимание именно этого шага.
+
+---
+
+## Шаг 4. Публикация пользовательских событий
+
+Опубликуйте тестовые события в Custom Topic.
+
+Убедитесь, что:
+
+- события соответствуют схеме Event Grid
+- указаны корректные `eventType`, `subject`, `data`
+- используются правильные ключи доступа
+
+Можно опубликовать несколько событий, чтобы протестировать фильтрацию.
+
+---
+
+## Шаг 5. Проверка доставки событий
+
+Проверьте:
+
+- Выполняется ли Azure Function
+- Получает ли она только отфильтрованные события
+- Отображаются ли события в логах
+
+Если события не доставляются:
+
+- проверьте фильтры
+- проверьте endpoint validation
+- проверьте статус подписки
+
+---
+
+## Шаг 6. Тестирование фильтрации и механизма повторных попыток
+
+### Проверка фильтрации
+
+- Опубликуйте событие, которое должно пройти фильтр
+- Опубликуйте событие, которое не должно пройти
+
+Убедитесь, что endpoint получает только ожидаемые события.
+
+---
+
+### Проверка retry-механизма
+
+Event Grid автоматически повторяет доставку при ошибках.
+
+Протестируйте:
+
+- временно возвращайте ошибку из webhook
+- проверьте, что Event Grid выполняет повторную попытку
+
+Важно помнить:
+
+- Event Grid использует экспоненциальную стратегию повторов
+- Существует срок хранения события (retry window)
+- После исчерпания попыток событие может быть отправлено в dead-letter endpoint (если настроен)
+
+---
+
+## Что это упражнение закрепляет
+
+- Понимание Custom Topics
+- Настройку Event Subscription
+- Применение фильтров
+- Обработку webhook validation
+- Понимание retry и delivery semantics
+
+---
+
+## Связь с экзаменом AZ-204
+
+Это упражнение охватывает:
+
+- Создание и настройку Event Grid
+- Реализацию webhook endpoint
+- Конфигурацию фильтрации
+- Обработку ошибок доставки
+
+Если вы понимаете каждый этап этого сценария — тема Event Grid для AZ-204 у вас закрыта на хорошем уровне.
 
 ---
 
@@ -776,78 +913,95 @@ echo "✓ Resources deleted"
 
 ---
 
-## Key Takeaways
+## Ключевые выводы (Key Takeaways)
 
-1. **Custom Topics**: Created Event Grid topic for custom events
-2. **Webhook Endpoint**: Deployed Azure Function as event handler
-3. **Event Subscription**: Configured filters for event routing
-4. **Event Publishing**: Published events via Azure CLI and SDK
-5. **Filtering**: Tested event type and subject filtering
-6. **Advanced Features**: Configured dead-letter and batching
-7. **Monitoring**: Verified delivery with metrics and logs
-
----
-
-## Troubleshooting Guide
-
-| Issue | Possible Cause | Solution |
-|-------|---------------|----------|
-| Validation failing | Function not responding | Check function logs, ensure HTTPS |
-| Events not delivered | Filter too restrictive | Review filter configuration |
-| Timeout errors | Function processing > 30s | Implement async processing |
-| 401 errors | Invalid function key | Regenerate and update endpoint |
-| Dead-letter events | Persistent failures | Check dead-letter container, investigate |
+1. **Custom Topics** — создан пользовательский Event Grid Topic для публикации собственных событий
+2. **Webhook Endpoint** — развернута Azure Function в роли обработчика событий
+3. **Event Subscription** — настроена подписка с фильтрацией для маршрутизации событий
+4. **Публикация событий** — отправка событий через Azure CLI и SDK
+5. **Фильтрация** — протестирована фильтрация по типу события и subject
+6. **Дополнительные возможности** — настроены dead-letter и batching
+7. **Мониторинг** — проверена доставка событий через метрики и логи
 
 ---
 
-## Additional Challenges
+## Руководство по устранению проблем (Troubleshooting Guide)
 
-**Challenge 1:** Add authentication to webhook using custom headers
-
-**Challenge 2:** Implement idempotent event processing (track event IDs)
-
-**Challenge 3:** Create multiple subscriptions routing to different functions based on event type
-
-**Challenge 4:** Implement circuit breaker pattern in event handler
-
-**Challenge 5:** Set up automated reprocessing of dead-letter events
+| Проблема | Возможная причина | Решение |
+|-----------|------------------|----------|
+| Ошибка валидации (Validation failing) | Функция не отвечает | Проверить логи функции, убедиться в использовании HTTPS |
+| События не доставляются | Слишком строгая фильтрация | Проверить конфигурацию фильтров |
+| Ошибки таймаута | Обработка функции > 30 секунд | Реализовать асинхронную обработку |
+| Ошибка 401 | Неверный ключ функции | Сгенерировать новый ключ и обновить endpoint |
+| События попадают в dead-letter | Постоянные ошибки доставки | Проверить контейнер dead-letter и проанализировать причину |
 
 ---
 
-## Exam Tips
+## Дополнительные задания (Additional Challenges)
 
-**Key Points to Remember:**
-- Custom topics must be explicitly created
-- Webhooks require endpoint validation
-- Filters reduce unnecessary event delivery
-- Dead-letter storage requires Azure Storage blob container
-- Retry policy defaults: 30 attempts, 24-hour TTL
-- Maximum event size: 1 MB
-- Billing: 64 KB increments
+**Задание 1:**  
+Добавить аутентификацию webhook через пользовательские HTTP-заголовки
 
-**Common Exam Scenarios:**
-- Creating custom topics for application events
-- Configuring event subscriptions with filters
-- Implementing webhook validation
-- Setting up dead-letter storage
-- Troubleshooting event delivery issues
+**Задание 2:**  
+Реализовать идемпотентную обработку событий (отслеживать `eventId`)
+
+**Задание 3:**  
+Создать несколько подписок с маршрутизацией в разные функции в зависимости от типа события
+
+**Задание 4:**  
+Реализовать паттерн Circuit Breaker в обработчике событий
+
+**Задание 5:**  
+Настроить автоматическую повторную обработку событий из dead-letter
 
 ---
 
-## Summary
+## Советы для экзамена AZ-204
 
-You have successfully:
-✅ Created an Event Grid custom topic
-✅ Deployed a webhook endpoint (Azure Function)
-✅ Created event subscriptions with filtering
-✅ Published custom events
-✅ Verified event delivery
-✅ Configured advanced features (dead-letter, batching)
-✅ Monitored metrics and logs
-✅ Tested retry mechanisms
+### Важно помнить:
 
-**Next Steps:**
-- Explore Event Grid with Azure services (Storage, IoT Hub)
-- Implement advanced filtering scenarios
-- Build production event-driven applications
-- Learn about Event Grid domains for multi-tenant scenarios
+- Custom Topics создаются явно (не автоматически)
+- Webhook требует обязательной endpoint validation
+- Фильтрация снижает лишнюю доставку событий
+- Dead-letter требует контейнер Azure Storage Blob
+- Политика повторных попыток по умолчанию:
+    - до 30 попыток
+    - TTL — 24 часа
+- Максимальный размер события: 1 МБ
+- Биллинг рассчитывается блоками по 64 КБ
+
+---
+
+### Типовые экзаменационные сценарии:
+
+- Создание Custom Topic для событий приложения
+- Настройка подписки с фильтрацией
+- Реализация webhook validation
+- Настройка dead-letter хранения
+- Диагностика проблем доставки событий
+
+---
+
+## Итог
+
+Вы успешно:
+
+✅ Создали пользовательский Event Grid Topic  
+✅ Развернули webhook endpoint (Azure Function)  
+✅ Настроили подписку с фильтрацией  
+✅ Опубликовали пользовательские события  
+✅ Проверили доставку событий  
+✅ Настроили расширенные возможности (dead-letter, batching)  
+✅ Проанализировали метрики и логи  
+✅ Протестировали механизм повторных попыток
+
+---
+
+## Следующие шаги
+
+- Изучить интеграцию Event Grid с Azure Storage и IoT Hub
+- Реализовать более сложные сценарии расширенной фильтрации
+- Построить production-ready event-driven архитектуру
+- Изучить Event Grid Domains для multi-tenant решений
+
+Если вы уверенно понимаете все эти пункты — тема Event Grid для AZ-204 у вас проработана на хорошем уровне.

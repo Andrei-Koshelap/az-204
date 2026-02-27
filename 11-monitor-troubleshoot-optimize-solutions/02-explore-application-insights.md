@@ -119,16 +119,22 @@ Azure Monitor — это единая платформа мониторинга 
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Types in Azure Monitor
+### Типы данных в Azure Monitor
 
 #### 1. **Metrics** (Azure Monitor Metrics)
-Numerical values collected at regular intervals.
+Числовые значения, собираемые через регулярные интервалы времени.
 
-**Characteristics:**
-- Lightweight and fast
-- Support near real-time scenarios
-- Stored for 93 days (standard)
-- Optimized for alerting and dashboards
+**Характеристики:**
+- Лёгковесные и быстро обрабатываются
+- Поддерживают сценарии, близкие к реальному времени (near real-time)
+- Хранятся 93 дня (по умолчанию)
+- Оптимизированы для алёртов и дашбордов
+
+**Дополнительно:**
+- Используются для отслеживания производительности ресурсов (CPU, Memory, Disk I/O, Requests и т.д.)
+- Отлично подходят для построения autoscale-правил
+- Имеют предагрегированную структуру (min, max, avg, count, sum), что ускоряет построение графиков
+- Не предназначены для хранения детализированных логов или сложного текстового анализа
 
 **Examples:**
 ```
@@ -139,13 +145,20 @@ Response Time:  120ms (p50)
 ```
 
 #### 2. **Logs** (Azure Monitor Logs / Log Analytics)
-Event records organized into tables.
+Событийные записи, организованные в таблицы.
 
-**Characteristics:**
-- Rich contextual data
-- Complex queries with KQL
-- Retention: 30 days to 2 years (configurable)
-- Optimized for analysis and investigation
+**Характеристики:**
+- Содержат расширенный контекст (structured + semi-structured данные)
+- Поддерживают сложные запросы с использованием KQL (Kusto Query Language)
+- Срок хранения: от 30 дней до 2 лет (настраивается)
+- Оптимизированы для анализа, расследований и поиска первопричин (root cause analysis)
+
+**Дополнительно:**
+- Подходят для хранения application logs, audit logs, security events
+- Позволяют выполнять join’ы между таблицами, агрегации, фильтрацию и корреляцию событий
+- Хорошо подходят для post-mortem анализа инцидентов
+- Используются в Azure Sentinel и других security-решениях
+- Стоимость зависит от объёма ingest’а и срока хранения
 
 **Examples:**
 ```kusto
@@ -159,49 +172,86 @@ requests
 ```
 
 #### 3. **Activity Logs** (Control Plane)
-Record of operations performed on Azure resources.
+Журнал операций, выполненных над ресурсами Azure (уровень управления — control plane).
 
-**Examples:**
-- Resource created/deleted
-- Configuration changes
-- Role assignments
-- Service health events
+**Примеры:**
+- Создание или удаление ресурса
+- Изменения конфигурации
+- Назначение ролей (RBAC)
+- События, связанные со здоровьем сервисов (Service Health)
 
-### Metrics vs Logs Comparison
+**Дополнительно:**
+- Activity Log фиксирует операции управления (ARM), а не события внутри самого приложения.
+- Используется для аудита и контроля изменений инфраструктуры.
+- Может быть отправлен в Log Analytics, Event Hub или Storage Account для дальнейшего анализа.
+
+---
+
+### Сравнение Metrics и Logs
 
 | Feature | Metrics | Logs |
 |---------|---------|------|
-| **Data Type** | Numerical time-series | Structured/unstructured records |
-| **Collection** | Automatic for platform | Requires diagnostic settings |
-| **Storage** | 93 days (standard) | 30 days to 2 years |
-| **Query Speed** | Very fast (preaggregated) | Depends on data volume |
-| **Use Case** | Dashboards, alerts, trends | Root cause analysis, debugging |
-| **Cost** | Free (platform metrics) | Charged by data ingestion |
-| **Retention** | Fixed | Configurable |
-| **Examples** | CPU%, request rate, duration | Exceptions, traces, custom events |
+| **Тип данных** | Числовые временные ряды | Структурированные / неструктурированные записи |
+| **Сбор данных** | Автоматически для платформенных ресурсов | Требуется настройка diagnostic settings |
+| **Хранение** | 93 дня (по умолчанию) | 30 дней – 2 года |
+| **Скорость запросов** | Очень высокая (предагрегированные данные) | Зависит от объёма данных |
+| **Основное назначение** | Дашборды, алёрты, тренды | Анализ причин сбоев, отладка |
+| **Стоимость** | Бесплатно (платформенные метрики) | Оплата за объём ingest’а |
+| **Retention** | Фиксированное | Настраиваемое |
+| **Примеры** | CPU%, частота запросов, длительность | Исключения, трассировки, кастомные события |
 
-## Application Insights Deep Dive
+**Коротко для экзамена AZ-204:**
+- Metrics → быстро, просто, числовые значения.
+- Logs → глубоко, гибко, аналитика через KQL.
 
-Application Insights is the APM (Application Performance Monitoring) component of Azure Monitor, purpose-built for applications.
+---
 
-### What is Application Insights?
+## Подробно об Application Insights
 
-Application Insights provides:
+Application Insights — это APM (Application Performance Monitoring) компонент Azure Monitor, специально предназначенный для мониторинга приложений.
 
-1. **Proactive Performance Monitoring**
-   - Understand how your application performs before issues occur
-   - Identify trends and anomalies
-   - Smart Detection uses machine learning to alert on unusual patterns
+### Что такое Application Insights?
 
-2. **Reactive Investigation**
-   - Review application execution data to determine the cause of incidents
-   - Detailed telemetry for troubleshooting
-   - Distributed tracing across components
+Application Insights предоставляет:
 
-3. **Usage Analytics**
-   - Understand how users interact with your application
-   - Track custom business events
-   - Funnel analysis and user flows
+---
+
+### 1. **Проактивный мониторинг производительности**
+
+- Понимание того, как приложение работает до возникновения проблем
+- Выявление трендов и аномалий
+- Smart Detection использует машинное обучение для обнаружения нетипичных паттернов
+
+**Дополнительно:**
+- Поддерживает automatic dependency tracking (HTTP, SQL, Azure services)
+- Позволяет отслеживать SLA/SLO через availability tests
+- Интегрируется с алёртами Azure Monitor
+
+---
+
+### 2. **Реактивное расследование инцидентов**
+
+- Анализ данных выполнения приложения для определения причины инцидентов
+- Детальная телеметрия для troubleshooting
+- Distributed tracing между сервисами (особенно важно в микросервисной архитектуре)
+
+**Дополнительно:**
+- Поддержка correlation ID для связывания запросов
+- Просмотр end-to-end цепочки вызовов
+- Интеграция с Log Analytics через KQL
+
+---
+
+### 3. **Аналитика использования (Usage Analytics)**
+
+- Анализ того, как пользователи взаимодействуют с приложением
+- Отслеживание кастомных бизнес-событий
+- Анализ воронок (funnel analysis) и пользовательских сценариев (user flows)
+
+**Дополнительно:**
+- Поддержка custom metrics и custom events
+- Возможность сегментации пользователей
+- Помогает принимать продуктовые решения на основе данных
 
 ### Application Insights Architecture
 
@@ -264,24 +314,30 @@ Application Insights provides:
 └────────────────────────────────────────────┘
 ```
 
-### Key Features
+### Ключевые возможности
 
 #### 1. **Live Metrics Stream**
 
-Real-time telemetry dashboard with sub-second latency.
+Панель телеметрии в реальном времени с задержкой менее секунды.
 
-**What You See:**
-- Incoming request rate (real-time chart)
-- Failed requests (count & list)
-- Outgoing dependency calls
-- Exceptions (as they occur)
-- Memory and CPU usage
-- Server count and health
+**Что отображается:**
+- Частота входящих запросов (график в реальном времени)
+- Ошибочные запросы (количество и список)
+- Исходящие вызовы зависимостей (dependency calls)
+- Исключения (по мере возникновения)
+- Использование памяти и CPU
+- Количество серверов и их состояние
 
-**Use Cases:**
-- Deployment validation (immediate feedback)
-- Load testing (real-time performance)
-- Incident response (live investigation)
+**Сценарии использования:**
+- Проверка деплоя (мгновенная обратная связь после релиза)
+- Нагрузочное тестирование (мониторинг производительности в реальном времени)
+- Реагирование на инциденты (live-расследование)
+
+**Дополнительно:**
+- Не требует сохранения данных в Log Analytics — работает напрямую с потоком телеметрии.
+- Идеально подходит для проверки "живости" приложения сразу после выката.
+- Часто используется при blue/green или canary deployment.
+- Не предназначен для долгосрочного анализа — для этого используются Logs и KQL.
 
 **Example View:**
 ```
@@ -304,14 +360,25 @@ Recent Requests:
 
 #### 2. **Smart Detection**
 
-AI-powered anomaly detection that learns your application's normal behavior.
+Обнаружение аномалий на основе ИИ, которое изучает нормальное поведение вашего приложения.
 
-**What It Detects:**
-- **Failure anomalies**: Unusual increase in failed requests
-- **Performance anomalies**: Abnormal response time degradation
-- **Memory leaks**: Gradual memory consumption increase
-- **Security issues**: Abnormal trace patterns
-- **Slow dependency**: External service degradation
+**Что обнаруживает:**
+- **Аномалии отказов (Failure anomalies)**: Необычный рост количества неуспешных запросов
+- **Аномалии производительности (Performance anomalies)**: Ненормальная деградация времени ответа
+- **Утечки памяти (Memory leaks)**: Постепенное увеличение потребления памяти
+- **Проблемы безопасности (Security issues)**: Нетипичные шаблоны трассировок
+- **Медленные зависимости (Slow dependency)**: Деградация внешних сервисов
+
+**Дополнительно:**
+- Работает автоматически после накопления достаточного объёма телеметрии.
+- Не требует ручной настройки порогов (в отличие от классических алёртов).
+- Использует исторические данные для построения baseline.
+- Отправляет уведомления через Azure Monitor Alerts.
+- Полезен в продакшене, где сложно заранее определить корректные threshold’ы.
+
+**Важно для AZ-204:**
+Smart Detection — это ML-based механизм, который дополняет, но не заменяет обычные alert rules.
+
 
 **Example Alert:**
 ```
@@ -352,27 +419,65 @@ az monitor app-insights component billing update \
 
 #### 3. **Availability Tests** (Synthetic Monitoring)
 
-Proactive monitoring by sending requests to your application from multiple global locations.
+Проактивный мониторинг доступности путём отправки запросов к вашему приложению из разных географических регионов Azure.
 
-**Test Types:**
+**Идея:**
+Вместо ожидания жалоб пользователей система сама регулярно проверяет доступность и корректность ответа приложения.
 
-1. **Standard Test** (Recommended)
-   - Single HTTP/HTTPS request
-   - Validates response code and content
-   - TLS/SSL certificate validation
-   - Custom headers and authentication
-   - Request timeout (default 30s)
+---
 
-2. **URL Ping Test** (Classic, retiring Sept 2026)
-   - Simple HTTP GET request
-   - Response time measurement
-   - Basic content validation
+### Типы тестов
 
-3. **Custom TrackAvailability Test**
-   - Write custom test code
-   - Complex scenarios (multi-step, auth flows)
-   - Use Azure Functions or WebJobs
+#### 1. **Standard Test** (Рекомендуется)
 
+- Один HTTP/HTTPS-запрос
+- Проверка кода ответа и содержимого
+- Валидация TLS/SSL-сертификата
+- Поддержка кастомных заголовков и аутентификации
+- Таймаут запроса (по умолчанию 30 секунд)
+
+**Особенности:**
+- Можно запускать из нескольких регионов одновременно.
+- Позволяет настроить alert при недоступности из определённого количества локаций.
+- Подходит для проверки публичных API и веб-приложений.
+
+---
+
+#### 2. **URL Ping Test** (Классический, будет выведен из эксплуатации в сентябре 2026)
+
+- Простой HTTP GET-запрос
+- Измерение времени ответа
+- Базовая проверка содержимого
+
+**Важно:**
+- Более ограниченный функционал по сравнению со Standard Test.
+- Постепенно заменяется Standard Test.
+
+---
+
+#### 3. **Custom TrackAvailability Test**
+
+- Написание собственного тестового кода
+- Поддержка сложных сценариев (многошаговые процессы, аутентификация, workflow)
+- Реализация через Azure Functions или WebJobs
+
+**Когда использовать:**
+- Нужно протестировать login flow, корзину, оплату и другие multi-step сценарии.
+- Требуется сложная бизнес-логика в проверке.
+
+---
+
+### Дополнительно
+
+- Availability Tests — это synthetic monitoring (искусственная нагрузка), в отличие от real user monitoring.
+- Результаты сохраняются в Application Insights и доступны для анализа через KQL.
+- Часто используются для проверки SLA и глобальной доступности сервиса.
+- Можно комбинировать с alert rules для автоматического реагирования.
+
+**Для AZ-204 важно помнить:**
+- Standard Test — основной и рекомендуемый вариант.
+- Тесты могут запускаться из нескольких регионов.
+- Поддерживается интеграция с alerting и dashboard.
 **Configuration Example:**
 ```bash
 # Create availability test
@@ -457,35 +562,62 @@ Insight: Payment Service is slow due to Stripe API issues (5.2s avg)
 Action: Consider implementing circuit breaker or fallback mechanism
 ```
 
-**Features:**
-- **Component health**: Color-coded status (green/yellow/red)
-- **Performance indicators**: Request rate, response time, failure rate
-- **Dependency tracking**: External services, databases, storage
-- **Click-through**: Drill into specific component for details
-- **Time range**: View historical performance
+**Возможности:**
+- **Состояние компонентов (Component health)**: Цветовая индикация статуса (зелёный / жёлтый / красный)
+- **Показатели производительности (Performance indicators)**: Частота запросов, время ответа, процент ошибок
+- **Отслеживание зависимостей (Dependency tracking)**: Внешние сервисы, базы данных, хранилища
+- **Переход к деталям (Click-through)**: Возможность провалиться в конкретный компонент
+- **Выбор временного диапазона (Time range)**: Просмотр исторических данных
 
-**How It Works:**
-- Uses distributed tracing (correlation IDs)
-- Automatically discovers components via HTTP calls
-- Groups by `cloud_RoleName` property
-- Requires Application Insights SDK installed on all components
+**Как это работает:**
+- Использует distributed tracing (через correlation ID)
+- Автоматически обнаруживает компоненты через HTTP-вызовы
+- Группирует сервисы по свойству `cloud_RoleName`
+- Требует установленного Application Insights SDK на всех компонентах системы
+
+**Дополнительно:**
+- Позволяет быстро определить "узкое место" в микросервисной архитектуре.
+- Особенно полезно при большом количестве сервисов и внешних зависимостей.
+- Работает корректно только при правильной передаче trace context между сервисами.
+
+---
 
 #### 5. **Distributed Tracing**
 
-End-to-end tracking of requests across microservices.
+Сквозное (end-to-end) отслеживание запроса через несколько микросервисов.
 
-**Tracing Concepts:**
+Позволяет понять:
+- где именно возникла задержка,
+- какой сервис вернул ошибку,
+- как распределяется время выполнения по цепочке вызовов.
 
-| Term | Definition | Example |
-|------|------------|---------|
-| **Trace** | Complete request journey | User checkout flow |
-| **Trace ID** | Unique ID for entire operation | `4bf92f3577b34da6a3ce929d0e0e4736` |
-| **Span** | Single operation within trace | SQL query, HTTP call |
-| **Span ID** | Unique ID for each span | `00f067aa0ba902b7` |
-| **Parent Span ID** | Links child to parent | Creates hierarchy |
-| **Operation Name** | Human-readable operation | `POST /api/checkout` |
-| **Duration** | Time span took | 245ms |
+---
 
+### Основные понятия трассировки
+
+| Термин | Определение | Пример |
+|--------|------------|---------|
+| **Trace** | Полный путь запроса | Процесс оформления заказа пользователем |
+| **Trace ID** | Уникальный идентификатор всей операции | `4bf92f3577b34da6a3ce929d0e0e4736` |
+| **Span** | Отдельная операция внутри Trace | SQL-запрос, HTTP-вызов |
+| **Span ID** | Уникальный ID конкретного span | `00f067aa0ba902b7` |
+| **Parent Span ID** | Связывает дочерний span с родительским | Формирует иерархию вызовов |
+| **Operation Name** | Читаемое имя операции | `POST /api/checkout` |
+| **Duration** | Время выполнения операции | 245ms |
+
+---
+
+### Дополнительно
+
+- Distributed tracing основан на стандартах W3C Trace Context.
+- Каждый входящий HTTP-запрос получает уникальный Trace ID.
+- Все downstream-вызовы наследуют этот ID.
+- Позволяет визуализировать "waterfall" выполнения запроса.
+
+**Для AZ-204 важно:**
+- Нужно установить SDK на все сервисы.
+- Корреляция работает автоматически для HTTP и популярных библиотек.
+- Ключевая цель — найти bottleneck и источник ошибок в распределённой системе.
 **Example Distributed Trace:**
 ```
 Trace ID: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -707,20 +839,40 @@ telemetryClient.TrackEvent("AddedToCart",
     });
 ```
 
-### Telemetry Types
+### Типы телеметрии
 
-Application Insights collects multiple types of telemetry:
+Application Insights собирает несколько типов телеметрии:
 
-| Telemetry Type | Description | Examples | Use Case |
-|----------------|-------------|----------|----------|
-| **Requests** | Incoming HTTP requests | GET /api/products, POST /api/orders | Performance, availability |
-| **Dependencies** | Outgoing calls | SQL queries, HTTP calls, Redis | Bottleneck identification |
-| **Exceptions** | Caught and uncaught errors | NullReferenceException, SqlException | Error tracking |
-| **Traces** | Log messages | Debug, Info, Warning, Error | Debugging, diagnostics |
-| **Events** | Custom business events | UserLoggedIn, ProductPurchased | Business analytics |
-| **Metrics** | Custom numerical values | CartValue, ItemsInStock | Business KPIs |
-| **Page Views** | Frontend page loads | Page URL, load time | User experience |
-| **Availability** | Synthetic test results | Test status, location, response time | Uptime monitoring |
+| Тип телеметрии | Описание | Примеры | Назначение |
+|----------------|----------|----------|------------|
+| **Requests** | Входящие HTTP-запросы | GET /api/products, POST /api/orders | Производительность, доступность |
+| **Dependencies** | Исходящие вызовы | SQL-запросы, HTTP-вызовы, Redis | Поиск узких мест |
+| **Exceptions** | Перехваченные и неперехваченные ошибки | NullReferenceException, SqlException | Отслеживание ошибок |
+| **Traces** | Лог-сообщения | Debug, Info, Warning, Error | Диагностика, отладка |
+| **Events** | Кастомные бизнес-события | UserLoggedIn, ProductPurchased | Бизнес-аналитика |
+| **Metrics** | Кастомные числовые показатели | CartValue, ItemsInStock | Бизнес-KPI |
+| **Page Views** | Загрузки страниц фронтенда | URL страницы, время загрузки | Пользовательский опыт |
+| **Availability** | Результаты синтетических тестов | Статус теста, регион, время ответа | Мониторинг доступности |
+
+---
+
+### Дополнительные пояснения
+
+- **Requests + Dependencies** вместе формируют полную картину выполнения запроса (входящий запрос → обращения к БД и внешним сервисам).
+- **Exceptions** автоматически коррелируются с конкретным Request или Dependency.
+- **Traces** часто отправляются через стандартные логгеры (например, ILogger, Log4j и т.д.).
+- **Events и Metrics** — это способ добавить бизнес-контекст к технической телеметрии.
+- **Page Views** актуальны для SPA-приложений и веб-клиентов.
+- **Availability** генерируется системой, а не реальными пользователями.
+
+---
+
+### Для AZ-204 важно помнить
+
+- Application Insights автоматически собирает Requests, Dependencies и Exceptions.
+- Custom Events и Custom Metrics нужно отправлять вручную через SDK.
+- Вся телеметрия может анализироваться через KQL.
+- Все типы телеметрии коррелируются через Trace ID.
 
 ### Getting Started with Application Insights
 
@@ -854,23 +1006,66 @@ az monitor app-insights metrics show \
   --interval PT1H
 ```
 
-### Pricing Considerations
+### Особенности ценообразования
 
-Application Insights uses a Pay-As-You-Go model:
+Application Insights работает по модели Pay-As-You-Go (оплата по фактическому использованию).
 
-| Component | Cost | Included Free |
-|-----------|------|---------------|
-| **Data Ingestion** | $2.30/GB (after free tier) | 5 GB/month (per subscription) |
-| **Data Retention** | $0.10/GB/month (after 90 days) | 90 days included |
-| **Standard Tests** | $0.006/test | None |
-| **Multi-step Tests** | $0.015/test | None |
+| Компонент | Стоимость | Бесплатно включено |
+|------------|------------|-------------------|
+| **Ingestion данных** | $2.30/GB (после бесплатного лимита) | 5 GB/месяц (на подписку) |
+| **Хранение данных** | $0.10/GB/месяц (после 90 дней) | 90 дней включено |
+| **Standard Tests** | $0.006 за тест | Нет |
+| **Multi-step Tests** | $0.015 за тест | Нет |
 
-**Cost Optimization Tips:**
-1. **Use Sampling**: Reduce telemetry volume by 50-90%
-2. **Filter Telemetry**: Exclude unnecessary data (health checks, static files)
-3. **Preaggregated Metrics**: Use GetMetric() instead of TrackMetric()
-4. **Adjust Retention**: Keep only what you need (default 90 days)
-5. **Cap Daily Limit**: Set a daily cap to prevent overage
+> ⚠️ Цены могут меняться — на экзамене важно понимать модель оплаты, а не точные цифры.
+
+---
+
+### Что влияет на стоимость
+
+- Объём отправляемой телеметрии (Requests, Dependencies, Traces и т.д.)
+- Частота логирования
+- Количество Availability Tests
+- Срок хранения данных
+- Уровень детализации логов (особенно Debug)
+
+---
+
+### Рекомендации по оптимизации затрат
+
+1. **Использовать Sampling**  
+   Снижение объёма телеметрии на 50–90%.  
+   Особенно полезно при высокой нагрузке.
+
+2. **Фильтрация телеметрии**  
+   Исключать ненужные данные:
+   - health-check запросы
+   - статические файлы
+   - шумные Debug-логи в продакшене
+
+3. **Использовать предагрегированные метрики**  
+   Предпочитать `GetMetric()` вместо `TrackMetric()` для снижения объёма ingest’а.
+
+4. **Настроить срок хранения (Retention)**  
+   Хранить только необходимый период (по умолчанию — 90 дней).
+
+5. **Ограничить дневной лимит (Daily Cap)**  
+   Установить дневной лимит, чтобы избежать неожиданного перерасхода бюджета.
+
+---
+
+### Практический совет
+
+В продакшене:
+- Включайте sampling.
+- Ограничивайте Debug-логи.
+- Мониторьте ingestion в Cost Analysis.
+- Проверяйте рост телеметрии после каждого релиза.
+
+**Для AZ-204 важно помнить:**
+- Основная статья расходов — Data Ingestion.
+- Sampling — ключевой инструмент оптимизации.
+- Retention сверх 90 дней оплачивается отдельно.
 
 ```bash
 # Set daily cap
@@ -879,49 +1074,76 @@ az monitor app-insights component billing update \
   --resource-group MyResourceGroup \
   --cap 5
 ```
+## Основные выводы
 
-## Key Takeaways
+✅ **Application Insights — это расширение Azure Monitor**, предназначенное для мониторинга производительности приложений (APM)
 
-✅ **Application Insights is an extension of Azure Monitor** designed for application performance monitoring (APM)
+✅ **Три типа данных**:
+- Metrics (быстро, числовые значения)
+- Logs (богатый контекст)
+- Traces (поток выполнения запроса)
 
-✅ **Three data types**: Metrics (fast, numerical), Logs (rich context), Traces (request flow)
+✅ **Live Metrics Stream** обеспечивает видимость в реальном времени с задержкой менее секунды
 
-✅ **Live Metrics Stream** provides real-time visibility with sub-second latency
+✅ **Smart Detection** использует ИИ для автоматического обнаружения аномалий
 
-✅ **Smart Detection** uses AI to automatically detect anomalies
+✅ **Application Map** визуализирует распределённую архитектуру приложения и состояние компонентов
 
-✅ **Application Map** visualizes distributed application architecture and health
+✅ **Availability Tests** проактивно проверяют доступность endpoints из разных регионов мира
 
-✅ **Availability Tests** proactively monitor endpoints from global locations
+✅ **Distributed Tracing** отслеживает запросы между микросервисами через correlation ID
 
-✅ **Distributed Tracing** tracks requests across microservices using correlation IDs
+✅ **Несколько вариантов инструментирования**:
+- Autoinstrumentation (без изменения кода)
+- SDK (кастомизация)
+- OpenTelemetry (стандарт индустрии)
 
-✅ **Multiple instrumentation options**: Autoinstrumentation (no code), SDK (custom), OpenTelemetry
+---
 
-## AZ-204 Exam Tips
+## Советы для экзамена AZ-204
 
-💡 **Autoinstrumentation vs SDK**: For App Service and Azure Functions, always prefer autoinstrumentation (simpler, no code changes)
+💡 **Autoinstrumentation vs SDK**  
+Для App Service и Azure Functions чаще всего правильный ответ — autoinstrumentation (проще, без изменений кода).
 
-💡 **Live Metrics**: Use during deployments for immediate feedback
+💡 **Live Metrics**  
+Используется во время деплоя для мгновенной проверки работоспособности.
 
-💡 **Smart Detection**: Automatically enabled, uses machine learning, no configuration needed
+💡 **Smart Detection**  
+Включён по умолчанию, основан на машинном обучении, не требует настройки.
 
-💡 **Application Map**: Best for troubleshooting distributed applications and identifying bottlenecks
+💡 **Application Map**  
+Лучший инструмент для анализа распределённых приложений и поиска bottleneck’ов.
 
-💡 **Availability Tests**: Use Standard tests (URL ping tests are retiring in 2026)
+💡 **Availability Tests**  
+Используйте Standard Test (URL Ping будет выведен из эксплуатации в 2026 году).
 
-💡 **Connection String**: New standard (replaces instrumentation key)
+💡 **Connection String**  
+Современный стандарт подключения (заменяет instrumentation key).
 
-💡 **Pricing**: First 5 GB/month free, then $2.30/GB
+💡 **Pricing**  
+Первые 5 GB в месяц бесплатно, далее оплата за объём ingest’а.
 
-## Next Steps
+---
 
-In the next unit, you'll learn about:
-- **Log-based metrics vs standard metrics**
-- How preaggregation improves performance
-- When to use each metric type
-- Sampling and filtering strategies
+## Что дальше
 
+В следующем разделе вы узнаете:
+
+- Разницу между **log-based metrics и standard metrics**
+- Как предагрегация повышает производительность
+- Когда использовать каждый тип метрик
+- Стратегии sampling и фильтрации
+
+---
+
+### Финальный акцент для AZ-204
+
+Если в вопросе речь о:
+- мониторинге производительности приложения → Application Insights
+- инфраструктурных метриках → Azure Monitor Metrics
+- глубоком анализе и KQL → Log Analytics
+
+Главное — понимать различия и правильно выбирать инструмент под задачу.
 ---
 
 Когда приложение отправляет телеметрию:

@@ -1,26 +1,45 @@
-# Exercise: Monitor Application with Autoinstrumentation
+# Практическое задание: Мониторинг приложения с Autoinstrumentation
 
-## Overview
+## Обзор
 
-In this hands-on exercise, you'll:
-1. Create an Azure App Service with Application Insights
-2. Deploy a sample web application
-3. Configure autoinstrumentation
-4. Generate traffic and analyze telemetry
-5. Set up availability tests and alerts
+В этом практическом задании вы:
 
-**Estimated Time:** 30 minutes
+1. Создадите Azure App Service с подключённым Application Insights
+2. Развернёте пример веб-приложение
+3. Настроите autoinstrumentation
+4. Сгенерируете трафик и проанализируете телеметрию
+5. Настроите availability tests и алёрты
 
-## Prerequisites
+**Оценочное время:** ~30 минут
 
-- Azure subscription
-- Azure CLI installed
-- .NET SDK 8.0+ installed (or use Azure Cloud Shell)
-- Git (for cloning sample code)
+---
 
-## Exercise Steps
+## Предварительные требования
 
-### Step 1: Create Resource Group
+- Подписка Azure
+- Azure CLI (или Azure Portal)
+- .NET SDK 8.0+ (или Azure Cloud Shell)
+- Git (для получения примера приложения)
+
+---
+
+## Шаги выполнения
+
+### Шаг 1: Создание Resource Group
+
+Создайте новую Resource Group в выбранном регионе (например, West Europe).
+
+Что важно:
+
+- Используйте один и тот же регион для всех ресурсов
+- Название должно быть уникальным в рамках подписки
+- В дальнейшем все ресурсы упражнения будут находиться в этой группе
+
+📌 После завершения практики Resource Group можно удалить, чтобы избежать лишних затрат.
+
+---
+
+В следующем шаге вы создадите App Service и подключите Application Insights через autoinstrumentation.
 
 ```bash
 # Set variables
@@ -447,34 +466,67 @@ az group delete \
 echo "Cleanup initiated"
 ```
 
-## What You Learned
+## Что вы изучили
 
-✅ **Autoinstrumentation**: Enabled monitoring without code changes
-✅ **Live Metrics**: Real-time telemetry visualization
-✅ **Performance Analysis**: Identified slow operations
-✅ **Failure Investigation**: Tracked exceptions and errors
-✅ **Application Map**: Visualized application topology
-✅ **Availability Tests**: Proactive uptime monitoring
-✅ **Alerts**: Configured automated notifications
-✅ **KQL Queries**: Analyzed telemetry data
+✅ **Autoinstrumentation** — подключение мониторинга без изменений кода
 
-## Key Takeaways
+✅ **Live Metrics** — визуализация телеметрии в реальном времени
 
-- Autoinstrumentation is the easiest way to enable monitoring for App Service
-- Live Metrics provides immediate feedback on application health
-- KQL is essential for deep analysis and troubleshooting
-- Availability tests catch issues before users report them
-- Alerts ensure quick response to problems
-- Application Map visualizes distributed application architecture
+✅ **Анализ производительности** — выявление медленных операций
 
-## AZ-204 Exam Tips
+✅ **Расследование сбоев** — отслеживание исключений и ошибок
 
-💡 **Autoinstrumentation**: No code changes, just configuration
-💡 **Connection String**: Passed via app settings
-💡 **Live Metrics**: Real-time, sub-second latency
-💡 **Standard Tests**: Preferred over URL ping tests
-💡 **Alert Thresholds**: Consider multiple test locations for availability
+✅ **Application Map** — визуализация топологии приложения
+
+✅ **Availability Tests** — проактивный мониторинг доступности
+
+✅ **Alerts** — настройка автоматических уведомлений
+
+✅ **KQL-запросы** — анализ телеметрии через Log Analytics
 
 ---
 
-**🎉 Congratulations!** You've successfully set up comprehensive application monitoring using Application Insights autoinstrumentation.
+## Основные выводы
+
+- Autoinstrumentation — самый простой способ включить мониторинг для App Service
+- Live Metrics даёт мгновенную обратную связь о состоянии приложения
+- KQL необходим для глубокого анализа и troubleshooting
+- Availability tests позволяют обнаружить проблему до обращения пользователей
+- Alerts обеспечивают быстрое реагирование
+- Application Map визуализирует распределённую архитектуру
+
+---
+
+## Советы для экзамена AZ-204
+
+💡 **Autoinstrumentation**  
+Не требует изменений кода — только конфигурация.
+
+💡 **Connection String**  
+Передаётся через настройки приложения (app settings).
+
+💡 **Live Metrics**  
+Работает в реальном времени с минимальной задержкой.
+
+💡 **Standard Tests**  
+Предпочтительнее URL Ping (который считается устаревающим).
+
+💡 **Порог алёртов**  
+Для Availability учитывайте несколько регионов, а не единичный сбой.
+
+---
+
+### Экзаменационный акцент
+
+Если в вопросе требуется:
+
+- Быстро включить мониторинг → Autoinstrumentation
+- Получить мгновенную телеметрию → Live Metrics
+- Найти причину сбоя → KQL + Distributed Tracing
+- Проверить доступность → Standard Availability Test
+- Автоматически уведомлять о проблемах → Alerts
+
+Главное — выбрать самый простой и управляемый способ, если он покрывает требования задачи.
+
+---
+

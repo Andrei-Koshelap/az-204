@@ -1,145 +1,185 @@
-# Summary: Develop Message-Based Solutions
+# Итог: Разработка решений на основе сообщений
 
-## Overview
+## Обзор
 
-This module covered **message-based solutions** in Azure using **Azure Service Bus** and **Azure Queue Storage**. You learned when to use each service, how to implement message queuing patterns, and best practices for building reliable distributed systems.
+В этом модуле рассмотрены **решения на основе сообщений** в Azure с использованием:
 
----
+- **Azure Service Bus**
+- **Azure Queue Storage**
 
-## Key Concepts Recap
+Вы изучили:
 
-### Azure Service Bus
-
-**Enterprise message broker** with advanced features for reliable messaging.
-
-**Core components:**
-- **Namespace**: Container for queues and topics
-- **Queues**: Point-to-point messaging (competing consumers)
-- **Topics**: Publish-subscribe messaging (fan-out to multiple subscribers)
-- **Subscriptions**: Independent consumers for topic messages
-
-**Key features:**
-- ✅ FIFO ordering (with sessions)
-- ✅ Transactions
-- ✅ Duplicate detection
-- ✅ Dead-letter queue (automatic)
-- ✅ Advanced routing and filtering
-- ✅ Message size: 256 KB (Standard), 100 MB (Premium)
-- ✅ Protocols: AMQP 1.0, HTTP/REST, JMS 2.0
-
-**Three tiers:**
-| Tier | Features | Use Case |
-|------|----------|----------|
-| **Basic** | Queues only, 256 KB | Dev/test |
-| **Standard** | Queues + topics, transactions | Production |
-| **Premium** | Dedicated resources, 100 MB, geo-DR | Mission-critical |
-
-### Azure Queue Storage
-
-**Simple, cost-effective** message queue for high-volume scenarios.
-
-**Core components:**
-- **Storage Account**: Container for queues
-- **Queue**: Contains messages
-- **Message**: Up to 64 KB data
-
-**Key features:**
-- ✅ HTTP/HTTPS protocol
-- ✅ Massive storage (500 TB per account)
-- ✅ Cost-effective
-- ✅ Visibility timeout (30 seconds default)
-- ✅ Peek without dequeue
-- ✅ Simple at-least-once delivery
-
-**Limitations:**
-- ❌ No FIFO guarantee
-- ❌ No transactions
-- ❌ No duplicate detection
-- ❌ No pub/sub
-- ❌ 64 KB message limit
+- когда использовать каждый сервис
+- как реализовать шаблоны очередей
+- лучшие практики построения отказоустойчивых распределённых систем
 
 ---
 
-## Decision Matrix
+# Azure Service Bus
 
-### When to Use Service Bus
+**Enterprise message broker** с расширенными возможностями надёжной доставки.
 
-✅ **Use Azure Service Bus when you need:**
+---
 
-1. **FIFO ordering guarantee**
-   - Enable sessions with SessionId
-   - Guaranteed in-order processing per session
+## Основные компоненты
 
-2. **Publish-subscribe pattern**
-   - Topics with multiple subscriptions
-   - Fan-out to multiple independent consumers
+- **Namespace** — контейнер для очередей и топиков
+- **Queues** — point-to-point (competing consumers)
+- **Topics** — publish-subscribe (fan-out)
+- **Subscriptions** — независимые получатели сообщений топика
 
-3. **Transactions**
-   - Atomic operations across multiple messages
-   - All-or-nothing delivery
+---
 
-4. **Duplicate detection**
-   - Automatic deduplication based on MessageId
-   - Prevent processing same message twice
+## Ключевые возможности
 
-5. **Advanced routing**
-   - SQL filter expressions on message properties
-   - Filter actions to modify properties
+- ✅ FIFO (через sessions)
+- ✅ Транзакции
+- ✅ Обнаружение дубликатов
+- ✅ Автоматическая Dead-letter очередь
+- ✅ Продвинутая маршрутизация и фильтрация
+- ✅ Размер сообщения:
+   - 256 КБ (Standard)
+   - 100 МБ (Premium)
+- ✅ Протоколы: AMQP 1.0, HTTP/REST, JMS 2.0
 
-6. **Messages > 64 KB**
-   - Up to 256 KB (Standard tier)
-   - Up to 100 MB (Premium tier)
+---
 
-7. **Enterprise features**
-   - Dead-letter queue (automatic)
-   - Message sessions
-   - Scheduled delivery
+## Уровни (Tiers)
+
+| Tier | Возможности | Сценарий |
+|------|-------------|----------|
+| **Basic** | Только очереди, 256 КБ | Dev/test |
+| **Standard** | Очереди + топики + транзакции | Production |
+| **Premium** | Выделенные ресурсы, 100 МБ, geo-DR | Mission-critical |
+
+---
+
+# Azure Queue Storage
+
+**Простая и экономичная** очередь для высоконагруженных сценариев.
+
+---
+
+## Основные компоненты
+
+- **Storage Account** — контейнер для очередей
+- **Queue** — хранит сообщения
+- **Message** — до 64 КБ данных
+
+---
+
+## Ключевые возможности
+
+- ✅ HTTP/HTTPS протокол
+- ✅ Огромный объём хранения (до 500 ТБ на аккаунт)
+- ✅ Низкая стоимость
+- ✅ Visibility timeout (по умолчанию 30 сек)
+- ✅ Peek без извлечения
+- ✅ Модель at-least-once
+
+---
+
+## Ограничения
+
+- ❌ Нет строгого FIFO
+- ❌ Нет транзакций
+- ❌ Нет дедупликации
+- ❌ Нет pub/sub
+- ❌ Лимит 64 КБ на сообщение
+
+---
+
+# Матрица выбора
+
+## Когда использовать Service Bus
+
+Используйте **Azure Service Bus**, если требуется:
+
+1. **Гарантированный FIFO**
+   - Sessions + SessionId
+
+2. **Publish-Subscribe**
+   - Topics + несколько subscriptions
+
+3. **Транзакции**
+   - Атомарные операции
+
+4. **Обнаружение дубликатов**
+   - Автоматическая дедупликация по MessageId
+
+5. **Продвинутая маршрутизация**
+   - SQL-фильтры
+
+6. **Сообщения > 64 КБ**
+   - До 256 КБ (Standard)
+   - До 100 МБ (Premium)
+
+7. **Enterprise-функциональность**
+   - Автоматический DLQ
+   - Scheduled messages
    - Message deferral
-   - Geo-disaster recovery (Premium)
+   - Geo-DR
 
-### When to Use Queue Storage
+---
 
-✅ **Use Azure Queue Storage when you need:**
+## Когда использовать Queue Storage
 
-1. **Simple message queue**
-   - Basic producer-consumer pattern
-   - No advanced features required
+Используйте **Azure Queue Storage**, если требуется:
 
-2. **Cost-effective solution**
-   - Lower cost than Service Bus
-   - High-volume scenarios
+1. Простая очередь
+2. Минимальная стоимость
+3. Большой объём хранения
+4. Простая модель retry через DequeueCount
+5. HTTP-доступ без сложных протоколов
 
-3. **Large storage capacity**
-   - Over 80 GB of messages
-   - Millions of messages in queue
+---
 
-4. **Track processing progress**
-   - DequeueCount property
-   - Visibility timeout for retry
+# Сравнительная таблица
 
-5. **Server-side logging**
-   - Storage Analytics logging
-   - Audit all operations
+| Возможность | Service Bus | Queue Storage |
+|--------------|-------------|---------------|
+| **Размер сообщения** | 256 КБ / 100 МБ | 64 КБ |
+| **Размер очереди** | Практически неограничен | 500 ТБ |
+| **FIFO** | ✅ Через sessions | ❌ Нет гарантии |
+| **Транзакции** | ✅ Да | ❌ Нет |
+| **Дедупликация** | ✅ Да | ❌ Нет |
+| **Pub/Sub** | ✅ Topics | ❌ Нет |
+| **Dead-letter** | ✅ Автоматически | ❌ Вручную |
+| **Протокол** | AMQP, HTTP | HTTP/HTTPS |
+| **Стоимость** | Выше | Ниже |
+| **Лучше подходит для** | Enterprise | Простые сценарии |
 
-6. **Simple HTTP access**
-   - REST API
-   - No protocol complexity
+---
 
-### Comparison Table
+# Главное для AZ-204
 
-| Feature | Service Bus | Queue Storage |
-|---------|-------------|---------------|
-| **Message Size** | 256 KB / 100 MB | 64 KB |
-| **Queue Size** | Unlimited | 500 TB per account |
-| **FIFO** | ✅ With sessions | ❌ No guarantee |
-| **Transactions** | ✅ Yes | ❌ No |
-| **Duplicate Detection** | ✅ Yes | ❌ No |
-| **Pub/Sub** | ✅ Topics | ❌ No |
-| **Dead-Letter Queue** | ✅ Automatic | ❌ Manual |
-| **Protocol** | AMQP, HTTP, SBMP | HTTP/HTTPS |
-| **Pricing** | Higher | Lower |
-| **Best For** | Enterprise | Simple, cost-effective |
+Если в вопросе фигурируют:
 
+- FIFO
+- транзакции
+- topics
+- дедупликация
+- сложная маршрутизация
+
+→ Ответ: **Service Bus**
+
+Если речь о:
+
+- простой очереди
+- дешёвом решении
+- большом объёме хранения
+- базовом producer-consumer
+
+→ Ответ: **Queue Storage**
+
+---
+
+## Ключевая мысль
+
+- **Service Bus** = enterprise messaging
+- **Queue Storage** = простая, дешёвая очередь
+
+Умение быстро определить, какой сервис подходит под требования, — один из самых частых типов вопросов на AZ-204.
 ---
 
 ## Common Messaging Patterns
@@ -285,27 +325,87 @@ Benefits:
 1. Receive → Message deleted immediately
 ```
 
-**Use when:**
-- ✅ Data loss acceptable (telemetry, logs)
-- ✅ Performance critical
-- ❌ NOT for critical data
+# Когда использовать (Service Bus / Messaging)
+
+**Использовать, если:**
+
+- ✅ Потеря данных допустима (телеметрия, логи)
+- ✅ Критична производительность
+- ❌ НЕ использовать для критичных бизнес-данных
+
+📌 Если данные нельзя терять — необходимо использовать механизмы гарантированной доставки, транзакции и дедупликацию (например, Service Bus).
 
 ---
 
-## Message Properties
+# Свойства сообщений (Message Properties)
 
-### Broker Properties (System-Defined)
+В Service Bus сообщения имеют два типа свойств:
 
-| Property | Purpose | Example |
-|----------|---------|---------|
-| **MessageId** | Unique identifier, duplicate detection | `"order-12345"` |
-| **CorrelationId** | Link related messages | `"correlation-abc"` |
-| **SessionId** | Group for FIFO ordering | `"customer-123"` |
-| **ContentType** | Serialization format | `"application/json"` |
-| **ReplyTo** | Reply queue address | `"replyQueue"` |
-| **TimeToLive** | Message expiration | `TimeSpan.FromHours(1)` |
+- **Broker properties (системные)**
+- **Application properties (пользовательские)**
 
-### User Properties (Application-Defined)
+---
+
+## Broker Properties (Системные свойства)
+
+Эти свойства определяются брокером сообщений и используются для маршрутизации, управления и обеспечения надёжности.
+
+| Свойство | Назначение | Пример |
+|------------|-------------|----------|
+| **MessageId** | Уникальный идентификатор (дедупликация) | `"order-12345"` |
+| **CorrelationId** | Связывает связанные сообщения | `"correlation-abc"` |
+| **SessionId** | Группировка для FIFO | `"customer-123"` |
+| **ContentType** | Формат сериализации | `"application/json"` |
+| **ReplyTo** | Очередь для ответа | `"replyQueue"` |
+| **TimeToLive** | Время жизни сообщения | `TimeSpan.FromHours(1)` |
+
+---
+
+## Пояснения
+
+### 🔹 MessageId
+- Используется для обнаружения дубликатов
+- Обязателен при включённой duplicate detection
+
+---
+
+### 🔹 CorrelationId
+- Применяется для отслеживания цепочек сообщений
+- Используется в request-response сценариях
+
+---
+
+### 🔹 SessionId
+- Обеспечивает FIFO внутри одной session
+- Сообщения с одинаковым SessionId обрабатываются последовательно
+
+---
+
+### 🔹 TimeToLive (TTL)
+- Определяет срок жизни сообщения
+- После истечения может попасть в Dead-letter queue
+
+---
+
+## Что важно для AZ-204
+
+- FIFO достигается через **SessionId**
+- Дедупликация требует **MessageId**
+- Request/response — через **ReplyTo + CorrelationId**
+- TTL управляет временем жизни сообщения
+
+---
+
+## Ключевая идея
+
+Свойства сообщения позволяют реализовать:
+
+- гарантированный порядок
+- дедупликацию
+- корреляцию
+- автоматическое истечение
+
+Понимание назначения этих свойств часто проверяется в вопросах AZ-204.### User Properties (Application-Defined)
 
 Custom key-value pairs for **filtering and routing**.
 
@@ -466,33 +566,80 @@ var sasUrl = GenerateSasToken(
 
 ---
 
-## AZ-204 Exam Tips
+# Советы к экзамену AZ-204 (Message-Based Solutions)
 
-### Key Concepts to Remember
+## Ключевые концепции
 
-1. **Service Bus** = Enterprise (FIFO, transactions, pub/sub)
-2. **Queue Storage** = Simple, cost-effective
-3. **FIFO** = Service Bus sessions only
-4. **Pub/sub** = Service Bus topics only
-5. **Message size** = 64 KB (Queue Storage), 256 KB (Service Bus Standard), 100 MB (Premium)
-6. **Peek Lock** = Two-stage, fault-tolerant (recommended)
-7. **Sessions** = FIFO ordering (SessionId)
-8. **CorrelationId** = Link request/reply
+1. **Service Bus** = Enterprise-месседжинг  
+   (FIFO, транзакции, pub/sub)
 
-### Common Exam Scenarios
+2. **Queue Storage** = Простая и экономичная очередь
 
-| Scenario | Solution |
-|----------|----------|
-| **Need FIFO ordering** | Service Bus with sessions |
-| **Broadcast to multiple systems** | Service Bus topics |
-| **Cost-effective, simple queue** | Queue Storage |
-| **Process messages in order** | Service Bus sessions |
-| **> 80 GB storage** | Queue Storage |
-| **Transactions required** | Service Bus |
-| **Messages > 64 KB** | Service Bus |
-| **Prevent duplicates** | Service Bus duplicate detection |
-| **Handle undeliverable messages** | Service Bus DLQ (automatic) |
+3. **FIFO** = Только через Service Bus sessions
 
+4. **Pub/Sub** = Только через Service Bus topics
+
+5. **Размер сообщения:**
+   - 64 КБ → Queue Storage
+   - 256 КБ → Service Bus (Standard)
+   - 100 МБ → Service Bus (Premium)
+
+6. **Peek-Lock** = Двухэтапная обработка (рекомендуется)
+   - Receive → Complete
+   - Обеспечивает отказоустойчивость
+
+7. **Sessions** = FIFO-упорядочивание (через SessionId)
+
+8. **CorrelationId** = Связь request/reply
+
+---
+
+# Типовые экзаменационные сценарии
+
+| Сценарий | Решение |
+|------------|-----------|
+| Нужен FIFO | Service Bus + sessions |
+| Рассылка нескольким системам | Service Bus topics |
+| Дешёвая простая очередь | Queue Storage |
+| Обработка строго по порядку | Service Bus sessions |
+| > 80 ГБ хранения | Queue Storage |
+| Нужны транзакции | Service Bus |
+| Сообщения > 64 КБ | Service Bus |
+| Предотвратить дубликаты | Service Bus duplicate detection |
+| Обработка недоставленных сообщений | Service Bus DLQ |
+
+---
+
+## Быстрая логика выбора на экзамене
+
+Если в вопросе упоминаются:
+
+- FIFO
+- транзакции
+- topics
+- дедупликация
+- dead-letter queue
+- correlation
+
+→ Ответ почти всегда **Service Bus**
+
+Если речь идёт о:
+
+- простой очереди
+- низкой стоимости
+- большом объёме хранения
+- базовом producer-consumer
+
+→ Ответ **Queue Storage**
+
+---
+
+## Ключевая мысль для AZ-204
+
+- **Service Bus** = сложная корпоративная интеграция
+- **Queue Storage** = простая и дешёвая очередь
+
+Умение быстро отличить требования enterprise-месседжинга от простого сценария — критично для успешной сдачи AZ-204.
 ### Quick Reference
 
 **Service Bus:**
@@ -552,43 +699,62 @@ Budget constrained? → YES → Queue Storage
 
 ---
 
-## Summary
+# Итог: Message-Based Solutions в Azure
 
-**Message-based solutions in Azure:**
+## Azure Service Bus
 
-**Azure Service Bus:**
 - ✅ Enterprise message broker
-- ✅ Queues (point-to-point) and topics (pub/sub)
-- ✅ FIFO ordering with sessions
-- ✅ Transactions, duplicate detection, dead-letter queue
-- ✅ Three tiers: Basic, Standard, Premium
-- ✅ Best for: Enterprise messaging, advanced features
+- ✅ Очереди (point-to-point) и топики (pub/sub)
+- ✅ FIFO через sessions
+- ✅ Транзакции, дедупликация, автоматический Dead-letter
+- ✅ Три уровня: Basic, Standard, Premium
+- ✅ Лучший выбор для enterprise-сценариев
 
-**Azure Queue Storage:**
-- ✅ Simple, cost-effective message queue
-- ✅ HTTP/HTTPS protocol
-- ✅ Massive storage capacity (500 TB)
-- ✅ Visibility timeout for safe processing
-- ✅ Best for: Simple queues, high volume, cost-sensitive
+---
 
-**Choose the right service based on your requirements:**
-- **Advanced features (FIFO, pub/sub, transactions)** → Service Bus
-- **Simple, cost-effective queue** → Queue Storage
+## Azure Queue Storage
 
-**Key patterns:**
-- Competing consumers (load balancing)
-- Publish-subscribe (fan-out)
-- Request-reply (CorrelationId + ReplyTo)
-- Load leveling (queue as buffer)
+- ✅ Простая и экономичная очередь
+- ✅ HTTP/HTTPS протокол
+- ✅ Огромная ёмкость (до 500 ТБ)
+- ✅ Visibility timeout для безопасной обработки
+- ✅ Лучший выбор для простых и высоконагруженных сценариев
 
-**Best practices:**
-- Design for idempotency (at-least-once delivery)
-- Handle poison messages (DLQ or poison queue)
-- Monitor queue depth and alert on backlog
-- Use appropriate timeouts for processing time
-- Reuse clients for performance
-- Use Azure AD for authentication
+---
 
+# Выбор сервиса по требованиям
+
+- **Нужны расширенные возможности (FIFO, pub/sub, транзакции)** → Service Bus
+- **Нужна простая и дешёвая очередь** → Queue Storage
+
+---
+
+# Ключевые архитектурные паттерны
+
+- **Competing Consumers** — балансировка нагрузки между несколькими обработчиками
+- **Publish-Subscribe** — fan-out сообщений нескольким подписчикам
+- **Request-Reply** — через CorrelationId + ReplyTo
+- **Load Leveling** — очередь как буфер для сглаживания нагрузки
+
+---
+
+# Лучшие практики
+
+- Проектировать систему с учётом идемпотентности (at-least-once delivery)
+- Обрабатывать poison messages (DLQ или отдельная очередь)
+- Мониторить глубину очереди и настраивать алерты
+- Настраивать корректные таймауты обработки
+- Переиспользовать клиентов для производительности
+- Использовать Azure AD для аутентификации
+
+---
+
+## Финальная мысль для AZ-204
+
+- **Service Bus** = корпоративные сценарии с расширенными требованиями
+- **Queue Storage** = простые и экономичные решения
+
+Умение правильно сопоставить требования задачи с возможностями сервиса — один из ключевых навыков для успешной сдачи AZ-204.
 
 📌 Как работает geo-filtering в Azure CDN
 

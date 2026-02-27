@@ -1,62 +1,136 @@
-# Summary and Exam Preparation
+# Итоги и подготовка к экзамену
 
-## Course Summary
+## Итоги курса
 
-Congratulations! You've completed **Topic 11: Monitor, Troubleshoot, and Optimize Azure Solutions**, the final topic in the AZ-204 certification learning path.
+Поздравляем! Вы завершили **Тему 11: Monitor, Troubleshoot, and Optimize Azure Solutions** — финальный раздел подготовки к экзамену AZ-204.
 
-In this topic, you learned:
+В этом модуле вы изучили ключевые инструменты мониторинга и диагностики в Azure.
 
-### Key Concepts Covered
+---
 
-✅ **Application Insights Overview**
-- Extension of Azure Monitor for APM (Application Performance Monitoring)
-- Provides proactive and reactive monitoring capabilities
-- Collects metrics, logs, and traces automatically
+## Основные концепции
 
-✅ **Telemetry Types**
-- **Metrics**: Numerical time-series data (fast, preaggregated)
-- **Logs**: Event records with rich context (KQL queries)
-- **Traces**: Distributed request tracking (correlation)
+### ✅ Обзор Application Insights
 
-✅ **Log-Based vs Standard Metrics**
-- Log-based: Flexible, affected by sampling, slower queries
-- Standard: Fast, real-time, not affected by sampling
-- Use standard for dashboards/alerts, log-based for analysis
+- Расширение Azure Monitor для APM (Application Performance Monitoring)
+- Поддерживает проактивный и реактивный мониторинг
+- Автоматически собирает метрики, логи и трассировки
 
-✅ **Instrumentation Methods**
-- **Autoinstrumentation**: No code changes (App Service, Functions)
-- **Manual SDK**: Full control, custom telemetry
-- **OpenTelemetry**: Vendor-neutral standard
+---
 
-✅ **Availability Tests**
-- **Standard tests**: Modern, recommended (SSL validation, custom headers)
-- **Custom TrackAvailability**: Multi-step, complex scenarios
-- Multiple geographic locations reduce false positives
+### ✅ Типы телеметрии
 
-✅ **Application Map**
-- Visualizes distributed application topology
-- Color-coded health indicators
-- Click-through for detailed analysis
-- Relies on cloud_RoleName and distributed tracing
+- **Metrics** — числовые временные ряды (быстро, предагрегировано)
+- **Logs** — события с богатым контекстом (запросы через KQL)
+- **Traces** — сквозное отслеживание запросов (correlation)
 
-✅ **Monitoring and Analysis**
-- **Metrics Explorer**: Real-time charts and dashboards
-- **KQL (Kusto Query Language)**: Powerful log analysis
-- **Distributed Tracing**: End-to-end request flows
-- **Alerts**: Proactive notifications
+---
 
-## Complete Feature Matrix
+### ✅ Log-Based vs Standard Metrics
 
-| Feature | Purpose | When to Use | Exam Weight |
-|---------|---------|-------------|-------------|
-| **Live Metrics** | Real-time monitoring | Deployments, incidents | Medium |
-| **Smart Detection** | AI anomaly detection | Automatic alerts | Medium |
-| **Application Map** | Topology visualization | Troubleshooting distributed apps | High |
-| **Availability Tests** | Proactive uptime monitoring | SLA compliance | High |
-| **Metrics Explorer** | Real-time dashboards | Performance monitoring | High |
-| **Log Analytics (KQL)** | Deep analysis | Root cause investigation | High |
-| **Distributed Tracing** | Request flow tracking | Microservices debugging | Medium |
-| **Workbooks** | Custom reports | Team dashboards | Low |
+- **Log-based**: гибкие, зависят от sampling, медленнее
+- **Standard**: быстрые, near real-time, не зависят от sampling
+
+Использование:
+- Standard → дашборды и алёрты
+- Log-based → анализ и расследование
+
+---
+
+### ✅ Методы инструментирования
+
+- **Autoinstrumentation** — без изменений кода (App Service, Functions)
+- **Manual SDK** — полный контроль, кастомная телеметрия
+- **OpenTelemetry** — vendor-neutral стандарт
+
+---
+
+### ✅ Availability Tests
+
+- **Standard tests** — современный и рекомендуемый вариант
+- **Custom TrackAvailability** — для сложных сценариев
+- Несколько регионов уменьшают ложные срабатывания
+
+---
+
+### ✅ Application Map
+
+- Визуализация распределённой архитектуры
+- Цветовая индикация состояния
+- Возможность drill-down
+- Основан на `cloud_RoleName` и distributed tracing
+
+---
+
+### ✅ Мониторинг и анализ
+
+- **Metrics Explorer** — real-time графики
+- **KQL** — мощный анализ логов
+- **Distributed Tracing** — end-to-end поток запроса
+- **Alerts** — проактивные уведомления
+
+---
+
+## Матрица ключевых инструментов
+
+| Функция | Назначение | Когда использовать | Важность на экзамене |
+|----------|------------|-------------------|----------------------|
+| **Live Metrics** | Мониторинг в реальном времени | Деплой, инциденты | Средняя |
+| **Smart Detection** | AI-обнаружение аномалий | Автоматические алёрты | Средняя |
+| **Application Map** | Визуализация топологии | Диагностика микросервисов | Высокая |
+| **Availability Tests** | Проактивный мониторинг доступности | Контроль SLA | Высокая |
+| **Metrics Explorer** | Real-time дашборды | Мониторинг производительности | Высокая |
+| **Log Analytics (KQL)** | Глубокий анализ | Root cause investigation | Высокая |
+| **Distributed Tracing** | Отслеживание цепочки вызовов | Отладка микросервисов | Средняя |
+| **Workbooks** | Кастомные отчёты | Командные дашборды | Низкая |
+
+---
+
+## Финальный экзаменационный фокус (AZ-204)
+
+Часто проверяются сценарии:
+
+- Как быстро включить мониторинг? → Autoinstrumentation
+- Как снизить стоимость? → Sampling + Standard metrics + GetMetric()
+- Как найти причину сбоя? → KQL + Distributed Tracing
+- Как настроить SLA-мониторинг? → Availability Tests
+- Как визуализировать архитектуру? → Application Map
+- Как настроить real-time алёрт? → Standard metrics
+
+---
+
+## Стратегия для экзамена
+
+1. Определите цель вопроса:
+ - Мониторинг?
+ - Анализ?
+ - Стоимость?
+ - SLA?
+ - Архитектура?
+
+2. Выберите самый простой инструмент, который покрывает требования.
+
+3. Помните ключевые различия:
+ - Metrics → быстро
+ - Logs → глубоко
+ - Tracing → связать всё
+ - Sampling → экономия
+ - Standard metrics → быстрые алёрты
+
+---
+
+### Заключение
+
+Мониторинг в Azure — это не один инструмент, а экосистема:
+
+- Application Insights
+- Azure Monitor
+- Log Analytics
+- Distributed tracing
+- Availability tests
+
+Умение правильно комбинировать их — ключ к успешной сдаче AZ-204 и к реальной работе в production.
+
 
 ## Decision Flowcharts
 
@@ -148,45 +222,81 @@ Performance Issue Detected
 └────────────────────────────────┘
 ```
 
-## Best Practices Checklist
+## Чек-лист лучших практик
 
-### Setup Phase
-- ✅ Enable autoinstrumentation for App Service and Functions
-- ✅ Set cloud_RoleName for all services
-- ✅ Configure sampling (adaptive recommended)
-- ✅ Set up availability tests from 5+ locations
-- ✅ Create alert rules for critical metrics
-- ✅ Configure action groups for notifications
+### Этап настройки (Setup Phase)
 
-### Development Phase
-- ✅ Use GetMetric() for custom metrics (not TrackMetric)
-- ✅ Track business events with TrackEvent()
-- ✅ Implement telemetry filtering for noise reduction
-- ✅ Propagate correlation headers for distributed tracing
-- ✅ Add custom properties via telemetry initializers
-- ✅ Test monitoring in development environment
+- ✅ Включить autoinstrumentation для App Service и Functions
+- ✅ Настроить `cloud_RoleName` для всех сервисов
+- ✅ Включить sampling (рекомендуется adaptive)
+- ✅ Настроить availability tests из 5+ регионов
+- ✅ Создать alert rules для критических метрик
+- ✅ Настроить action groups для уведомлений
 
-### Operations Phase
-- ✅ Monitor Live Metrics during deployments
-- ✅ Review Application Map daily
-- ✅ Investigate Smart Detection alerts promptly
-- ✅ Use Workbooks for team dashboards
-- ✅ Analyze trends with KQL queries
-- ✅ Review and optimize alert thresholds monthly
+---
 
-### Cost Optimization
-- ✅ Enable adaptive sampling (target 5 items/sec)
-- ✅ Filter health check endpoints
-- ✅ Use GetMetric() for high-volume metrics
-- ✅ Set daily cap if needed
-- ✅ Adjust retention period (default 90 days)
-- ✅ Archive old data to storage if required
+### Этап разработки (Development Phase)
 
-## Common Exam Scenarios
+- ✅ Использовать `GetMetric()` для кастомных метрик (не `TrackMetric()`)
+- ✅ Отслеживать бизнес-события через `TrackEvent()`
+- ✅ Реализовать фильтрацию телеметрии для снижения шума
+- ✅ Передавать correlation headers для distributed tracing
+- ✅ Добавлять кастомные свойства через telemetry initializers
+- ✅ Тестировать мониторинг в dev-среде
 
-### Scenario 1: Enable Monitoring Without Code Changes
+---
 
-**Question:** You have an ASP.NET Core web app deployed to Azure App Service. You need to enable monitoring with zero code changes. What should you do?
+### Этап эксплуатации (Operations Phase)
+
+- ✅ Мониторить Live Metrics во время деплоя
+- ✅ Ежедневно просматривать Application Map
+- ✅ Оперативно реагировать на Smart Detection
+- ✅ Использовать Workbooks для командных дашбордов
+- ✅ Анализировать тренды через KQL
+- ✅ Ежемесячно пересматривать пороги алёртов
+
+---
+
+### Оптимизация стоимости (Cost Optimization)
+
+- ✅ Включить adaptive sampling (цель — ~5 элементов/сек)
+- ✅ Исключить health-check endpoints
+- ✅ Использовать `GetMetric()` для метрик с высокой частотой
+- ✅ Установить daily cap при необходимости
+- ✅ Настроить retention (по умолчанию 90 дней)
+- ✅ Архивировать старые данные в Storage при необходимости
+
+---
+
+## Частые экзаменационные сценарии
+
+### Сценарий 1: Включить мониторинг без изменений кода
+
+**Вопрос:**  
+У вас есть ASP.NET Core веб-приложение, развернутое в Azure App Service. Нужно включить мониторинг без изменений кода. Что делать?
+
+### ✅ Правильный ответ:
+
+Включить **Autoinstrumentation** в настройках App Service и подключить Application Insights через Configuration (Connection String).
+
+### Почему:
+
+- Не требует изменений кода
+- Не требует повторной сборки приложения
+- Самый простой и рекомендуемый способ
+
+### Экзаменационный акцент:
+
+Если в вопросе есть:
+- App Service
+- Azure Functions
+- Требование "без изменений кода"
+
+→ Почти всегда правильный ответ — **Autoinstrumentation**.
+
+---
+
+Если нужно, можем разобрать ещё 5–10 типовых сценариев в формате "вопрос → правильное решение → почему".
 
 **Answer:** 
 ```bash
@@ -333,105 +443,134 @@ union requests, dependencies
 | project timestamp, itemType, name, duration
 | order by timestamp asc
 ```
+## Советы по подготовке к экзамену
 
-## Exam Preparation Tips
+### Ключевые темы для уверенного владения
 
-### Core Topics to Master
+### 🔥 Высокий приоритет (наиболее вероятны на экзамене)
 
-**High Priority (Likely Exam Questions):**
 1. ✅ Autoinstrumentation vs Manual SDK
-2. ✅ Connection String configuration
+2. ✅ Настройка Connection String
 3. ✅ Standard metrics vs log-based metrics
-4. ✅ Availability test types and configuration
-5. ✅ Application Map usage
-6. ✅ KQL query basics (where, summarize, join)
-7. ✅ Alert configuration (metric vs log alerts)
+4. ✅ Типы Availability Tests и их конфигурация
+5. ✅ Использование Application Map
+6. ✅ Основы KQL (where, summarize, join)
+7. ✅ Настройка alert’ов (metric alerts vs log alerts)
 
-**Medium Priority:**
-8. ✅ GetMetric() vs TrackMetric()
-9. ✅ Distributed tracing concepts
-10. ✅ Sampling types and impact
+---
+
+### ⚡ Средний приоритет
+
+8. ✅ `GetMetric()` vs `TrackMetric()`
+9. ✅ Основы distributed tracing
+10. ✅ Типы sampling и их влияние
 11. ✅ Telemetry processors
-12. ✅ cloud_RoleName configuration
-13. ✅ OpenTelemetry integration
+12. ✅ Настройка `cloud_RoleName`
+13. ✅ Интеграция OpenTelemetry
 
-**Lower Priority:**
-14. ✅ Workbooks creation
-15. ✅ Advanced KQL functions
-16. ✅ Custom availability tests
+---
 
-### Key Facts to Remember
+### 📌 Низкий приоритет
 
-| Topic | Key Facts |
-|-------|-----------|
-| **Connection String** | Replaces instrumentation key (new standard) |
-| **Autoinstrumentation** | App Service, Functions, AKS (no code changes) |
-| **Sampling** | Only affects log-based metrics (not standard) |
-| **GetMetric()** | Preaggregated, cost-effective, accurate |
-| **Standard Tests** | 5-minute frequency, 5+ locations recommended |
-| **Application Map** | Requires cloud_RoleName, shows distributed topology |
+14. ✅ Создание Workbooks
+15. ✅ Продвинутые функции KQL
+16. ✅ Custom TrackAvailability tests
+
+---
+
+## Факты, которые нужно помнить
+
+| Тема | Ключевые факты |
+|------|----------------|
+| **Connection String** | Заменяет instrumentation key (новый стандарт) |
+| **Autoinstrumentation** | App Service, Functions, AKS (без изменений кода) |
+| **Sampling** | Влияет только на log-based metrics |
+| **GetMetric()** | Предагрегированная, экономичная, точная |
+| **Standard Tests** | Частота 5 минут, 5+ регионов рекомендуется |
+| **Application Map** | Требует `cloud_RoleName`, показывает распределённую топологию |
 | **KQL** | summarize, where, project, order by, join |
-| **Alert Frequency** | Metric: 1-min, Log: 5-min minimum |
-| **Retention** | Standard metrics: 93 days, Logs: 30-730 days |
-| **Smart Detection** | Automatic, ML-based, no configuration |
+| **Частота алёртов** | Metric: ~1 минута, Log: минимум ~5 минут |
+| **Retention** | Standard metrics: 93 дня, Logs: 30–730 дней |
+| **Smart Detection** | Автоматический ML-механизм, без настройки |
 
-## Final Checklist
+---
 
-Before the exam, ensure you can:
+## Финальный чек-лист
 
-- [ ] Create Application Insights resource via CLI
-- [ ] Enable autoinstrumentation for App Service
-- [ ] Configure connection string in app settings
-- [ ] Differentiate standard and log-based metrics
-- [ ] Write basic KQL queries (where, summarize)
-- [ ] Create availability tests with multiple locations
-- [ ] Set up metric and log alerts
-- [ ] Use Application Map for troubleshooting
-- [ ] Configure cloud_RoleName for distributed apps
-- [ ] Track custom events and metrics with SDK
-- [ ] Understand sampling types and impact
-- [ ] Interpret distributed traces
+Перед экзаменом убедитесь, что вы умеете:
 
-## Next Steps
+- [ ] Создать Application Insights ресурс
+- [ ] Включить autoinstrumentation для App Service
+- [ ] Настроить connection string в app settings
+- [ ] Различать standard и log-based metrics
+- [ ] Писать базовые KQL-запросы (where, summarize)
+- [ ] Настраивать availability tests из нескольких регионов
+- [ ] Создавать metric и log alerts
+- [ ] Использовать Application Map для диагностики
+- [ ] Настраивать `cloud_RoleName`
+- [ ] Отправлять custom events и metrics через SDK
+- [ ] Понимать типы sampling и их влияние
+- [ ] Интерпретировать distributed traces
 
-### Continue Learning
+---
 
-1. **Practice Labs**: Use Azure free tier to practice hands-on
-2. **Sample Questions**: Take AZ-204 practice exams
-3. **Microsoft Learn**: Review all 11 topics
-4. **Hands-On**: Build and monitor a real application
-5. **Community**: Join Azure Developer forums
+## Следующие шаги
 
-### AZ-204 Certification Resources
+### Продолжение подготовки
 
-- **Official Exam Page**: [AZ-204: Developing Solutions for Microsoft Azure](https://learn.microsoft.com/en-us/credentials/certifications/azure-developer/)
-- **Study Guide**: [AZ-204 Exam Study Guide](https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-204)
-- **Practice Assessment**: Available on Microsoft Learn
-- **Exam Sandbox**: Experience the exam interface
+1. Практика в Azure Free Tier
+2. Прохождение пробных экзаменов AZ-204
+3. Повтор всех 11 тем на Microsoft Learn
+4. Развёртывание и мониторинг собственного приложения
+5. Участие в Azure Developer сообществах
 
-## Congratulations! 🎉
+---
 
-You've completed **all 11 topics** of the AZ-204 certification learning path:
+## Вы завершили весь путь AZ-204 🎉
 
-1. ✅ Implement Azure App Service Web Apps
-2. ✅ Implement Azure Functions
-3. ✅ Work with Azure Blob Storage
-4. ✅ Develop solutions that use Azure Cosmos DB
-5. ✅ Implement containerized solutions
-6. ✅ Implement user authentication and authorization
-7. ✅ Implement secure Azure solutions
-8. ✅ Implement API Management
-9. ✅ Develop event-based solutions
-10. ✅ Develop message-based solutions
-11. ✅ **Monitor, troubleshoot, and optimize Azure solutions**
+Все 11 тем курса:
 
-### Key Takeaways from Entire AZ-204 Course
+1. ✅ Azure App Service Web Apps
+2. ✅ Azure Functions
+3. ✅ Azure Blob Storage
+4. ✅ Azure Cosmos DB
+5. ✅ Контейнерные решения
+6. ✅ Аутентификация и авторизация
+7. ✅ Безопасные решения в Azure
+8. ✅ API Management
+9. ✅ Event-based решения
+10. ✅ Message-based решения
+11. ✅ **Мониторинг, диагностика и оптимизация решений**
 
-- **Compute**: App Service, Functions, Containers (ACI, ACA)
-- **Storage**: Blob Storage, Cosmos DB, Queue Storage
-- **Security**: Key Vault, Managed Identity, Azure AD authentication
-- **Integration**: API Management, Event Grid, Event Hubs, Service Bus
-- **Monitoring**: Application Insights, Azure Monitor, distributed tracing
+---
+
+## Итоговые выводы по всему курсу AZ-204
+
+### Compute
+App Service, Functions, Containers (ACI, ACA)
+
+### Storage
+Blob Storage, Cosmos DB, Queue Storage
+
+### Security
+Key Vault, Managed Identity, Azure AD
+
+### Integration
+API Management, Event Grid, Event Hubs, Service Bus
+
+### Monitoring
+Application Insights, Azure Monitor, Distributed Tracing
+
+---
+
+### Финальный совет
+
+На экзамене всегда:
+
+1. Определяйте цель задачи (мониторинг? безопасность? интеграция?).
+2. Выбирайте самый простой и управляемый вариант.
+3. Помните различия между похожими инструментами.
+4. Учитывайте стоимость, масштабируемость и производительность.
 
 You're now ready to take the **AZ-204: Developing Solutions for Microsoft Azure** certification exam!
 

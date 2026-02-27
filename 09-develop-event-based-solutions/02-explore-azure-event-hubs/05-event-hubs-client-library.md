@@ -1,17 +1,73 @@
-# Event Hubs Client Library
+# Клиентская библиотека Event Hubs
 
-## Azure Event Hubs Client Library Overview
+## Обзор Azure Event Hubs Client Library
 
-The **Azure Event Hubs client library** (`Azure.Messaging.EventHubs`) provides APIs for sending and receiving events.
+Клиентская библиотека **Azure Event Hubs** (`Azure.Messaging.EventHubs`) предоставляет API для отправки и получения событий из Event Hubs.
 
-### Key Client Types
+Она используется для:
 
-| Client Type | Purpose | Use Case |
-|------------|---------|----------|
-| **EventHubProducerClient** | Send events | Publish telemetry, logs, events |
-| **EventHubConsumerClient** | Read events | Prototyping, simple scenarios |
-| **EventProcessorClient** | Process events at scale | Production applications |
+- публикации событий (producers)
+- чтения событий (consumers)
+- масштабируемой потоковой обработки
 
+Это основная библиотека для работы с Event Hubs в .NET и часто упоминается в вопросах AZ-204.
+
+---
+
+## Основные типы клиентов
+
+| Тип клиента | Назначение | Сценарий использования |
+|-------------|------------|------------------------|
+| **EventHubProducerClient** | Отправка событий | Публикация телеметрии, логов, событий |
+| **EventHubConsumerClient** | Чтение событий | Прототипирование, простые сценарии |
+| **EventProcessorClient** | Масштабируемая обработка | Production-приложения |
+
+---
+
+## Краткое сравнение
+
+### 🔹 EventHubProducerClient
+- Используется для отправки событий
+- Поддерживает batch-отправку
+- Позволяет задавать partition key
+- Рекомендуется для producer-приложений
+
+---
+
+### 🔹 EventHubConsumerClient
+- Прямое чтение из партиций
+- Нет автоматической балансировки
+- Подходит для простых сценариев и тестирования
+- Требует ручной координации при масштабировании
+
+---
+
+### 🔹 EventProcessorClient
+- Автоматическая балансировка партиций
+- Поддержка checkpointing
+- Координация через Blob Storage
+- Рекомендуется для production-сценариев
+
+---
+
+## Что важно для AZ-204
+
+- Для production-обработки использовать **EventProcessorClient**
+- Для отправки событий — **EventHubProducerClient**
+- EventHubConsumerClient не выполняет автоматическую балансировку
+- Масштабирование ограничено количеством партиций
+
+---
+
+## Ключевая идея
+
+Выбор клиента зависит от роли приложения:
+
+- Producer → EventHubProducerClient
+- Простой Consumer → EventHubConsumerClient
+- Масштабируемый Consumer → EventProcessorClient
+
+Понимание различий между этими клиентами — обязательная часть темы Event Hubs на AZ-204.
 ### NuGet Packages
 
 ```bash
@@ -467,17 +523,80 @@ await foreach (PartitionEvent evt in consumer.ReadEventsFromPartitionAsync(
 }
 ```
 
-### Event Position Strategies
+## Стратегии выбора позиции чтения (Event Position Strategies)
 
-**EventPosition Options:**
+При чтении событий из Event Hubs можно указать, **с какой позиции начинать обработку**.  
+Для этого используется объект `EventPosition`.
 
-| Position | Description | Use Case |
-|----------|-------------|----------|
-| **Earliest** | Start from beginning | Read all historical events |
-| **Latest** | Start from newest events | Real-time monitoring |
-| **FromOffset** | Start from specific offset | Resume from known position |
-| **FromSequenceNumber** | Start from sequence number | Precise resume point |
-| **FromEnqueuedTime** | Start from timestamp | Time-based replay |
+---
+
+## Доступные варианты
+
+| Позиция | Описание | Сценарий использования |
+|----------|-----------|------------------------|
+| **Earliest** | Начать с самого начала партиции | Чтение всей исторической истории событий |
+| **Latest** | Начать с новых событий | Мониторинг в реальном времени |
+| **FromOffset** | Начать с конкретного offset | Возобновление с известной позиции |
+| **FromSequenceNumber** | Начать с определённого sequence number | Точное восстановление |
+| **FromEnqueuedTime** | Начать с указанного времени | Повторное воспроизведение по времени |
+
+---
+
+## Когда использовать каждую стратегию
+
+### 🔹 Earliest
+- Используется для полной переобработки
+- Подходит для batch-аналитики
+- Часто применяется при первичной загрузке данных
+
+---
+
+### 🔹 Latest
+- Игнорирует старые события
+- Подходит для real-time monitoring
+- Используется в сценариях live-обработки
+
+---
+
+### 🔹 FromOffset
+- Используется при хранении конкретного offset
+- Подходит для ручного восстановления
+- Требует сохранения позиции
+
+---
+
+### 🔹 FromSequenceNumber
+- Более точная позиция восстановления
+- Используется при строгих требованиях к последовательности
+
+---
+
+### 🔹 FromEnqueuedTime
+- Удобно для time-based replay
+- Подходит для обработки событий за определённый период
+- Используется в аналитических сценариях
+
+---
+
+## Что важно для AZ-204
+
+- Offset и sequence number используются для checkpointing
+- Earliest и Latest — самые часто встречающиеся варианты
+- Для production-обработки обычно используется checkpointing вместо ручного указания позиции
+- Порядок событий гарантируется только внутри одной партиции
+
+---
+
+## Ключевая идея
+
+Выбор EventPosition определяет, **с какого момента начнётся обработка**.
+
+- Историческая обработка → Earliest
+- Реалтайм → Latest
+- Точное восстановление → Offset / SequenceNumber
+- Replay по времени → FromEnqueuedTime
+
+Понимание этих стратегий важно для правильной конфигурации consumer-приложений и часто встречается в вопросах AZ-204.
 
 **C# - EventPosition Examples:**
 
@@ -941,49 +1060,94 @@ finally
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204 (Event Hubs Client Library)
 
-### Key Concepts to Remember
+## Ключевые концепции
 
-1. **EventHubProducerClient** = Send events (batching recommended)
-2. **EventHubConsumerClient** = Read events (prototyping only)
-3. **EventProcessorClient** = Production processing (automatic load balancing, checkpointing)
-4. **Checkpoint Store** = Azure Blob Storage (required for EventProcessorClient)
-5. **Batching** = Use `CreateBatchAsync()` for better performance
-6. **Partition Key** = Group related events (maintain ordering)
-7. **EventPosition** = Earliest, Latest, FromOffset, FromSequenceNumber, FromEnqueuedTime
+1. **EventHubProducerClient**  
+   Используется для отправки событий  
+   (рекомендуется batch-отправка)
 
-### Common Exam Scenarios
+2. **EventHubConsumerClient**  
+   Чтение событий  
+   Подходит для прототипирования
 
-**Scenario 1**: Send events to Event Hubs
-- ✅ Use EventHubProducerClient
-- ✅ Use batching (`CreateBatchAsync()`)
-- ✅ Use partition key for related events
+3. **EventProcessorClient**  
+   Production-обработка  
+   (автоматическая балансировка + checkpointing)
 
-**Scenario 2**: Production event processing
-- ✅ Use EventProcessorClient (not EventHubConsumerClient)
-- ✅ Requires checkpoint store (Blob Storage)
-- ✅ Automatic load balancing and fault tolerance
+4. **Checkpoint Store**  
+   Azure Blob Storage  
+   (обязателен для EventProcessorClient)
 
-**Scenario 3**: Checkpoint processing progress
-- ✅ Call `UpdateCheckpointAsync()` periodically
-- ✅ Checkpoint every 50-100 events (not every event)
-- ✅ Don't checkpoint on error
+5. **Batching**  
+   Использовать `CreateBatchAsync()` для повышения производительности
 
-**Scenario 4**: Read events from beginning
-- ✅ Use `EventPosition.Earliest`
-- ✅ Or `EventPosition.FromEnqueuedTime(timestamp)`
+6. **Partition Key**  
+   Группирует связанные события  
+   (гарантирует порядок внутри партиции)
 
-### Remember for Exam
+7. **EventPosition**  
+   Earliest, Latest, FromOffset, FromSequenceNumber, FromEnqueuedTime
 
-- **EventHubProducerClient**: Send events (use batching)
-- **EventHubConsumerClient**: Prototyping only (no load balancing)
-- **EventProcessorClient**: Production (requires Blob Storage)
-- **Batching**: `CreateBatchAsync()` and `TryAdd()`
-- **Partition Key**: Groups related events (ordering maintained)
-- **Checkpointing**: `UpdateCheckpointAsync()` (every 50-100 events)
-- **EventPosition**: Earliest, Latest, FromOffset, etc.
+---
 
+## Типовые экзаменационные сценарии
+
+### Сценарий 1: Отправка событий
+
+✔ Использовать EventHubProducerClient  
+✔ Применять batch-отправку  
+✔ Использовать partition key для связанных событий
+
+---
+
+### Сценарий 2: Production-обработка событий
+
+✔ Использовать EventProcessorClient  
+✘ Не использовать EventHubConsumerClient для production  
+✔ Требуется Blob Storage для checkpoint  
+✔ Автоматическая балансировка и отказоустойчивость
+
+---
+
+### Сценарий 3: Отслеживание прогресса обработки
+
+✔ Вызывать `UpdateCheckpointAsync()` периодически  
+✔ Выполнять checkpoint каждые 50–100 событий  
+✘ Не выполнять checkpoint при ошибке
+
+---
+
+### Сценарий 4: Чтение событий с начала
+
+✔ Использовать `EventPosition.Earliest`  
+✔ Или `EventPosition.FromEnqueuedTime(timestamp)`
+
+---
+
+## Что обязательно помнить
+
+- **EventHubProducerClient** — отправка событий (использовать batching)
+- **EventHubConsumerClient** — только для простых сценариев
+- **EventProcessorClient** — production (требует Blob Storage)
+- Batch-операции выполняются через `CreateBatchAsync()` и `TryAdd()`
+- Partition key обеспечивает порядок внутри партиции
+- Checkpointing выполняется через `UpdateCheckpointAsync()`
+- EventPosition определяет точку начала чтения
+
+---
+
+## Экзаменационная логика
+
+Если в вопросе:
+
+- требуется масштабирование → EventProcessorClient
+- требуется высокая производительность отправки → batching
+- требуется сохранение порядка → partition key
+- требуется восстановление после сбоя → checkpointing
+
+Понимание различий между клиентами и механизмами обработки — ключевой элемент темы Event Hubs для AZ-204.
 ### Quick Reference
 
 ```csharp
@@ -1011,29 +1175,55 @@ await processor.StartProcessingAsync();
 
 ---
 
-## Summary
+## Итог
 
-**Event Hubs client library** provides three main client types for different scenarios.
+**Клиентская библиотека Event Hubs** предоставляет три основных типа клиентов для разных сценариев использования.
 
-**EventHubProducerClient:**
-- Send events to Event Hubs
-- Use batching for performance
-- Partition key for related events
+---
 
-**EventHubConsumerClient:**
-- Read events from Event Hubs
-- Prototyping and simple scenarios only
-- Not recommended for production
+## EventHubProducerClient
 
-**EventProcessorClient:**
-- Production-ready event processing
-- Automatic load balancing
-- Built-in checkpointing
-- Requires Azure Blob Storage
+- Используется для отправки событий в Event Hubs
+- Рекомендуется использовать batch-отправку для повышения производительности
+- Partition key применяется для группировки связанных событий  
+  (порядок сохраняется внутри одной партиции)
 
-**Best Practices:**
-- Always use batching when sending
-- Checkpoint periodically (not every event)
-- Use EventProcessorClient for production
-- Handle errors gracefully (don't checkpoint on error)
-- Reuse clients across operations
+---
+
+## EventHubConsumerClient
+
+- Используется для чтения событий
+- Подходит для прототипирования и простых сценариев
+- Не рекомендуется для production (нет автоматической балансировки)
+
+---
+
+## EventProcessorClient
+
+- Production-ready решение для обработки событий
+- Автоматическая балансировка партиций
+- Встроенный механизм checkpointing
+- Требует Azure Blob Storage для хранения состояния
+
+---
+
+## Лучшие практики
+
+- Всегда использовать batching при отправке событий
+- Выполнять checkpoint периодически (не после каждого события)
+- Использовать EventProcessorClient для production
+- Обрабатывать ошибки корректно (не выполнять checkpoint при ошибке)
+- Переиспользовать клиенты между операциями (не создавать их заново каждый раз)
+
+---
+
+## Главное для AZ-204
+
+Если требуется:
+
+- масштабируемая обработка → EventProcessorClient
+- высокая производительность отправки → batching
+- сохранение порядка событий → partition key
+- восстановление после сбоя → checkpointing
+
+Понимание различий между клиентами — ключевой момент темы Event Hubs на экзамене AZ-204.

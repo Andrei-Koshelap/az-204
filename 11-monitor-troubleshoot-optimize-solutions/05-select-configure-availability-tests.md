@@ -1,43 +1,72 @@
-# Select and Configure Availability Tests
+# Выбор и настройка Availability Tests
 
-## Overview
+## Обзор
 
-Availability tests proactively monitor your application's uptime and responsiveness from multiple geographic locations. By regularly sending synthetic requests to your endpoints, you can detect issues before real users are affected.
+Availability tests позволяют проактивно отслеживать доступность и отзывчивость вашего приложения из разных географических регионов.
 
-## Availability Test Types
+Система регулярно отправляет synthetic-запросы к вашим endpoint’ам, что позволяет обнаружить проблему **до того, как её заметят реальные пользователи**.
 
-Application Insights offers three types of availability tests:
+---
 
-### 1. Standard Test (Recommended)
+## Типы Availability Tests
 
-Modern replacement for URL ping tests with enhanced capabilities.
+Application Insights поддерживает три типа тестов доступности.
 
-**Features:**
-- Single HTTP/HTTPS request
-- TLS/SSL certificate validation
-- Proactive lifetime check
-- Custom HTTP verbs (GET, HEAD, POST)
-- Custom headers and authentication
-- Custom data in request body
-- Response content validation
-- Multiple test locations
-- Configurable test frequency (5-15 min)
+---
 
-**When to Use:**
-✅ Public-facing endpoints
-✅ API health checks
-✅ Certificate expiration monitoring
-✅ Simple single-request scenarios
+### 1. Standard Test (Рекомендуется)
+
+Современная замена URL Ping Test с расширенными возможностями.
+
+### Возможности:
+
+- Один HTTP/HTTPS-запрос
+- Проверка TLS/SSL-сертификата
+- Проактивная проверка срока действия сертификата
+- Поддержка HTTP-методов (GET, HEAD, POST)
+- Кастомные заголовки и аутентификация
+- Передача данных в теле запроса
+- Проверка содержимого ответа
+- Запуск из нескольких регионов
+- Настраиваемая частота (каждые 5–15 минут)
+
+---
+
+### Когда использовать:
+
+✅ Публичные endpoint’ы  
+✅ Проверка здоровья API  
+✅ Мониторинг срока действия сертификата  
+✅ Простые сценарии с одним запросом
+
+📌 Это основной вариант, который следует выбирать по умолчанию (важно для AZ-204).
+
+---
 
 ### 2. Custom TrackAvailability Test
 
-Write custom code for complex test scenarios.
+Позволяет писать собственный код для сложных сценариев тестирования.
 
-**Use Cases:**
-- Multi-step workflows
-- Authentication flows (OAuth, SAML)
-- Complex business scenarios
-- Internal endpoints (not publicly accessible)
+### Сценарии использования:
+
+- Многошаговые workflow
+- Процессы аутентификации (OAuth, SAML)
+- Сложная бизнес-логика
+- Внутренние endpoint’ы (недоступные публично)
+
+Обычно реализуется через:
+- Azure Functions
+- WebJobs
+- Фоновый сервис
+
+---
+
+## Ключевая идея
+
+- Standard Test → проще, быстрее, чаще всего правильный выбор
+- Custom Test → когда требуется сложная логика или доступ к внутренним ресурсам
+
+В следующем разделе обычно рассматривается настройка тестов и конфигурация алёртов.
 
 **Implementation:**
 ```csharp
@@ -138,42 +167,64 @@ az monitor app-insights web-test create \
   --defined-tags "Environment=Production" "Owner=DevOps"
 ```
 
-### Configuration Options
+### Параметры конфигурации
 
-| Setting | Description | Recommended Value |
-|---------|-------------|-------------------|
-| **Test Frequency** | How often to run test | 5 minutes (production) |
-| **Test Locations** | Geographic test points | 5+ locations |
-| **Success Criteria** | Pass/fail conditions | HTTP 200, < 5s |
-| **Alerts** | Enable alerting | Yes (< 3 locations fail) |
-| **Timeout** | Request timeout | 30 seconds |
-| **Parse dependent requests** | Load page resources | No (faster tests) |
-| **Enable retries** | Retry on failure | Yes (reduces false positives) |
+| Параметр | Описание | Рекомендуемое значение |
+|-----------|------------|------------------------|
+| **Test Frequency** | Как часто запускать тест | 5 минут (production) |
+| **Test Locations** | Географические точки запуска | 5+ регионов |
+| **Success Criteria** | Условия успешного прохождения | HTTP 200, < 5 секунд |
+| **Alerts** | Включить оповещения | Да (если < 3 регионов дали сбой) |
+| **Timeout** | Таймаут запроса | 30 секунд |
+| **Parse dependent requests** | Загружать ресурсы страницы | Нет (быстрее и дешевле) |
+| **Enable retries** | Повтор при ошибке | Да (уменьшает ложные срабатывания) |
 
-## Test Locations
+---
 
-Application Insights provides global test locations:
+## Локации тестирования
 
-**North America:**
-- us-ca-sjc-azr (West US - California)
-- us-va-ash-azr (East US - Virginia)
-- us-tx-sn1-azr (South Central US - Texas)
-- us-il-ch1-azr (Central US - Illinois)
-- us-fl-mia-azr (East US 2 - Florida)
+Application Insights предоставляет глобальные точки запуска тестов.
 
-**Europe:**
-- emea-nl-ams-azr (West Europe - Netherlands)
-- emea-gb-db3-azr (UK South - London)
-- emea-fr-pra-azr (France Central - Paris)
-- emea-ch-zrh-azr (Switzerland North - Zurich)
+### Северная Америка:
+- us-ca-sjc-azr (West US — Калифорния)
+- us-va-ash-azr (East US — Вирджиния)
+- us-tx-sn1-azr (South Central US — Техас)
+- us-il-ch1-azr (Central US — Иллинойс)
+- us-fl-mia-azr (East US 2 — Флорида)
 
-**Asia Pacific:**
-- apac-sg-sin-azr (Southeast Asia - Singapore)
-- apac-hk-hkn-azr (East Asia - Hong Kong)
-- apac-jp-kaw-azr (Japan East - Tokyo)
-- apac-au-syd-azr (Australia East - Sydney)
+### Европа:
+- emea-nl-ams-azr (West Europe — Нидерланды)
+- emea-gb-db3-azr (UK South — Лондон)
+- emea-fr-pra-azr (France Central — Париж)
+- emea-ch-zrh-azr (Switzerland North — Цюрих)
 
-**Recommendation:** Select 5+ locations across different regions for comprehensive coverage.
+### Азиатско-Тихоокеанский регион:
+- apac-sg-sin-azr (Southeast Asia — Сингапур)
+- apac-hk-hkn-azr (East Asia — Гонконг)
+- apac-jp-kaw-azr (Japan East — Токио)
+- apac-au-syd-azr (Australia East — Сидней)
+
+---
+
+## Рекомендация
+
+Выбирайте 5 и более локаций из разных регионов для:
+
+- Проверки глобальной доступности
+- Исключения локальных сетевых проблем
+- Повышения точности SLA-мониторинга
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если требуется:
+- Минимизировать ложные алёрты → включить retries
+- Глобальный сервис → выбрать регионы из разных частей мира
+- Быстрое обнаружение проблем → частота 5 минут
+- Контроль частичных сбоев → алёрт при падении из нескольких регионов
+
+Главная идея: Availability Tests должны быть геораспределёнными и настроены с разумными порогами.
 
 ## Advanced Configuration
 
@@ -303,34 +354,80 @@ availabilityResults
 | order by FailureCount desc
 ```
 
-## Best Practices
+## Лучшие практики
 
-✅ **Test frequency**: 5 minutes for production, 15 minutes for non-critical
-✅ **Multiple locations**: Use 5+ locations to avoid false positives
-✅ **Alerts**: Alert when < 3 locations pass (not just 1)
-✅ **Timeout**: Set realistic timeout (5-30s based on endpoint)
-✅ **SSL checks**: Enable for certificate expiration monitoring
-✅ **Retries**: Enable retries to reduce false positives
-✅ **Content validation**: Verify response contains expected content
-✅ **Test dependencies**: Don't parse dependent requests (faster tests)
+✅ **Частота тестирования**:
+- 5 минут — для production
+- 15 минут — для некритичных систем
 
-## Key Takeaways
+✅ **Несколько регионов**:  
+Используйте 5+ локаций, чтобы снизить риск ложных срабатываний.
 
-✅ **Standard tests** are the recommended type (URL ping retiring in 2026)
-✅ **5+ locations** provide reliable coverage and reduce false positives
-✅ **5-minute frequency** balances cost and responsiveness
-✅ **Custom TrackAvailability** for complex multi-step scenarios
-✅ **Alert thresholds**: < 3 locations passing indicates real issue
-✅ **SSL validation** monitors certificate expiration
+✅ **Настройка алёртов**:  
+Триггерить алёрт, если успешно проходит менее 3 локаций (а не при единичном сбое).
 
-## AZ-204 Exam Tips
+✅ **Timeout**:  
+Устанавливайте реалистичный таймаут (5–30 секунд в зависимости от endpoint’а).
 
-💡 **Standard test is the answer** for most exam scenarios (URL ping is deprecated)
-💡 **Multiple locations** prevent false positives from single region issues
-💡 **Custom TrackAvailability** when multi-step or authentication required
-💡 **5-minute frequency** is default and recommended for production
-💡 **Alert configuration** should consider multiple locations (not single failure)
+✅ **Проверка SSL**:  
+Включайте проверку сертификата для мониторинга срока его действия.
 
+✅ **Retries**:  
+Включайте повторные попытки, чтобы уменьшить ложные срабатывания.
+
+✅ **Проверка содержимого ответа**:  
+Убедитесь, что ответ содержит ожидаемые данные (не только HTTP 200).
+
+✅ **Не парсить зависимые ресурсы**:  
+Отключайте загрузку зависимых ресурсов (быстрее и дешевле).
+
+---
+
+## Основные выводы
+
+✅ **Standard tests** — рекомендуемый тип (URL Ping выводится из эксплуатации в 2026 году)
+
+✅ **5+ регионов** обеспечивают надёжное покрытие и снижают ложные срабатывания
+
+✅ **Частота 5 минут** — оптимальный баланс между стоимостью и скоростью реакции
+
+✅ **Custom TrackAvailability** — для сложных многошаговых сценариев
+
+✅ **Порог алёрта**: менее 3 успешных локаций — признак реальной проблемы
+
+✅ **Проверка SSL** помогает отслеживать истечение сертификата
+
+---
+
+## Советы для экзамена AZ-204
+
+💡 **Standard Test — почти всегда правильный ответ**  
+URL Ping считается устаревшим.
+
+💡 **Несколько регионов обязательны**  
+Один регион может давать локальные сбои.
+
+💡 **Custom TrackAvailability**  
+Выбирается, если требуется аутентификация или многошаговый сценарий.
+
+💡 **Частота 5 минут**  
+Стандартное и рекомендуемое значение для production.
+
+💡 **Алёрты должны учитывать несколько регионов**  
+Не настраивайте алёрт на единичный сбой — это частая экзаменационная ловушка.
+
+---
+
+### Экзаменационный акцент
+
+Availability Tests — это synthetic monitoring.  
+Главная цель — обнаружить проблему **до** того, как её увидят пользователи.
+
+В вопросах выбирайте решение, которое:
+- геораспределено
+- устойчиво к ложным срабатываниям
+- минимально усложняет архитектуру
+- использует Standard Test по умолчанию
 ---
 
 **📚 Further Reading:**

@@ -748,29 +748,73 @@ if (count > 10000)
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204 (Azure Queue Storage API)
 
-### Key APIs
+## Основные API
 
-| Operation | Method |
-|-----------|--------|
-| **Create queue** | `CreateIfNotExistsAsync()` |
-| **Send message** | `SendMessageAsync()` |
-| **Peek message** | `PeekMessagesAsync()` |
-| **Receive message** | `ReceiveMessagesAsync()` |
-| **Update message** | `UpdateMessageAsync()` |
-| **Delete message** | `DeleteMessageAsync()` |
-| **Get properties** | `GetPropertiesAsync()` |
-| **Delete queue** | `DeleteAsync()` |
+| Операция | Метод |
+|------------|---------|
+| **Создать очередь** | `CreateIfNotExistsAsync()` |
+| **Отправить сообщение** | `SendMessageAsync()` |
+| **Просмотреть сообщение (без удаления)** | `PeekMessagesAsync()` |
+| **Получить сообщение** | `ReceiveMessagesAsync()` |
+| **Обновить сообщение** | `UpdateMessageAsync()` |
+| **Удалить сообщение** | `DeleteMessageAsync()` |
+| **Получить свойства очереди** | `GetPropertiesAsync()` |
+| **Удалить очередь** | `DeleteAsync()` |
 
-### Remember
+---
 
-1. **ReceiveMessages** makes messages invisible (default 30 seconds)
-2. **PeekMessages** doesn't affect visibility
-3. **DeleteMessage** requires MessageId and PopReceipt
-4. **UpdateMessage** can change content and extend visibility
-5. **Max messages** per receive is 32
-6. **DequeueCount** tracks delivery attempts
+## Что обязательно помнить
+
+1. **ReceiveMessagesAsync()**
+    - Делает сообщение невидимым
+    - Visibility timeout по умолчанию — 30 секунд
+    - Если сообщение не удалено — станет доступным снова
+
+2. **PeekMessagesAsync()**
+    - Не изменяет visibility
+    - Используется только для просмотра
+
+3. **DeleteMessageAsync()**
+    - Требует `MessageId` и `PopReceipt`
+    - Без PopReceipt удалить сообщение нельзя
+
+4. **UpdateMessageAsync()**
+    - Позволяет изменить содержимое сообщения
+    - Можно продлить visibility timeout
+
+5. **Максимум сообщений за один receive**
+    - До 32 сообщений
+
+6. **DequeueCount**
+    - Отслеживает количество попыток обработки
+    - Используется для определения poison messages
+
+---
+
+## Частая экзаменационная логика
+
+- Нужно временно скрыть сообщение → `ReceiveMessagesAsync()`
+- Нужно просто посмотреть сообщение → `PeekMessagesAsync()`
+- Нужно продлить время обработки → `UpdateMessageAsync()`
+- Нужно удалить после обработки → `DeleteMessageAsync()`
+- Нужно определить количество повторных попыток → `DequeueCount`
+
+---
+
+## Ключевая идея
+
+Azure Queue Storage использует модель:
+
+- Получить сообщение →
+- Сделать невидимым →
+- Обработать →
+- Удалить
+
+Если не удалить — сообщение будет доставлено повторно.
+
+Понимание жизненного цикла сообщения — частая тема на AZ-204.
 
 ### Common Patterns
 
@@ -800,15 +844,55 @@ if (message.DequeueCount >= 5)
 
 ---
 
-## Summary
+# Итог (Azure.Storage.Queues)
 
-**Azure.Storage.Queues library provides:**
-- ✅ QueueClient for queue operations
-- ✅ Send messages with optional TTL and visibility delay
-- ✅ Receive messages with configurable visibility timeout
-- ✅ Peek messages without affecting visibility
-- ✅ Update message content and extend timeout
-- ✅ Delete messages after processing
-- ✅ Get queue properties and message count
+Библиотека **Azure.Storage.Queues** предоставляет API для работы с Azure Queue Storage.
+
+---
+
+## Основные возможности
+
+- ✅ **QueueClient** — основной клиент для работы с очередью
+- ✅ Отправка сообщений с возможностью указания TTL и задержки видимости
+- ✅ Получение сообщений с настраиваемым visibility timeout
+- ✅ Просмотр сообщений (peek) без изменения их состояния
+- ✅ Обновление содержимого сообщения и продление времени обработки
+- ✅ Удаление сообщений после успешной обработки
+- ✅ Получение свойств очереди и количества сообщений
+
+---
+
+## Жизненный цикл сообщения
+
+1. Producer отправляет сообщение
+2. Consumer получает сообщение (оно становится невидимым)
+3. Consumer обрабатывает сообщение
+4. Сообщение удаляется
+
+Если сообщение не удалено до истечения visibility timeout — оно будет доставлено повторно.
+
+---
+
+## Что важно для AZ-204
+
+- Основной класс — `QueueClient`
+- Visibility timeout по умолчанию — 30 секунд
+- Максимум 32 сообщения за один receive
+- Удаление требует `MessageId` и `PopReceipt`
+- Queue Storage обеспечивает модель at-least-once
+
+---
+
+## Ключевая идея
+
+Azure Queue Storage — это:
+
+- простой
+- дешёвый
+- масштабируемый
+
+механизм асинхронной обработки задач с минимальным набором возможностей по сравнению с Service Bus.
+
+Понимание жизненного цикла сообщения и API — обязательная часть темы очередей для AZ-204.
 
 **Key pattern:** Receive → Process → Delete (or move to poison queue after retries)!

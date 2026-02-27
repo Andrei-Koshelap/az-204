@@ -33,17 +33,70 @@ Producers ──────> Service Bus ──────> Consumers
 (Senders)         (Broker)            (Receivers)
 ```
 
-### Core Capabilities
+### Основные возможности (Core Capabilities)
 
-| Capability | Description |
-|------------|-------------|
-| **Message Queuing** | Store messages until receiving application retrieves them |
-| **Load Balancing** | Distribute work across multiple competing consumers |
-| **Temporal Decoupling** | Producers and consumers don't need to be online simultaneously |
-| **Load Leveling** | Smooth out bursts of traffic |
-| **Reliable Delivery** | At-least-once or at-most-once delivery guarantees |
-| **Publish-Subscribe** | Broadcast messages to multiple independent subscribers |
-| **Advanced Routing** | Filter and route messages based on properties |
+| Возможность | Описание |
+|-------------|----------|
+| **Message Queuing** | Хранение сообщений до тех пор, пока принимающее приложение их не обработает |
+| **Load Balancing** | Распределение нагрузки между несколькими competing consumers |
+| **Temporal Decoupling** | Продюсер и потребитель могут работать независимо во времени |
+| **Load Leveling** | Сглаживание пиков нагрузки |
+| **Reliable Delivery** | Гарантия доставки: at-least-once или at-most-once |
+| **Publish-Subscribe** | Рассылка сообщений нескольким независимым подписчикам |
+| **Advanced Routing** | Фильтрация и маршрутизация сообщений по свойствам |
+
+---
+
+## Краткое объяснение по каждому пункту
+
+### 📦 Message Queuing
+Позволяет приложениям обмениваться сообщениями асинхронно, не требуя одновременной доступности обеих сторон.
+
+---
+
+### ⚖️ Load Balancing
+Несколько consumers могут обрабатывать сообщения параллельно, повышая throughput.
+
+---
+
+### ⏳ Temporal Decoupling
+Продюсер отправляет сообщение и не ждёт немедленного ответа. Потребитель может обработать его позже.
+
+---
+
+### 📊 Load Leveling
+Очередь служит буфером при резких скачках нагрузки.
+
+---
+
+### 🔒 Reliable Delivery
+- **At-least-once** — сообщение будет доставлено минимум один раз
+- **At-most-once** — сообщение может быть доставлено не более одного раза
+
+---
+
+### 📡 Publish-Subscribe
+Один отправитель → несколько получателей. Каждый подписчик получает собственную копию сообщения.
+
+---
+
+### 🎯 Advanced Routing
+Сообщения могут направляться в разные подписки на основе:
+- свойств сообщения
+- SQL-фильтров
+- correlation-фильтров
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Publish-Subscribe → Service Bus Topics
+- Advanced Routing → Service Bus
+- Простая очередь → Queue Storage
+- Load leveling → подходят оба варианта
+- Enterprise-механизмы доставки → Service Bus
+
+Главное — понимать, какие возможности относятся к базовой очереди, а какие к enterprise-месседжингу.
 
 ---
 
@@ -68,15 +121,58 @@ az servicebus namespace create \
   --sku Standard
 ```
 
-### Queues
+### Queues (Очереди)
 
-**Point-to-point** messaging entities that store messages in **FIFO order** (when sessions are enabled).
+**Point-to-point** сущности обмена сообщениями, которые хранят сообщения в порядке **FIFO** (при включённых sessions в Service Bus).
 
-**Key features:**
-- Competing consumers pattern
-- One message delivered to one consumer
-- Messages persist until retrieved and deleted
-- Load balancing across multiple consumers
+---
+
+## Основные характеристики
+
+- **Competing Consumers pattern**  
+  Несколько потребителей могут обрабатывать сообщения параллельно.
+
+- **Одно сообщение → один получатель**  
+  Каждое сообщение обрабатывается только одним consumer’ом.
+
+- **Персистентность сообщений**  
+  Сообщения сохраняются, пока не будут получены и удалены.
+
+- **Балансировка нагрузки**  
+  Сообщения автоматически распределяются между активными consumers.
+
+---
+
+## Как это работает
+
+1. Producer отправляет сообщение в очередь
+2. Сообщение хранится до получения
+3. Consumer получает сообщение
+4. После успешной обработки сообщение удаляется
+
+Если обработка не удалась:
+- В Service Bus сообщение может попасть в DLQ
+- В Queue Storage сообщение снова станет видимым после visibility timeout
+
+---
+
+## Когда использовать
+
+- Асинхронная обработка задач
+- Фоновая обработка (background jobs)
+- Разгрузка веб-приложения
+- Масштабируемая обработка через несколько worker’ов
+
+---
+
+## Важно для AZ-204
+
+- FIFO гарантируется **только в Service Bus при использовании sessions**
+- Queue Storage не гарантирует строгий порядок
+- Queue = 1:1 взаимодействие
+- Для 1:N используйте Topics
+
+Главная идея: Queue — это базовый механизм асинхронной и надёжной обработки задач.
 
 ```bash
 # Create queue
@@ -87,15 +183,58 @@ az servicebus queue create \
   --max-size 1024
 ```
 
-### Topics and Subscriptions
+### Topics и Subscriptions
 
-**Publish-subscribe** pattern where multiple subscribers can receive copies of each message.
+**Publish-Subscribe** паттерн, при котором несколько подписчиков получают копию каждого сообщения.
 
-**Key features:**
-- One-to-many communication
-- Each subscription acts like a queue
-- Independent message retrieval per subscription
-- Filter rules per subscription
+---
+
+## Ключевые особенности
+
+- **One-to-many коммуникация**  
+  Один отправитель публикует сообщение в Topic, и оно доставляется нескольким подписчикам.
+
+- **Каждая Subscription работает как отдельная очередь**  
+  У каждой подписки своя изолированная очередь сообщений.
+
+- **Независимая обработка**  
+  Каждый подписчик обрабатывает сообщения в своём темпе. Замедление одного не влияет на других.
+
+- **Фильтрация на уровне подписки**  
+  Можно настраивать правила, по которым подписка будет получать только определённые сообщения (например, по региону или типу события).
+
+---
+
+## Как это работает
+
+1. Producer отправляет сообщение в Topic
+2. Service Bus создаёт копию сообщения для каждой подписки
+3. Каждый consumer получает сообщение из своей subscription
+4. Обработка полностью независима
+
+---
+
+## Когда использовать
+
+- Event-driven архитектура
+- Рассылка событий нескольким сервисам
+- IoT-сценарии
+- Микросервисная архитектура
+- Системы с разной логикой обработки одного события
+
+---
+
+## Важно для AZ-204
+
+- Publish/Subscribe реализуется через **Service Bus Topics**
+- Queue Storage не поддерживает pub/sub
+- Фильтрация сообщений доступна только в Service Bus
+- Каждая subscription масштабируется независимо
+
+Главная идея:  
+Queue → 1:1  
+Topic → 1:N  
+Subscription = отдельная очередь с собственной логикой обработки
 
 ```bash
 # Create topic
@@ -114,47 +253,108 @@ az servicebus topic subscription create \
 
 ---
 
-## Service Bus Tiers
+## Тарифные планы Service Bus
 
-Azure Service Bus offers three pricing tiers with different capabilities and performance characteristics.
+Azure Service Bus предлагает три тарифных уровня с разными возможностями и характеристиками производительности.
 
-### Tier Comparison
+---
 
-| Feature | Basic | Standard | Premium |
-|---------|-------|----------|---------|
-| **Queues** | ✅ Yes | ✅ Yes | ✅ Yes |
-| **Topics/Subscriptions** | ❌ No | ✅ Yes | ✅ Yes |
-| **Max Message Size** | 256 KB | 256 KB | 100 MB |
-| **Max Queue/Topic Size** | 1 GB | 1-5 GB | 1-80 GB |
-| **Throughput** | Low | Variable (shared) | High (dedicated) |
-| **Latency** | Standard | Standard | Low (<10 ms) |
-| **Resource Isolation** | ❌ Shared | ❌ Shared | ✅ Dedicated CPU/Memory |
-| **Transactions** | ❌ No | ✅ Yes | ✅ Yes |
-| **Duplicate Detection** | ❌ No | ✅ Yes | ✅ Yes |
-| **Sessions** | ❌ No | ✅ Yes | ✅ Yes |
-| **Batching** | ✅ Yes | ✅ Yes | ✅ Yes |
-| **Auto-Forwarding** | ❌ No | ✅ Yes | ✅ Yes |
-| **Scheduled Messages** | ❌ No | ✅ Yes | ✅ Yes |
-| **Dead-Letter Queue** | ✅ Yes | ✅ Yes | ✅ Yes |
-| **Geo-Disaster Recovery** | ❌ No | ❌ No | ✅ Yes |
-| **Availability Zones** | ❌ No | ❌ No | ✅ Yes |
-| **Private Endpoints** | ❌ No | ❌ No | ✅ Yes |
-| **JMS 2.0 Support** | ❌ No | ❌ No | ✅ Yes |
-| **Pricing Model** | Pay-per-operation | Pay-per-operation | Fixed monthly |
-| **Typical Use Case** | Dev/test, simple queues | Production, standard workloads | Mission-critical, high-performance |
+## Сравнение тарифов
 
-### Basic Tier
+| Возможность | Basic | Standard | Premium |
+|-------------|--------|----------|----------|
+| **Queues** | ✅ Да | ✅ Да | ✅ Да |
+| **Topics / Subscriptions** | ❌ Нет | ✅ Да | ✅ Да |
+| **Макс. размер сообщения** | 256 KB | 256 KB | 100 MB |
+| **Макс. размер очереди / topic** | 1 GB | 1–5 GB | 1–80 GB |
+| **Throughput** | Низкий | Переменный (shared) | Высокий (dedicated) |
+| **Latency** | Стандартная | Стандартная | Низкая (<10 ms) |
+| **Изоляция ресурсов** | ❌ Shared | ❌ Shared | ✅ Выделенные CPU/Memory |
+| **Транзакции** | ❌ Нет | ✅ Да | ✅ Да |
+| **Duplicate Detection** | ❌ Нет | ✅ Да | ✅ Да |
+| **Sessions (FIFO)** | ❌ Нет | ✅ Да | ✅ Да |
+| **Batching** | ✅ Да | ✅ Да | ✅ Да |
+| **Auto-Forwarding** | ❌ Нет | ✅ Да | ✅ Да |
+| **Scheduled Messages** | ❌ Нет | ✅ Да | ✅ Да |
+| **Dead-Letter Queue** | ✅ Да | ✅ Да | ✅ Да |
+| **Geo-Disaster Recovery** | ❌ Нет | ❌ Нет | ✅ Да |
+| **Availability Zones** | ❌ Нет | ❌ Нет | ✅ Да |
+| **Private Endpoints** | ❌ Нет | ❌ Нет | ✅ Да |
+| **JMS 2.0 Support** | ❌ Нет | ❌ Нет | ✅ Да |
+| **Модель оплаты** | Оплата за операции | Оплата за операции | Фиксированная ежемесячная |
+| **Типичный сценарий** | Dev/Test | Production | Mission-critical |
 
-**Best for:**
-- Development and testing
-- Simple queue scenarios
-- Budget-conscious projects
+---
 
-**Limitations:**
-- No topics/subscriptions
-- No advanced features (sessions, transactions, etc.)
-- Lower throughput
+## Basic Tier
 
+### Подходит для:
+- Разработки и тестирования
+- Простых сценариев с очередями
+- Проектов с ограниченным бюджетом
+
+### Ограничения:
+- Нет поддержки Topics / Subscriptions
+- Нет sessions (FIFO)
+- Нет транзакций
+- Нет duplicate detection
+- Ограниченная производительность
+
+📌 Basic — минимальный функционал без enterprise-возможностей.
+
+---
+
+## Standard Tier
+
+### Подходит для:
+- Production-нагрузки
+- Большинства бизнес-приложений
+- Сценариев с pub/sub
+- FIFO через sessions
+- Транзакционных сценариев
+
+### Особенности:
+- Shared инфраструктура
+- Поддержка Topics
+- Поддержка advanced-функций
+
+📌 Это наиболее часто используемый тариф для production.
+
+---
+
+## Premium Tier
+
+### Подходит для:
+- Mission-critical систем
+- Высокой нагрузки
+- Низкой задержки
+- Требований к изоляции ресурсов
+- Интеграции с JMS 2.0
+
+### Преимущества:
+- Выделенные ресурсы (CPU/Memory)
+- Высокий throughput
+- Низкая latency
+- Поддержка Geo-DR
+- Поддержка Availability Zones
+- Сообщения до 100 MB
+
+📌 Premium — для высоконагруженных enterprise-систем.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Нужны Topics → минимум Standard
+- Нужны Sessions / Transactions → минимум Standard
+- Нужна высокая производительность и изоляция → Premium
+- Dev/Test без сложных требований → Basic
+
+Главный ориентир:
+
+Basic → простая очередь  
+Standard → полноценный production  
+Premium → критически важные высоконагруженные системы
 ```csharp
 // Basic tier usage
 await using var client = new ServiceBusClient(connectionString);
@@ -164,17 +364,43 @@ await sender.SendMessageAsync(new ServiceBusMessage("Hello"));
 
 ### Standard Tier
 
-**Best for:**
-- Production workloads
-- Need topics and subscriptions
-- Variable workloads
+## Подходит для:
 
-**Features:**
-- Topics and subscriptions (pub/sub)
-- Transactions
-- Duplicate detection
-- Sessions (FIFO)
-- Advanced routing
+- Production-нагрузок
+- Сценариев с Topics и Subscriptions (pub/sub)
+- Переменной нагрузки
+- Большинства бизнес-приложений
+
+---
+
+## Возможности:
+
+- **Topics и Subscriptions** (поддержка publish/subscribe)
+- **Транзакции** (атомарные операции)
+- **Duplicate Detection** (защита от повторной обработки)
+- **Sessions (FIFO)** (гарантированный порядок обработки)
+- **Продвинутая маршрутизация** (фильтры и правила подписок)
+
+---
+
+## Важно понимать
+
+- Использует shared-инфраструктуру (ресурсы не выделенные)
+- Подходит для большинства production-сценариев
+- Самый распространённый тариф для корпоративных приложений
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+
+- Нужны Topics
+- Требуется FIFO
+- Требуются транзакции
+- Нужна фильтрация сообщений
+
+→ Минимальный правильный ответ — **Standard Tier**.
 
 ```csharp
 // Standard tier with topic
@@ -188,20 +414,46 @@ await sender.SendMessageAsync(message);
 
 ### Premium Tier
 
-**Best for:**
-- Mission-critical workloads
-- Predictable performance required
-- High throughput (80,000+ msg/sec)
-- Large messages (up to 100 MB)
+## Подходит для:
 
-**Features:**
-- Dedicated resources (CPU and memory)
-- Predictable latency (<10 ms)
-- Resource isolation
-- Availability zones
-- Geo-disaster recovery
-- Private endpoints
-- JMS 2.0 support
+- Mission-critical систем
+- Сценариев с предсказуемой производительностью
+- Очень высокой пропускной способности (80 000+ сообщений/сек)
+- Сообщений большого размера (до 100 MB)
+
+---
+
+## Возможности:
+
+- **Выделенные ресурсы (CPU и память)**
+- **Предсказуемая низкая задержка (<10 ms)**
+- **Изоляция ресурсов** (нет "шумных соседей")
+- **Availability Zones**
+- **Geo-Disaster Recovery**
+- **Private Endpoints**
+- **Поддержка JMS 2.0**
+
+---
+
+## Важно понимать
+
+- Фиксированная ежемесячная стоимость (через Messaging Units)
+- Подходит для высоконагруженных и критичных систем
+- Гарантирует стабильную производительность независимо от других клиентов
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+
+- Требуется гарантированная производительность
+- Очень высокий throughput
+- Нужна изоляция ресурсов
+- Требуется Geo-DR или Availability Zones
+- Сообщения > 256 KB
+
+→ Правильный выбор — **Premium Tier**.
 
 ```csharp
 // Premium tier with large message
@@ -348,17 +600,47 @@ await foreach (var message in sessionReceiver.ReceiveMessagesAsync())
 
 ---
 
-## Advanced Features
+## Расширенные возможности
 
-### 1. Message Sessions
+### 1️⃣ Message Sessions
 
-**Enable FIFO guarantee** by grouping related messages using `SessionId`.
+**Гарантия FIFO** достигается за счёт группировки связанных сообщений по `SessionId`.
 
-**Features:**
-- Strict ordering within a session
-- Session state storage
-- Single receiver per session
-- Parallel processing across sessions
+---
+
+## Возможности
+
+- **Строгий порядок внутри сессии**  
+  Все сообщения с одинаковым `SessionId` обрабатываются строго последовательно.
+
+- **Хранение состояния сессии**  
+  Можно сохранять состояние обработки между сообщениями одной сессии.
+
+- **Один получатель на сессию**  
+  В каждый момент времени только один consumer может обрабатывать конкретную сессию.
+
+- **Параллельная обработка между сессиями**  
+  Разные `SessionId` могут обрабатываться параллельно разными consumers.
+
+---
+
+## Когда использовать
+
+- Обработка заказов одного клиента
+- Workflow-сценарии с несколькими шагами
+- Финансовые транзакции
+- Любые процессы, где критичен порядок обработки
+
+---
+
+## Важно для AZ-204
+
+- FIFO гарантируется **только через Sessions**
+- Queue Storage не поддерживает sessions
+- Без включённых sessions порядок обработки не гарантируется
+
+Главная идея:  
+Session = логическая группа сообщений с гарантированным порядком обработки.
 
 ```csharp
 // Enable sessions on queue
@@ -403,16 +685,50 @@ Source Queue    Auto-Forward     Destination Queue
 └──────────┘                    └────────────┘
 ```
 
-### 3. Dead-Letter Queue (DLQ)
+### 3️⃣ Dead-Letter Queue (DLQ)
 
-**Automatically move** unprocessable messages to a separate queue for inspection.
+**Автоматическое перемещение** необрабатываемых сообщений в отдельную очередь для анализа.
 
-**Messages are dead-lettered when:**
-- Max delivery count exceeded
-- Message expired (TTL)
-- Session lock lost
-- Explicitly dead-lettered by receiver
-- Filter evaluation fails
+DLQ — это встроенный механизм Service Bus для изоляции проблемных сообщений без потери данных.
+
+---
+
+## Когда сообщение попадает в DLQ:
+
+- **Превышено максимальное количество попыток доставки**  
+  Сообщение несколько раз не было успешно обработано.
+
+- **Истёк срок жизни сообщения (TTL)**  
+  Сообщение не было обработано вовремя.
+
+- **Потеря блокировки сессии (Session lock lost)**  
+  Consumer не завершил обработку в отведённое время.
+
+- **Явно отправлено в DLQ получателем**  
+  Приложение вручную пометило сообщение как ошибочное.
+
+- **Ошибка фильтрации в подписке**  
+  Сообщение не прошло условия фильтра.
+
+---
+
+## Зачем нужен DLQ
+
+- Диагностика ошибок
+- Повторная обработка (replay)
+- Анализ некорректных сообщений
+- Защита основной очереди от "залипания"
+
+---
+
+## Важно для AZ-204
+
+- DLQ — встроенная функция Service Bus
+- Queue Storage не имеет встроенной DLQ (реализуется вручную)
+- Часто в вопросах DLQ указывает на выбор Service Bus
+
+Главная идея:  
+DLQ = безопасная изоляция проблемных сообщений без их потери.
 
 ```csharp
 // Process with dead-lettering
@@ -568,45 +884,119 @@ az servicebus georecovery-alias create \
   --partner-namespace secondaryNamespaceResourceId
 ```
 
-**Features:**
-- Metadata replication (queues, topics, subscriptions)
-- Automatic failover
-- Single connection string (alias)
-- No message replication (use separately for data redundancy)
+## Дополнительные возможности
+
+### Geo-Disaster Recovery (Geo-DR)
+
+Обеспечивает устойчивость к региональным сбоям на уровне метаданных.
+
+### Возможности:
+
+- **Репликация метаданных**  
+  Очереди, topics и subscriptions копируются во вторичный регион.
+
+- **Автоматическое переключение (failover)**  
+  При сбое можно выполнить переключение на вторичный namespace.
+
+- **Единая строка подключения (alias)**  
+  Клиенты используют alias вместо конкретного namespace.
+
+- **Нет репликации сообщений**  
+  Данные сообщений не копируются автоматически — для полной отказоустойчивости требуется отдельная стратегия (например, cross-region архитектура).
+
+📌 Geo-DR защищает структуру, но не сами сообщения.
 
 ---
 
-## Protocols
+# Протоколы
 
-### AMQP 1.0 (Recommended)
+## AMQP 1.0 (Рекомендуется)
 
-**Advanced Message Queuing Protocol** - Open ISO/IEC standard protocol.
+**Advanced Message Queuing Protocol** — открытый стандарт ISO/IEC для обмена сообщениями.
 
-**Benefits:**
-- Binary protocol (efficient)
-- Multiplexing (multiple sessions over single TCP connection)
-- Cross-platform
-- Long-lived connections
-- Supports transactions
+---
 
+### Преимущества:
+
+- **Бинарный протокол**  
+  Более эффективен, чем текстовые протоколы.
+
+- **Multiplexing**  
+  Несколько сессий могут работать через одно TCP-соединение.
+
+- **Кроссплатформенность**  
+  Поддерживается многими языками и платформами.
+
+- **Долгоживущие соединения**  
+  Подходит для высоконагруженных систем.
+
+- **Поддержка транзакций**  
+  Встроенная поддержка атомарных операций.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- AMQP 1.0 — предпочтительный протокол для Service Bus
+- Поддерживает транзакции и sessions
+- HTTP используется, но AMQP — более эффективный вариант
+
+Если в вопросе упоминается высокая производительность или enterprise-месседжинг → выбирайте AMQP.
 ```csharp
 // Uses AMQP by default
 await using var client = new ServiceBusClient(connectionString);
 ```
 
-### HTTP/REST
+### HTTP / REST
 
-**HTTP-based protocol** for RESTful operations.
+**HTTP-базированный протокол** для выполнения REST-операций с очередями и топиками.
 
-**Benefits:**
-- Firewall-friendly (port 443)
-- Simpler for debugging
-- Works with any HTTP client
+---
 
-**Limitations:**
-- Higher overhead than AMQP
-- No long-polling
-- New connection per request
+## Преимущества:
+
+- **Проходит через firewall**  
+  Использует стандартный порт 443 (HTTPS).
+
+- **Проще для отладки**  
+  Можно использовать обычные HTTP-инструменты (Postman, curl и т.д.).
+
+- **Совместимость**  
+  Работает с любым HTTP-клиентом, независимо от платформы.
+
+---
+
+## Ограничения:
+
+- **Более высокий overhead**, чем у AMQP  
+  Каждый запрос содержит HTTP-заголовки и дополнительную служебную информацию.
+
+- **Нет long-polling**  
+  Используется короткий polling, что менее эффективно при высокой нагрузке.
+
+- **Новое соединение на каждый запрос**  
+  Нет постоянного TCP-соединения, как в AMQP.
+
+---
+
+## Когда использовать
+
+- Простые сценарии
+- Ограничения сети (только HTTPS)
+- Отладка и тестирование
+- Интеграции без специализированных SDK
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- AMQP — предпочтительный протокол для production
+- HTTP — допустим, но менее эффективен
+- Если важна производительность и долгоживущие соединения → выбирайте AMQP
+
+Главная идея:  
+HTTP — проще  
+AMQP — эффективнее и производительнее
 
 ```bash
 # REST API example
@@ -817,37 +1207,74 @@ await Task.WhenAll(tasks);
 
 ---
 
-## Exam Tips for AZ-204
+## Советы для экзамена AZ-204
 
-### Key Concepts
+### Ключевые концепции
 
-1. **Service Bus = Enterprise messaging** (FIFO, transactions, pub/sub)
-2. **Queues = Point-to-point** (one consumer per message)
-3. **Topics = Publish-subscribe** (multiple consumers)
-4. **Sessions = FIFO ordering** (within session)
-5. **Premium = Dedicated resources** (predictable performance)
+1. **Service Bus = Enterprise messaging**  
+   FIFO, транзакции, pub/sub, DLQ, фильтрация.
 
-### Remember
+2. **Queues = Point-to-point**  
+   Одно сообщение → один получатель.
 
-| Feature | Requires |
-|---------|----------|
-| **Topics/Subscriptions** | Standard or Premium tier |
-| **FIFO Ordering** | Sessions enabled |
-| **Transactions** | Standard or Premium tier |
-| **Duplicate Detection** | Standard or Premium tier |
-| **100 MB Messages** | Premium tier only |
-| **Geo-DR** | Premium tier only |
-| **JMS 2.0** | Premium tier only |
+3. **Topics = Publish-subscribe**  
+   Одно сообщение → несколько независимых подписчиков.
 
-### Common Scenarios
+4. **Sessions = FIFO порядок**  
+   Гарантируют последовательную обработку внутри одной сессии.
 
-- **Ordered processing** → Sessions with SessionId
-- **Broadcast events** → Topics with subscriptions
-- **Mission-critical** → Premium tier
-- **Large messages** → Premium tier (100 MB)
-- **Decouple apps** → Queues or topics
-- **Filter messages** → Topic subscriptions with SQL filters
+5. **Premium = Выделенные ресурсы**  
+   Предсказуемая производительность и высокая нагрузка.
 
+---
+
+## Что нужно запомнить
+
+| Возможность | Требует |
+|-------------|---------|
+| **Topics / Subscriptions** | Standard или Premium |
+| **FIFO порядок** | Включённые Sessions |
+| **Транзакции** | Standard или Premium |
+| **Duplicate Detection** | Standard или Premium |
+| **Сообщения до 100 MB** | Только Premium |
+| **Geo-Disaster Recovery** | Только Premium |
+| **JMS 2.0** | Только Premium |
+
+---
+
+## Типовые экзаменационные сценарии
+
+- **Обработка строго по порядку** → Sessions + SessionId
+- **Рассылка событий нескольким сервисам** → Topics + Subscriptions
+- **Mission-critical система** → Premium tier
+- **Большие сообщения (>256 KB)** → Premium tier
+- **Развязать приложения** → Queues или Topics
+- **Фильтрация сообщений** → Topic Subscriptions + SQL filters
+
+---
+
+## Экзаменационный ориентир
+
+Если в вопросе встречаются:
+
+- "ordered processing"
+- "transactions"
+- "duplicate detection"
+- "filtering"
+- "enterprise messaging"
+
+→ Почти всегда это **Service Bus (Standard или Premium)**.
+
+Если акцент на:
+
+- простоте
+- низкой стоимости
+- базовой очереди
+
+→ вероятнее всего **Queue Storage**.
+
+Главное правило:  
+Выбирайте минимальный тариф, который покрывает требования.
 ### Quick Reference
 
 ```csharp
@@ -868,14 +1295,32 @@ var message = await sessionReceiver.ReceiveMessageAsync();
 
 ---
 
-## Summary
+## Итог
 
-**Azure Service Bus** is a fully managed enterprise message broker providing:
-- ✅ Reliable message delivery
-- ✅ Queues (point-to-point) and topics (publish-subscribe)
-- ✅ Three tiers: Basic, Standard, Premium
-- ✅ Advanced features: sessions, transactions, duplicate detection
-- ✅ Multiple protocols: AMQP 1.0, HTTP/REST, JMS 2.0
-- ✅ Enterprise-grade: geo-DR, private endpoints, RBAC
+**Azure Service Bus** — полностью управляемый enterprise-брокер сообщений, предоставляющий:
 
-Use Service Bus for decoupling applications, load leveling, and building reliable distributed systems!
+- ✅ Надёжную доставку сообщений
+- ✅ Очереди (point-to-point) и топики (publish-subscribe)
+- ✅ Три тарифа: Basic, Standard, Premium
+- ✅ Расширенные возможности: sessions, транзакции, duplicate detection
+- ✅ Поддержку нескольких протоколов: AMQP 1.0, HTTP/REST, JMS 2.0
+- ✅ Enterprise-функции: geo-DR, private endpoints, RBAC
+
+---
+
+## Когда использовать Service Bus
+
+- Развязка приложений (decoupling)
+- Сглаживание нагрузки (load leveling)
+- Асинхронная обработка
+- Event-driven архитектура
+- Надёжные распределённые системы
+
+---
+
+## Главное для AZ-204
+
+Service Bus =  
+надежность + порядок + транзакции + pub/sub + enterprise-возможности.
+
+Если задача требует чего-то больше, чем просто «простая очередь» — скорее всего, это Service Bus.

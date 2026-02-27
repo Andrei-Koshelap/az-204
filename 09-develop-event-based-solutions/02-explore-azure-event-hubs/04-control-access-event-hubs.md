@@ -1,32 +1,70 @@
-# Control Access to Event Hubs
+# Контроль доступа к Event Hubs
 
-## Authentication and Authorization Overview
+## Обзор аутентификации и авторизации
 
-Azure Event Hubs supports multiple authentication mechanisms to secure access to event hubs and control who can send or receive events.
-
-### Authentication Methods
-
-| Method | Description | Use Case | Recommended |
-|--------|-------------|----------|-------------|
-| **Azure Active Directory (Azure AD)** | OAuth 2.0 token-based | Production applications | ✅ Yes |
-| **Managed Identity** | No credentials in code | Azure-hosted applications | ✅ Yes |
-| **Shared Access Signature (SAS)** | Token-based with key | Legacy or non-Azure apps | ⚠️ Use with caution |
-| **Connection String** | Contains shared key | Development/testing | ❌ Not recommended |
+Azure Event Hubs поддерживает несколько механизмов аутентификации для защиты доступа к namespace и конкретным Event Hub, а также для управления правами на отправку и получение событий.
 
 ---
 
-## Azure Active Directory (Azure AD) Authorization
+## Методы аутентификации
 
-**Azure AD** provides identity-based authentication using **OAuth 2.0** and the **Microsoft identity platform**.
+| Метод | Описание | Сценарий использования | Рекомендуется |
+|--------|-----------|------------------------|----------------|
+| **Azure Active Directory (Azure AD)** | Аутентификация по OAuth 2.0 токену | Production-приложения | ✅ Да |
+| **Managed Identity** | Без хранения секретов в коде | Приложения, размещённые в Azure | ✅ Да |
+| **Shared Access Signature (SAS)** | Токен на основе ключа | Legacy или не-Azure приложения | ⚠️ С осторожностью |
+| **Connection String** | Содержит shared key | Разработка и тестирование | ❌ Не рекомендуется |
 
-### Benefits
+---
 
-- ✅ **No credentials in code**: Tokens managed by Azure AD
-- ✅ **Fine-grained access**: Role-based access control (RBAC)
-- ✅ **Centralized management**: Manage permissions in Azure Portal
-- ✅ **Audit trail**: Track who accessed what and when
-- ✅ **Token expiration**: Automatic rotation and refresh
-- ✅ **Multi-factor authentication**: Additional security layer
+# Авторизация через Azure Active Directory (Azure AD)
+
+**Azure AD** обеспечивает аутентификацию на основе идентичности с использованием:
+
+- OAuth 2.0
+- Microsoft identity platform
+
+Это рекомендуемый способ для production-сценариев.
+
+---
+
+## Преимущества Azure AD
+
+- ✅ **Отсутствие секретов в коде**  
+  Токены выдаются и управляются Azure AD
+
+- ✅ **Гибкая модель доступа**  
+  Используется Role-Based Access Control (RBAC)
+
+- ✅ **Централизованное управление**  
+  Настройка прав через Azure Portal
+
+- ✅ **Аудит и логирование**  
+  Возможность отслеживать, кто и когда получил доступ
+
+- ✅ **Автоматическое истечение токенов**  
+  Снижается риск компрометации
+
+- ✅ **Поддержка MFA**  
+  Дополнительный уровень безопасности
+
+---
+
+## Что важно для AZ-204
+
+- Для production рекомендуется Azure AD или Managed Identity
+- SAS используется при интеграции с внешними системами
+- Connection string с ключом — не best practice для продакшена
+- RBAC управляет доступом на уровне namespace или Event Hub
+
+---
+
+## Ключевая идея
+
+Современный подход к безопасности Event Hubs —  
+**identity-based access (Azure AD / Managed Identity)** вместо хранения ключей.
+
+На экзамене почти всегда правильный ответ — отказаться от shared keys и использовать RBAC через Azure AD.
 
 ### How Azure AD Authorization Works
 
@@ -56,16 +94,70 @@ Azure Event Hubs supports multiple authentication mechanisms to secure access to
         └────────────────────────────┘
 ```
 
-### Built-in RBAC Roles
+## Встроенные роли RBAC (Built-in RBAC Roles)
 
-Azure Event Hubs provides three built-in roles:
+Azure Event Hubs предоставляет три встроенные роли для управления доступом к данным.
 
-| Role | Description | Permissions | Scope |
-|------|-------------|-------------|-------|
-| **Azure Event Hubs Data Owner** | Full access to Event Hubs resources | Send, receive, manage | Namespace or Event Hub |
-| **Azure Event Hubs Data Sender** | Send access only | Send events | Namespace or Event Hub |
-| **Azure Event Hubs Data Receiver** | Receive access only | Receive events | Namespace or Event Hub |
+| Роль | Описание | Разрешения | Область применения (Scope) |
+|------|-----------|------------|----------------------------|
+| **Azure Event Hubs Data Owner** | Полный доступ к данным Event Hubs | Отправка, получение, управление | Namespace или конкретный Event Hub |
+| **Azure Event Hubs Data Sender** | Доступ только на отправку | Отправка событий | Namespace или конкретный Event Hub |
+| **Azure Event Hubs Data Receiver** | Доступ только на получение | Получение событий | Namespace или конкретный Event Hub |
 
+---
+
+## Пояснения
+
+### 🔹 Azure Event Hubs Data Owner
+- Может отправлять и получать события
+- Может управлять consumer groups
+- Подходит для административных или сервисных ролей
+
+---
+
+### 🔹 Azure Event Hubs Data Sender
+- Может только публиковать события
+- Не имеет доступа к чтению
+- Идеально для producer-приложений
+
+---
+
+### 🔹 Azure Event Hubs Data Receiver
+- Может только читать события
+- Используется consumer-приложениями
+- Не имеет прав на отправку
+
+---
+
+## Scope (область назначения роли)
+
+Роль можно назначить:
+
+- На уровне **Namespace** — доступ ко всем Event Hub внутри
+- На уровне конкретного **Event Hub** — более точечный контроль
+
+📌 Рекомендуется назначать роль на минимально необходимом уровне (principle of least privilege).
+
+---
+
+## Что важно для AZ-204
+
+- RBAC используется вместе с Azure AD
+- Роли Data Sender и Data Receiver чаще всего используются в production
+- Роль назначается через Azure Portal, CLI или ARM/Bicep
+- Лучше использовать Managed Identity + RBAC вместо SAS
+
+---
+
+## Экзаменационная логика
+
+Если в вопросе говорится:
+
+- «Приложение должно только отправлять события» → Data Sender
+- «Приложение должно только читать события» → Data Receiver
+- «Полный доступ» → Data Owner
+
+Понимание различий между этими ролями — обязательный элемент темы безопасности Event Hubs.
 **Detailed Permissions:**
 
 ```
@@ -317,47 +409,99 @@ async function main() {
 main().catch(console.error);
 ```
 
-### DefaultAzureCredential Chain
+## Цепочка DefaultAzureCredential
 
-**DefaultAzureCredential** tries authentication methods in this order:
+**DefaultAzureCredential** автоматически пытается использовать доступные механизмы аутентификации в следующем порядке:
 
-1. **Environment variables**: `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`
-2. **Managed Identity**: System-assigned or user-assigned
-3. **Visual Studio**: Cached credentials
-4. **Azure CLI**: `az login` credentials
-5. **Azure PowerShell**: `Connect-AzAccount` credentials
-6. **Interactive browser**: Prompts for login
+1. **Переменные окружения**  
+   `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`
 
-**Best Practices:**
-- ✅ Use `DefaultAzureCredential` for automatic credential discovery
-- ✅ Works locally (Azure CLI) and in Azure (Managed Identity)
-- ✅ No code changes between environments
+2. **Managed Identity**  
+   System-assigned или user-assigned
+
+3. **Visual Studio**  
+   Кэшированные учетные данные разработчика
+
+4. **Azure CLI**  
+   Учетные данные из `az login`
+
+5. **Azure PowerShell**  
+   Учетные данные из `Connect-AzAccount`
+
+6. **Интерактивный вход через браузер**  
+   Предлагает выполнить авторизацию вручную
 
 ---
 
-## Shared Access Signatures (SAS)
+### Лучшие практики
 
-**Shared Access Signature (SAS)** is a token-based authentication mechanism using shared keys.
+- ✅ Использовать `DefaultAzureCredential` для автоматического выбора способа аутентификации
+- ✅ Работает локально (через Azure CLI) и в Azure (через Managed Identity)
+- ✅ Не требует изменения кода между средами (dev → prod)
 
-### SAS Components
+📌 Это рекомендуемый способ аутентификации для production-приложений.
 
-| Component | Description |
-|-----------|-------------|
-| **Shared Access Policy** | Named policy with permissions and keys |
-| **Primary Key** | First shared key (can be regenerated) |
-| **Secondary Key** | Second shared key (for key rotation) |
-| **SAS Token** | Signed token with expiration and permissions |
+---
 
-### Authorization Rules and Permissions
+# Shared Access Signatures (SAS)
 
-**Permissions:**
+**Shared Access Signature (SAS)** — механизм аутентификации на основе токена, использующий shared keys.
 
-| Permission | Description | Operations |
-|-----------|-------------|------------|
-| **Send** | Send events | Publish events to Event Hub |
-| **Listen** | Receive events | Read events from Event Hub |
-| **Manage** | Manage Event Hub | Create, update, delete Event Hub entities |
+Чаще применяется в legacy-сценариях или при интеграции с внешними системами.
 
+---
+
+## Компоненты SAS
+
+| Компонент | Описание |
+|------------|-----------|
+| **Shared Access Policy** | Именованная политика с набором разрешений и ключами |
+| **Primary Key** | Основной ключ (можно регенерировать) |
+| **Secondary Key** | Вторичный ключ (используется для ротации) |
+| **SAS Token** | Подписанный токен с ограниченным сроком действия и разрешениями |
+
+---
+
+## Правила авторизации и разрешения
+
+### Доступные разрешения:
+
+| Разрешение | Описание | Операции |
+|-------------|-----------|-----------|
+| **Send** | Отправка событий | Публикация событий в Event Hub |
+| **Listen** | Получение событий | Чтение событий из Event Hub |
+| **Manage** | Управление Event Hub | Создание, обновление и удаление сущностей Event Hub |
+
+---
+
+## Важно понимать
+
+- SAS-токены имеют срок действия (expiration)
+- Ключи можно регенерировать без остановки сервиса (через Primary/Secondary rotation)
+- SAS предоставляет доступ на основе ключа, а не идентичности
+- В production предпочтительнее использовать Azure AD + RBAC
+
+---
+
+## Что важно для AZ-204
+
+- `DefaultAzureCredential` — рекомендуемый подход
+- Managed Identity — лучший вариант для Azure-hosted приложений
+- SAS используется, если Azure AD недоступен
+- Разрешения SAS: Send, Listen, Manage
+- Принцип наименьших привилегий (least privilege)
+
+---
+
+## Экзаменационная логика
+
+Если требуется:
+
+- безопасный production-доступ → Azure AD / Managed Identity
+- ротация ключей → использовать Primary/Secondary keys
+- ограниченный доступ по времени → SAS token
+
+Понимание различий между identity-based и key-based доступом — обязательная часть темы безопасности в AZ-204.
 ### Create Authorization Rule
 
 **Azure CLI:**
@@ -679,69 +823,114 @@ az network private-dns link vnet create \
 
 ---
 
-## Best Practices
-
-### Authentication Best Practices
-
-1. **Prefer Azure AD and Managed Identity**
-   - ✅ No credentials in code
-   - ✅ Centralized management
-   - ✅ Automatic key rotation
-   - ✅ Audit trail
-
-2. **Use Least Privilege**
-   - Assign minimum required permissions
-   - Use Data Sender for publishers
-   - Use Data Receiver for consumers
-   - Reserve Data Owner for administrators
-
-3. **Rotate Keys Regularly**
-   - Rotate SAS keys every 90 days
-   - Use secondary key for seamless rotation
-   - Automate key rotation with Azure Key Vault
-
-4. **Store Secrets Securely**
-   - Use Azure Key Vault for connection strings
-   - Never hardcode credentials
-   - Use environment variables or configuration
-
-5. **Monitor Access**
-   - Enable diagnostic logging
-   - Monitor failed authentication attempts
-   - Set alerts for unusual activity
-
-### Network Security Best Practices
-
-1. **Restrict Network Access**
-   - Use VNet service endpoints
-   - Configure IP firewall rules
-   - Implement private endpoints for sensitive workloads
-
-2. **Disable Public Access**
-   - Use private endpoints exclusively
-   - Disable public network access in namespace settings
-
-3. **Use TLS 1.2+**
-   - Enforce minimum TLS version 1.2
-   - Disable older TLS versions
+## Лучшие практики
 
 ---
 
-## Troubleshooting
+# Лучшие практики аутентификации
 
-### Common Issues
+### 1. Предпочитать Azure AD и Managed Identity
 
-**Issue 1: Unauthorized (401)**
+- ✅ Нет хранения секретов в коде
+- ✅ Централизованное управление доступом
+- ✅ Автоматическая ротация токенов
+- ✅ Аудит доступа
 
-**Symptoms:**
-- "Unauthorized" error when sending/receiving events
+---
 
-**Possible Causes:**
-- Incorrect credentials
-- Expired SAS token
-- Missing RBAC role assignment
-- Managed identity not enabled
+### 2. Принцип наименьших привилегий (Least Privilege)
 
+- Назначать только необходимые разрешения
+- Использовать **Data Sender** для publisher
+- Использовать **Data Receiver** для consumer
+- Роль **Data Owner** оставлять администраторам
+
+---
+
+### 3. Регулярная ротация ключей
+
+- Ротировать SAS-ключи каждые ~90 дней
+- Использовать secondary key для бесшовной ротации
+- Автоматизировать ротацию через Azure Key Vault
+
+---
+
+### 4. Безопасное хранение секретов
+
+- Использовать Azure Key Vault для хранения connection strings
+- Никогда не хардкодить учетные данные
+- Использовать переменные окружения или конфигурацию
+
+---
+
+### 5. Мониторинг доступа
+
+- Включить диагностическое логирование
+- Отслеживать неудачные попытки аутентификации
+- Настроить алерты на подозрительную активность
+
+---
+
+# Лучшие практики сетевой безопасности
+
+### 1. Ограничение сетевого доступа
+
+- Использовать VNet service endpoints
+- Настроить IP firewall rules
+- Использовать Private Endpoints для чувствительных систем
+
+---
+
+### 2. Отключение публичного доступа
+
+- Использовать только private endpoints
+- Отключить public network access в настройках namespace
+
+---
+
+### 3. Использование TLS 1.2+
+
+- Установить минимальную версию TLS 1.2
+- Отключить устаревшие версии TLS
+
+---
+
+# Устранение проблем (Troubleshooting)
+
+## Распространённые проблемы
+
+---
+
+### Проблема 1: Unauthorized (401)
+
+**Симптомы:**
+- Ошибка «Unauthorized» при отправке или получении событий
+
+**Возможные причины:**
+
+- Неверные учетные данные
+- Просроченный SAS-токен
+- Отсутствует назначение RBAC-роли
+- Managed Identity не включена
+
+**Что проверить:**
+
+- Корректность токена или connection string
+- Срок действия SAS
+- Назначена ли нужная роль (Data Sender / Receiver)
+- Активирована ли Managed Identity
+- Совпадает ли tenant Azure AD
+
+---
+
+## Что важно для AZ-204
+
+- В production — Azure AD / Managed Identity
+- SAS требует контроля срока действия
+- RBAC-роль обязательна при использовании Azure AD
+- 401 обычно означает проблему с аутентификацией или авторизацией
+
+Понимание разницы между ошибками аутентификации (401) и сетевыми проблемами — частый экзаменационный момент.
 **Resolution:**
 
 ```bash
@@ -781,53 +970,95 @@ az eventhubs namespace network-rule list \
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204 (Контроль доступа к Event Hubs)
 
-### Key Concepts to Remember
+## Ключевые концепции
 
-1. **Azure AD** = Preferred authentication (OAuth 2.0, no credentials in code)
-2. **Managed Identity** = Best for Azure-hosted apps (automatic credential management)
-3. **RBAC Roles** = Data Owner (full), Data Sender (send only), Data Receiver (receive only)
-4. **SAS** = Token-based authentication with shared keys
-5. **Connection String** = Contains shared keys (use with caution)
-6. **VNet Integration** = Restrict access to specific networks
-7. **Private Endpoints** = Private IP connectivity from VNet
+1. **Azure AD**  
+   Предпочтительный способ аутентификации  
+   (OAuth 2.0, без хранения секретов в коде)
 
-### Common Exam Scenarios
+2. **Managed Identity**  
+   Лучший вариант для приложений, размещённых в Azure  
+   (автоматическое управление учетными данными)
 
-**Scenario 1**: Secure Azure Function sending events
-- ✅ Enable managed identity on Function App
-- ✅ Assign "Azure Event Hubs Data Sender" role
-- ✅ Use `DefaultAzureCredential()` in code
+3. **RBAC-роли**
+   - Data Owner — полный доступ
+   - Data Sender — только отправка
+   - Data Receiver — только получение
 
-**Scenario 2**: Fine-grained access control
-- ✅ Use Azure AD with RBAC roles
-- ✅ Data Sender for publishers
-- ✅ Data Receiver for consumers
+4. **SAS (Shared Access Signature)**  
+   Токен на основе shared keys
 
-**Scenario 3**: Rotate credentials without downtime
-- ✅ Use SAS with primary and secondary keys
-- ✅ Update apps to use secondary key
-- ✅ Regenerate primary key
-- ✅ Update apps to use new primary key
-- ✅ Regenerate secondary key
+5. **Connection String**  
+   Содержит shared key (менее безопасный вариант)
 
-**Scenario 4**: Restrict network access
-- ✅ Configure VNet service endpoints
-- ✅ Add IP firewall rules
-- ✅ Use private endpoints for sensitive workloads
+6. **VNet Integration**  
+   Ограничение доступа к Event Hubs по сети
 
-### Remember for Exam
+7. **Private Endpoints**  
+   Доступ через приватный IP внутри VNet
 
-- **Preferred**: Azure AD + Managed Identity (no credentials)
-- **RBAC Roles**: 3 built-in roles (Owner, Sender, Receiver)
-- **SAS**: Token-based, time-limited, permissions-based
-- **Connection String**: Contains shared key (less secure)
-- **DefaultAzureCredential**: Automatic credential discovery
-- **VNet Integration**: Service endpoints or private endpoints
-- **Least Privilege**: Assign minimum required permissions
+---
 
-### Quick Reference
+## Типовые экзаменационные сценарии
+
+### Сценарий 1: Безопасная отправка событий из Azure Function
+
+✔ Включить Managed Identity для Function App  
+✔ Назначить роль **Azure Event Hubs Data Sender**  
+✔ Использовать `DefaultAzureCredential()`
+
+---
+
+### Сценарий 2: Гибкий контроль доступа
+
+✔ Использовать Azure AD + RBAC  
+✔ Data Sender для publisher  
+✔ Data Receiver для consumer
+
+---
+
+### Сценарий 3: Ротация ключей без простоя
+
+✔ Использовать SAS с primary и secondary ключами  
+✔ Перевести приложения на secondary ключ  
+✔ Регенерировать primary ключ  
+✔ Перевести приложения на новый primary ключ  
+✔ Регенерировать secondary ключ
+
+---
+
+### Сценарий 4: Ограничение сетевого доступа
+
+✔ Настроить VNet service endpoints  
+✔ Добавить IP firewall rules  
+✔ Использовать private endpoints для чувствительных систем
+
+---
+
+## Что обязательно помнить
+
+- Предпочтительный вариант: **Azure AD + Managed Identity**
+- Встроенные RBAC-роли: Owner, Sender, Receiver
+- SAS — токен с ограниченным сроком действия и набором разрешений
+- Connection string содержит shared key
+- `DefaultAzureCredential` автоматически выбирает способ аутентификации
+- Для ограничения сети использовать Service Endpoints или Private Endpoints
+- Всегда применять принцип **наименьших привилегий (Least Privilege)**
+
+---
+
+## Экзаменационная логика
+
+Если вопрос касается:
+
+- безопасности production-системы → Azure AD / Managed Identity
+- минимизации прав → RBAC + Least Privilege
+- временного доступа → SAS
+- сетевой изоляции → VNet или Private Endpoint
+
+Понимание различий между identity-based и key-based доступом — ключевой момент для успешной сдачи AZ-204.### Quick Reference
 
 ```csharp
 // Managed Identity (Recommended)
@@ -852,32 +1083,69 @@ az role assignment create \
 
 ---
 
-## Summary
+## Итог
 
-**Controlling access** to Event Hubs involves authentication (who you are) and authorization (what you can do).
+**Контроль доступа** к Event Hubs включает два аспекта:
 
-**Authentication Methods:**
-- Azure AD (OAuth 2.0) - Recommended
-- Managed Identity - Best for Azure apps
-- Shared Access Signatures (SAS) - Token-based
-- Connection Strings - Contains shared keys
+- **Аутентификация** — кто вы
+- **Авторизация** — что вам разрешено делать
 
-**Authorization:**
-- RBAC Roles: Data Owner, Data Sender, Data Receiver
-- Permissions: Send, Listen, Manage
-- Scope: Namespace or Event Hub level
+---
 
-**Network Security:**
+## Методы аутентификации
+
+- **Azure AD (OAuth 2.0)** — рекомендуемый способ
+- **Managed Identity** — лучший вариант для приложений в Azure
+- **Shared Access Signatures (SAS)** — токены на основе shared keys
+- **Connection Strings** — содержат shared keys (менее безопасно)
+
+---
+
+## Авторизация
+
+- **RBAC-роли:**
+   - Data Owner
+   - Data Sender
+   - Data Receiver
+
+- **Разрешения:**
+   - Send
+   - Listen
+   - Manage
+
+- **Scope назначения роли:**
+   - На уровне Namespace
+   - На уровне конкретного Event Hub
+
+---
+
+## Сетевая безопасность
+
 - VNet service endpoints
 - IP firewall rules
 - Private endpoints (Private Link)
 
-**Best Practices:**
-- Prefer Azure AD and managed identity
-- Use least privilege principle
-- Rotate keys regularly
-- Store secrets securely (Key Vault)
-- Monitor access and audit logs
+---
+
+## Лучшие практики
+
+- Предпочитать Azure AD и Managed Identity
+- Применять принцип наименьших привилегий
+- Регулярно ротировать ключи
+- Хранить секреты в Azure Key Vault
+- Включать мониторинг доступа и аудит
+
+---
+
+## Главное для AZ-204
+
+Если требуется:
+
+- безопасный production-доступ → Azure AD + Managed Identity
+- ограничение прав → RBAC + Least Privilege
+- сетовая изоляция → VNet или Private Endpoint
+
+Понимание различий между методами аутентификации и моделями авторизации — ключевой элемент темы безопасности в AZ-204.
   
 - | Если нужно                               | Используй              |
   | ---------------------------------------- | ---------------------- |

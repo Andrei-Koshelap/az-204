@@ -820,6 +820,7 @@ curl "https://api.contoso.com/users?subscription-key=key"  # Insecure
 - мониторинге использования,
 
 — правильные действия включают ротацию ключей, использование Primary/Secondary и включение аналитики.
+
 ### 6. **Implement Approval Workflow**
 
 ✅ **Do**: Require approval for sensitive APIs
@@ -963,6 +964,10 @@ Service: Internal Microservice
 - Ротация ключей — стандартная практика безопасности.
 - Разные тарифы реализуются через продукты и подписки, а не через отдельные API.---
 
+Когда subscription key НЕ нужен
+Используется OAuth 2.0
+Используется validate-jwt policy
+Используется Azure AD authentication
 ## Learn More
 
 - [Subscriptions in API Management](https://docs.microsoft.com/azure/api-management/api-management-subscriptions)

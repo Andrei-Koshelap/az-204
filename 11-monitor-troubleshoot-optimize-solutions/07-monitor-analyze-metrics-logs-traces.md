@@ -10,26 +10,48 @@ Metrics Explorer provides real-time visualization of preaggregated metrics.
 
 ### Creating Metric Charts
 
-**Azure Portal:**
-```
-Application Insights → Metrics
-1. Select metric namespace: azure.applicationinsights
-2. Select metric: requests/count
-3. Select aggregation: Sum
-4. Add filter: cloud_RoleName = OrderService
-5. Apply splitting: request/resultCode
-```
 
-**Common Metrics:**
+### Что это даст:
 
-| Metric | Description | Typical Use |
-|--------|-------------|-------------|
-| `requests/count` | Request rate | Traffic monitoring |
-| `requests/duration` | Response time | Performance monitoring |
-| `requests/failed` | Failed requests | Error monitoring |
-| `dependencies/duration` | Dependency latency | Bottleneck identification |
-| `exceptions/count` | Exception rate | Error tracking |
-| `availabilityResults/availabilityPercentage` | Uptime | SLA monitoring |
+- Общий объём входящих запросов
+- Фильтрацию по конкретному сервису
+- Разделение по HTTP-кодам (200, 400, 500 и т.д.)
+- Быстрое выявление роста ошибок
+
+---
+
+## Часто используемые метрики
+
+| Метрика | Описание | Типичное применение |
+|----------|------------|----------------------|
+| `requests/count` | Частота запросов | Мониторинг трафика |
+| `requests/duration` | Время ответа | Мониторинг производительности |
+| `requests/failed` | Количество неуспешных запросов | Контроль ошибок |
+| `dependencies/duration` | Задержка зависимостей | Поиск bottleneck |
+| `exceptions/count` | Частота исключений | Отслеживание ошибок |
+| `availabilityResults/availabilityPercentage` | Доступность | Мониторинг SLA |
+
+---
+
+## Практический совет
+
+- Для SLA → используйте `availabilityPercentage`
+- Для P95 latency → `requests/duration` с Percentile (P95)
+- Для анализа деградации БД → `dependencies/duration`
+- Для всплеска ошибок → `requests/failed` + split by `resultCode`
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если требуется:
+
+- Построить алёрт по latency → `requests/duration`
+- Отследить рост ошибок → `requests/failed`
+- Найти узкое место во внешнем сервисе → `dependencies/duration`
+- Проверить доступность → `availabilityPercentage`
+
+Metrics Explorer работает со **standard (предагрегированными) метриками**, что обеспечивает быстрые запросы и минимальную задержку алёртов.
 
 ### Azure CLI Metrics Query
 
@@ -432,17 +454,98 @@ performanceCounters
 | render timechart
 ```
 
-## Workbooks (Interactive Dashboards)
+## Workbooks (Интерактивные дашборды)
 
-Create custom interactive reports combining multiple data sources.
+Workbooks позволяют создавать кастомные интерактивные отчёты, объединяя данные из нескольких источников:
 
-**Example Workbook Sections:**
-1. **Executive Summary**: Key metrics (requests, errors, performance)
-2. **Performance Analysis**: Response time trends, slow operations
-3. **Failure Analysis**: Error rates, exception types
-4. **Dependency Health**: External service performance
-5. **Usage Analytics**: User activity, popular features
+- Application Insights
+- Log Analytics
+- Azure Monitor Metrics
+- Resource Graph
+- и других сервисов Azure
 
+Это более гибкий инструмент, чем обычные Dashboard.
+
+---
+
+## Пример структуры Workbook
+
+### 1. Executive Summary (Сводка для руководства)
+
+- Общий объём запросов
+- Процент ошибок
+- Среднее и P95 время ответа
+- Доступность (SLA)
+
+Цель — быстро понять текущее состояние системы.
+
+---
+
+### 2. Performance Analysis (Анализ производительности)
+
+- Тренды response time
+- P95 / P99 latency
+- Самые медленные операции
+- Анализ зависимостей (dependencies)
+
+Используются:
+- Standard metrics
+- KQL-запросы для детализации
+
+---
+
+### 3. Failure Analysis (Анализ ошибок)
+
+- Процент ошибок по времени
+- Топ исключений
+- Разбиение по `resultCode`
+- Корреляция с конкретными сервисами
+
+Позволяет быстро перейти к root cause.
+
+---
+
+### 4. Dependency Health (Состояние зависимостей)
+
+- Latency внешних API
+- Ошибки SQL
+- Деградация Redis или других сервисов
+- Процент таймаутов
+
+Помогает определить внешний bottleneck.
+
+---
+
+### 5. Usage Analytics (Аналитика использования)
+
+- Активность пользователей
+- Популярные функции
+- Кастомные бизнес-события
+- Воронки (funnel analysis)
+
+Используются Custom Events и Custom Metrics.
+
+---
+
+## Почему Workbooks важны
+
+- Объединяют Metrics + Logs + KQL в одном интерфейсе
+- Поддерживают параметры (filters, time range)
+- Позволяют создавать drill-down сценарии
+- Подходят для технических и бизнес-отчётов
+
+---
+
+## Для AZ-204 важно помнить
+
+Если требуется:
+
+- Создать кастомный отчёт → Workbooks
+- Объединить несколько источников данных → Workbooks
+- Построить интерактивный мониторинг → Workbooks
+- Использовать KQL внутри отчёта → Workbooks
+
+Workbooks — это продвинутый инструмент визуализации и анализа телеметрии.
 **Create Workbook:**
 ```
 Application Insights → Workbooks → New
@@ -453,37 +556,83 @@ Add sections:
 • Text explanations
 ```
 
-## Best Practices
+## Лучшие практики
 
-✅ **Use Metrics Explorer** for real-time monitoring and dashboards
-✅ **Use KQL** for deep analysis and troubleshooting
-✅ **Create alerts** on critical metrics (response time, error rate, availability)
-✅ **Use percentiles** (p95, p99) instead of averages for SLOs
-✅ **Correlate data** across requests, dependencies, and exceptions
-✅ **Track custom events** for business metrics
-✅ **Use GetMetric()** for efficient custom metrics
-✅ **Create workbooks** for team dashboards
-✅ **Set up Smart Detection** for automatic anomaly alerts
+✅ **Используйте Metrics Explorer** для мониторинга в реальном времени и дашбордов
 
-## Key Takeaways
+✅ **Используйте KQL** для глубокого анализа и troubleshooting
 
-✅ **Metrics Explorer**: Real-time preaggregated metrics for dashboards
-✅ **KQL**: Powerful query language for log analysis
-✅ **Distributed tracing**: End-to-end request flow analysis
-✅ **Custom events/metrics**: Track business-specific data
-✅ **Alerts**: Proactive notification on anomalies
-✅ **Workbooks**: Interactive dashboards for teams
-✅ **Performance counters**: Server-level metrics (CPU, memory)
+✅ **Создавайте алёрты** по критическим метрикам (время ответа, error rate, доступность)
 
-## AZ-204 Exam Tips
+✅ **Используйте percentiles (p95, p99)** вместо среднего значения для SLO
 
-💡 **Metrics vs Logs**: Metrics for dashboards/alerts, Logs for deep analysis
-💡 **KQL summarize**: Most common operation for aggregations
-💡 **operation_Id**: Key for correlating telemetry across services
-💡 **Percentiles**: Use p95/p99 for performance SLOs (not average)
-💡 **GetMetric()**: Preferred over TrackMetric() for efficiency
-💡 **Dynamic thresholds**: AI-powered anomaly detection
+✅ **Коррелируйте данные** между requests, dependencies и exceptions
 
+✅ **Отслеживайте custom events** для бизнес-метрик
+
+✅ **Используйте `GetMetric()`** для эффективных кастомных метрик
+
+✅ **Создавайте Workbooks** для командных дашбордов
+
+✅ **Включайте Smart Detection** для автоматического обнаружения аномалий
+
+---
+
+## Основные выводы
+
+✅ **Metrics Explorer** — real-time предагрегированные метрики для дашбордов
+
+✅ **KQL** — мощный язык запросов для анализа логов
+
+✅ **Distributed tracing** — анализ полного пути запроса (end-to-end)
+
+✅ **Custom events и metrics** — сбор бизнес-специфичных данных
+
+✅ **Alerts** — проактивное уведомление о проблемах
+
+✅ **Workbooks** — интерактивные дашборды для команды
+
+✅ **Performance counters** — метрики уровня сервера (CPU, память и т.д.)
+
+---
+
+## Советы для экзамена AZ-204
+
+💡 **Metrics vs Logs**  
+Metrics — для дашбордов и алёртов  
+Logs — для глубокого анализа
+
+💡 **KQL `summarize`**  
+Операция агрегации — самая часто используемая в экзаменационных сценариях
+
+💡 **`operation_Id`**  
+Ключевое поле для корреляции телеметрии между сервисами
+
+💡 **Percentiles**  
+Для SLO используйте p95/p99, а не average
+
+💡 **`GetMetric()`**  
+Предпочтительнее `TrackMetric()` (эффективность и предагрегация)
+
+💡 **Dynamic thresholds**  
+AI-based обнаружение аномалий через Smart Detection
+
+---
+
+### Экзаменационный акцент
+
+Если в вопросе требуется:
+
+- Быстрый алёрт → Standard metrics
+- Анализ причин сбоя → KQL + correlation
+- SLA/SLO → Percentiles
+- Бизнес-метрики → Custom events / GetMetric()
+- Автоматическое обнаружение аномалий → Smart Detection
+
+Главное — правильно выбрать инструмент под задачу:  
+Metrics → быстро  
+Logs → глубоко  
+Tracing → связать всё вместе
 ---
 
 **📚 Further Reading:**

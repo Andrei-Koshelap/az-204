@@ -1,13 +1,62 @@
-# Troubleshoot Applications with Application Map
+# Диагностика приложений с помощью Application Map
 
-## Overview
+## Обзор
 
-Application Map provides a visual representation of your distributed application's architecture, helping you spot performance bottlenecks and failure hotspots across all components. It's essential for troubleshooting microservices and distributed systems.
+Application Map — это инструмент визуализации распределённой архитектуры приложения, который помогает быстро выявлять:
 
-## What is Application Map?
+- узкие места производительности
+- точки повышенного количества ошибок
+- деградацию внешних зависимостей
+- проблемные сервисы в цепочке вызовов
 
-Application Map automatically discovers and visualizes your application topology by following HTTP dependency calls between services with the Application Insights SDK installed.
+Он особенно важен при работе с микросервисами и распределёнными системами.
 
+---
+
+## Что такое Application Map?
+
+Application Map автоматически обнаруживает и отображает топологию приложения, отслеживая HTTP-зависимости между сервисами, где установлен Application Insights SDK.
+
+### Как это происходит:
+
+- SDK добавляет correlation ID к каждому запросу
+- Входящие запросы фиксируются как **Requests**
+- Исходящие вызовы фиксируются как **Dependencies**
+- Сервисы группируются по свойству `cloud_RoleName`
+- На основе этих данных строится карта взаимодействий
+
+---
+
+## Что отображается на карте
+
+- Узлы (сервисы, базы данных, внешние API)
+- Связи между ними
+- Частота вызовов
+- Время ответа
+- Процент ошибок
+- Цветовая индикация состояния (здоров / деградирует / ошибка)
+
+---
+
+## Когда использовать
+
+- При инциденте в production
+- Для поиска bottleneck’ов
+- Для анализа цепочки вызовов (end-to-end flow)
+- При переходе к микросервисной архитектуре
+- Для понимания реальной топологии системы
+
+---
+
+## Важно для AZ-204
+
+Если требуется:
+
+- Визуализировать архитектуру → Application Map
+- Найти проблемный сервис → Application Map
+- Отследить цепочку запроса → Distributed Tracing + Application Map
+
+Главная цель — быстро определить компонент, вызывающий сбой или задержку.
 ```
 ┌──────────────────── APPLICATION MAP ────────────────────────┐
 │                                                               │
@@ -27,13 +76,53 @@ Application Map automatically discovers and visualizes your application topology
 └───────────────────────────────────────────────────────────────┘
 ```
 
-## Component Discovery
+## Обнаружение компонентов (Component Discovery)
 
-Application Map discovers components through:
+Application Map автоматически обнаруживает компоненты системы на основе телеметрии.
 
-1. **HTTP Dependency Tracking**: Follows calls between services
-2. **Cloud Role Name**: Groups telemetry by service
-3. **Correlation IDs**: Links related operations
+### Как происходит обнаружение:
+
+1. **HTTP Dependency Tracking**  
+   Отслеживаются вызовы между сервисами (Requests → Dependencies).  
+   Если один сервис вызывает другой по HTTP, создаётся связь на карте.
+
+2. **Cloud Role Name (`cloud_RoleName`)**  
+   Телеметрия группируется по имени сервиса.  
+   Каждый уникальный `cloud_RoleName` отображается как отдельный узел.
+
+3. **Correlation IDs**  
+   Связывают связанные операции в одну цепочку выполнения (trace).  
+   Позволяют корректно отобразить направление вызовов.
+
+---
+
+## Что важно понимать
+
+- Если SDK установлен не на всех сервисах, карта будет неполной.
+- Внешние зависимости (SQL, Redis, HTTP API) отображаются автоматически.
+- Для корректной работы необходима передача trace context между сервисами.
+
+---
+
+## Практический вывод
+
+Чтобы Application Map работала корректно:
+
+- SDK должен быть установлен на всех компонентах
+- `cloud_RoleName` должен быть настроен корректно
+- Correlation должен передаваться между сервисами
+
+---
+
+## Для AZ-204
+
+Если в вопросе требуется:
+
+- Автоматическое обнаружение сервисов → Application Map
+- Группировка по сервисам → `cloud_RoleName`
+- Связать операции в одну цепочку → Correlation ID
+
+Главное — понимать, что карта строится на основе Requests + Dependencies + Correlation.
 
 ### Setting Cloud Role Name
 
@@ -365,33 +454,78 @@ union requests, dependencies, exceptions, traces
 | order by timestamp asc
 ```
 
-## Best Practices
+## Лучшие практики
 
-✅ **Set cloud_RoleName** for all services (enables proper grouping)
-✅ **Install SDK on all components** for complete visibility
-✅ **Monitor Application Map daily** to catch new issues
-✅ **Use time range filters** to investigate specific incidents
-✅ **Click through to detailed metrics** for root cause analysis
-✅ **Enable distributed tracing** for microservices
-✅ **Review topology changes** after deployments
+✅ **Настройте `cloud_RoleName` для всех сервисов**  
+Это обеспечивает корректную группировку компонентов на карте.
 
-## Key Takeaways
+✅ **Установите SDK на все компоненты**  
+Иначе карта будет неполной и не покажет реальные зависимости.
 
-✅ **Application Map** visualizes distributed application architecture automatically
-✅ **Color-coded nodes** indicate health status (green/yellow/red)
-✅ **cloud_RoleName** determines how components are grouped
-✅ **Distributed tracing** links operations across services
-✅ **Click-through** provides detailed metrics and failure analysis
-✅ **Best for** troubleshooting microservices and identifying bottlenecks
+✅ **Проверяйте Application Map регулярно**  
+Это помогает вовремя замечать новые ошибки или деградацию производительности.
 
-## AZ-204 Exam Tips
+✅ **Используйте фильтр временного диапазона (Time range)**  
+Позволяет анализировать конкретный инцидент или период времени.
 
-💡 **Application Map shows distributed topology** - use for troubleshooting multi-service apps
-💡 **cloud_RoleName** is key for component grouping
-💡 **Automatic discovery** via HTTP dependency tracking
-💡 **Color indicators**: Green (healthy), Yellow (warning), Red (critical)
-💡 **Use with distributed tracing** for end-to-end request flows
+✅ **Переходите к детальным метрикам (Click-through)**  
+Для проведения root cause analysis.
 
+✅ **Включите distributed tracing**  
+Особенно важно для микросервисной архитектуры.
+
+✅ **Проверяйте изменения топологии после деплоя**  
+Новые сервисы или зависимости должны корректно отображаться на карте.
+
+---
+
+## Основные выводы
+
+✅ **Application Map** автоматически визуализирует распределённую архитектуру приложения
+
+✅ **Цветовая индикация узлов** показывает состояние:
+- 🟢 Зелёный — здоров
+- 🟡 Жёлтый — предупреждение
+- 🔴 Красный — критическая проблема
+
+✅ **`cloud_RoleName`** определяет группировку компонентов
+
+✅ **Distributed tracing** связывает операции между сервисами
+
+✅ **Click-through** позволяет перейти к детальному анализу ошибок и метрик
+
+✅ **Лучше всего подходит для** диагностики микросервисов и поиска узких мест
+
+---
+
+## Советы для экзамена AZ-204
+
+💡 **Application Map показывает распределённую топологию**  
+Используется для диагностики multi-service приложений.
+
+💡 **`cloud_RoleName` — ключевой параметр группировки**
+
+💡 **Автоматическое обнаружение** происходит через HTTP dependency tracking
+
+💡 **Цветовая индикация состояния**:  
+Green — healthy  
+Yellow — warning  
+Red — critical
+
+💡 **Используется вместе с distributed tracing**  
+Для анализа полного пути запроса (end-to-end flow).
+
+---
+
+### Экзаменационный акцент
+
+Если в вопросе требуется:
+
+- Визуализировать взаимодействие сервисов → Application Map
+- Найти bottleneck → Application Map
+- Проанализировать цепочку запроса → Distributed Tracing + Application Map
+
+Главная цель — быстро определить проблемный компонент в распределённой системе.
 
 Premium поддерживает:
 

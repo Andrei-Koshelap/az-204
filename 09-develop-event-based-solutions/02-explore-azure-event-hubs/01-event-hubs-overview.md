@@ -1,30 +1,79 @@
-# Azure Event Hubs Overview
+# Обзор Azure Event Hubs
 
-## What is Azure Event Hubs?
+## Что такое Azure Event Hubs?
 
-**Azure Event Hubs** is a fully managed, real-time data streaming platform and event ingestion service that can receive and process **millions of events per second** with low latency.
+**Azure Event Hubs** — это полностью управляемая платформа для потоковой передачи данных в реальном времени и сервис приёма событий, способный принимать и обрабатывать **миллионы событий в секунду** с минимальной задержкой.
 
-### Key Characteristics
+Event Hubs предназначен для сценариев high-throughput ingestion и последующей потоковой или пакетной обработки.
 
-- **Big Data Streaming**: Ingest millions of events per second
-- **Low Latency**: Sub-second latency for real-time processing
-- **Apache Kafka Compatible**: Run existing Kafka workloads without code changes
-- **Durable Storage**: Store streaming data for batch and real-time processing
-- **Partitioned Consumer Model**: Scale with multiple parallel consumers
-- **Multi-Protocol Support**: AMQP, Kafka, HTTPS protocols
-- **Fully Managed**: No infrastructure to manage
+---
 
-### Primary Use Cases
+## Ключевые характеристики
 
-| Use Case | Description | Example |
-|----------|-------------|---------|
-| **Telemetry & IoT** | Ingest IoT device telemetry at scale | Smart home sensors, connected vehicles |
-| **Application Logging** | Collect application logs from distributed systems | Microservices log aggregation |
-| **Clickstream Analytics** | Track user behavior on websites/apps | E-commerce user journey tracking |
-| **Live Dashboarding** | Real-time metrics and monitoring | Operations dashboard, KPI tracking |
-| **Anomaly Detection** | Detect fraud or security threats | Credit card fraud detection |
-| **Archiving** | Store streaming data for compliance | Financial transaction logs |
-| **Transaction Processing** | Process financial transactions | Payment processing, order management |
+- **Big Data Streaming**  
+  Приём миллионов событий в секунду
+
+- **Низкая задержка**  
+  Обработка в режиме near real-time (sub-second latency)
+
+- **Совместимость с Apache Kafka**  
+  Возможность запускать Kafka-нагрузку без изменения кода
+
+- **Долговременное хранение**  
+  События сохраняются для последующей обработки
+
+- **Partitioned Consumer Model**  
+  Масштабирование через параллельных потребителей
+
+- **Поддержка нескольких протоколов**  
+  AMQP, Kafka, HTTPS
+
+- **Полностью управляемый сервис**  
+  Нет необходимости администрировать инфраструктуру
+
+---
+
+# Основные сценарии использования
+
+| Сценарий | Описание | Пример |
+|------------|-----------|---------|
+| **Telemetry & IoT** | Приём телеметрии от IoT-устройств | Умные датчики, автомобили |
+| **Application Logging** | Централизованный сбор логов | Агрегация логов микросервисов |
+| **Clickstream Analytics** | Отслеживание поведения пользователей | Аналитика e-commerce |
+| **Live Dashboarding** | Метрики в реальном времени | Операционные панели |
+| **Anomaly Detection** | Обнаружение аномалий | Fraud detection |
+| **Archiving** | Долговременное хранение потоков | Финансовые логи |
+| **Transaction Processing** | Поточная обработка транзакций | Платёжные системы |
+
+---
+
+## Архитектурный акцент
+
+Event Hubs — это:
+
+- Высокопроизводительный ingestion layer
+- Буфер между producers и stream processors
+- Основа для real-time analytics
+- Часто используется вместе с:
+   - Azure Stream Analytics
+   - Azure Functions
+   - Azure Databricks
+   - Apache Spark
+
+---
+
+## Важно для AZ-204
+
+Нужно понимать:
+
+- Event Hubs = streaming + big data ingestion
+- Поддерживает Kafka-протокол
+- Масштабируется через partitions
+- Подходит для high-throughput telemetry
+- Отличается от Event Grid (reactive events)
+- Отличается от Service Bus (transactional messaging)
+
+Если в вопросе говорится о миллионах событий в секунду или потоковой аналитике — почти всегда правильный ответ — Event Hubs.
 
 ---
 
@@ -88,18 +137,66 @@
 
 ---
 
-## Core Event Hubs Concepts
+# Основные понятия Azure Event Hubs
 
-### 1. Event Hubs Namespace
+## 1️⃣ Event Hubs Namespace
 
-A **namespace** is a management container for one or more Event Hubs (or Kafka topics).
+**Namespace** — это логический контейнер управления, внутри которого создаются один или несколько Event Hubs (или Kafka topics).
 
-**Namespace Characteristics:**
-- **Scope**: Regional resource in a specific Azure location
-- **Capacity**: Defines throughput units or processing units
-- **Network**: Configure VNet, firewall, private endpoints
-- **Security**: Manage access keys and authorization policies
-- **Unique Endpoint**: `<namespace>.servicebus.windows.net`
+Это уровень конфигурации инфраструктуры и безопасности.
+
+---
+
+## Характеристики Namespace
+
+- **Региональность**  
+  Ресурс создаётся в конкретном регионе Azure
+
+- **Емкость (Capacity)**  
+  Определяется через:
+   - Throughput Units (Standard)
+   - Processing Units (Premium/Dedicated)
+
+- **Сетевые настройки**
+   - VNet integration
+   - Firewall rules
+   - Private Endpoints
+
+- **Безопасность**
+   - Shared Access Policies
+   - Access keys
+   - Azure AD / RBAC
+
+- **Уникальный endpoint**  
+  Формат:
+
+<namespace>.servicebus.windows.net
+
+---
+
+## Архитектурный смысл
+
+Namespace:
+
+- Изолирует среду (dev/test/prod)
+- Управляет масштабированием
+- Контролирует сетевой доступ
+- Централизует безопасность
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Namespace — это контейнер для Event Hubs
+- Он региональный
+- Throughput Units определяют пропускную способность
+- Endpoint namespace используется producers и consumers
+- Сетевые и security-настройки применяются на уровне namespace
+
+Если вопрос касается масштабирования, сетевой изоляции или ключей — это уровень namespace.
+
 
 **Create Namespace (Azure CLI):**
 ```bash
@@ -111,25 +208,78 @@ az eventhubs namespace create \
   --capacity 1
 ```
 
-**Namespace Tiers:**
+## Уровни Namespace (Tiers)
 
-| Tier | Throughput | Features | Use Case |
-|------|-----------|----------|----------|
-| **Basic** | Up to 20 TUs | Basic features, 1-day retention | Development, testing |
-| **Standard** | Up to 40 TUs | Consumer groups, Capture, auto-inflate | Production workloads |
-| **Premium** | Processing Units | Dedicated resources, isolation, longer retention | Mission-critical, high throughput |
-| **Dedicated** | Capacity Units | Single-tenant deployment | Enterprise, compliance |
+| Tier | Пропускная способность | Возможности | Сценарий использования |
+|------|------------------------|-------------|------------------------|
+| **Basic** | До 20 Throughput Units | Базовый функционал, хранение 1 день | Разработка, тестирование |
+| **Standard** | До 40 Throughput Units | Consumer groups, Capture, auto-inflate | Production-нагрузка |
+| **Premium** | Processing Units | Выделенные ресурсы, изоляция, увеличенное хранение | Mission-critical системы |
+| **Dedicated** | Capacity Units | Single-tenant развертывание | Enterprise, compliance |
 
-### 2. Event Hub (Kafka Topic)
+---
 
-An **Event Hub** is a log-structured append-only stream, similar to a Kafka topic.
+### Что важно понимать
 
-**Event Hub Properties:**
-- **Partitions**: 1-32 partitions (Standard), up to 100 (Premium)
-- **Retention**: 1-90 days (configurable)
-- **Message Size**: Up to 1 MB per event
-- **Throughput**: Controlled by throughput units
-- **Ordering**: Guaranteed within a partition
+- **Basic** — ограниченный функционал.
+- **Standard** — наиболее распространённый вариант для production.
+- **Premium** — выделенные ресурсы и изоляция.
+- **Dedicated** — отдельный кластер (enterprise-сценарии).
+
+---
+
+# 2️⃣ Event Hub (Kafka Topic)
+
+**Event Hub** — это append-only поток событий, логически похожий на Kafka topic.
+
+События записываются последовательно и не изменяются после публикации.
+
+---
+
+## Свойства Event Hub
+
+- **Partitions**
+   - 1–32 (Standard)
+   - До 100 (Premium)
+     Используются для масштабирования и параллельной обработки.
+
+- **Retention**
+   - От 1 до 90 дней (настраивается)
+     События хранятся фиксированное время независимо от чтения.
+
+- **Размер сообщения**
+   - До 1 MB на событие
+
+- **Throughput**
+   - Ограничивается Throughput Units или Processing Units
+
+- **Ordering**
+   - Гарантируется **внутри одной partition**
+   - Между partitions порядок не гарантируется
+
+---
+
+## Архитектурный акцент
+
+- Event Hub — это distributed log
+- Масштабирование достигается через partitions
+- Producers пишут в partitions
+- Consumers читают независимо
+- Retention не зависит от того, прочитано ли сообщение
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Порядок гарантируется только внутри partition
+- Retention — временной, а не «пока не прочитано»
+- Максимальный размер события — 1 MB
+- Throughput Units ограничивают скорость записи
+- Premium поддерживает больше partitions
+
+Если в вопросе речь о потоковой обработке с миллионами событий — это Event Hubs.
 
 **Create Event Hub (Azure CLI):**
 ```bash
@@ -177,29 +327,82 @@ var eventData = new EventData(Encoding.UTF8.GetBytes(jsonData))
 await producer.SendAsync(eventData);
 ```
 
-**Choosing Partition Count:**
+# Выбор количества partitions
 
-| Partition Count | Throughput | Cost | Use Case |
-|----------------|-----------|------|----------|
-| **1-2** | Low (1-2 MB/s) | Lower | Development, low-volume |
-| **4-8** | Medium (4-8 MB/s) | Moderate | Standard production |
-| **16-32** | High (16-32 MB/s) | Higher | High-throughput applications |
+Количество partitions напрямую влияет на масштабируемость и стоимость.
 
-**Important Notes:**
-- ⚠️ **Cannot change partition count** after Event Hub creation
-- ✅ Plan for future growth
-- ✅ More partitions = more parallelism but higher cost
+| Количество partitions | Пропускная способность | Стоимость | Сценарий |
+|------------------------|------------------------|-----------|----------|
+| **1–2** | Низкая (1–2 MB/s) | Ниже | Разработка, небольшой объём |
+| **4–8** | Средняя (4–8 MB/s) | Средняя | Стандартная production-нагрузка |
+| **16–32** | Высокая (16–32 MB/s) | Выше | High-throughput приложения |
 
-### 4. Consumer Groups
+---
 
-A **consumer group** is a view of the entire Event Hub, enabling multiple applications to read the same stream independently.
+## Важные замечания
 
-**Consumer Group Characteristics:**
-- **Independent Offsets**: Each group tracks its own position
-- **Parallel Processing**: Multiple groups process events simultaneously
-- **Default Group**: `$Default` group created automatically
-- **Maximum Groups**: 20 consumer groups per Event Hub (Standard tier)
+- ⚠️ **Количество partitions нельзя изменить** после создания Event Hub
+- ✅ Планируйте с учётом будущего роста
+- ✅ Больше partitions = больше параллелизма
+- ⚠️ Но выше стоимость
 
+---
+
+## Архитектурный акцент
+
+- Partitions определяют уровень параллельной обработки
+- Каждый consumer читает partition эксклюзивно
+- Ordering гарантируется только внутри partition
+- Scaling-out = увеличение числа partitions
+
+---
+
+# 4️⃣ Consumer Groups
+
+**Consumer group** — это независимое представление потока, позволяющее нескольким приложениям читать одни и те же события независимо друг от друга.
+
+---
+
+## Характеристики Consumer Groups
+
+- **Независимые offset’ы**  
+  Каждая группа отслеживает свою позицию чтения
+
+- **Параллельная обработка**  
+  Разные группы могут обрабатывать один и тот же поток одновременно
+
+- **Группа по умолчанию**  
+  `$Default` создаётся автоматически
+
+- **Максимум групп**  
+  До 20 consumer groups в Standard tier
+
+---
+
+## Архитектурный пример
+
+Один Event Hub может обслуживать:
+
+- Real-time analytics
+- Архивирование
+- Fraud detection
+- Мониторинг
+
+Каждый сценарий использует отдельную consumer group.
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Consumer group = независимое чтение одного потока
+- Offsets хранятся отдельно для каждой группы
+- `$Default` создаётся автоматически
+- Partitions нельзя изменить после создания
+- Ordering гарантируется только внутри partition
+
+Если в вопросе требуется несколько независимых обработчиков одного потока — используйте consumer groups.
 **Consumer Group Use Cases:**
 
 ```
@@ -307,19 +510,62 @@ if (batch.Count > 0)
 }
 ```
 
-### 6. Event Consumers
+# 6️⃣ Event Consumers
 
-**Event consumers** read and process data from Event Hubs.
+**Event consumers** — это приложения или сервисы, которые читают и обрабатывают данные из Event Hubs.
 
-**Consumer Types:**
+Они получают события из partitions и обрабатывают их в реальном времени или пакетно.
 
-| Consumer Type | Use Case | Example |
+---
+
+## Типы Consumers
+
+| Тип Consumer | Сценарий | Пример |
 |--------------|----------|---------|
-| **EventHubConsumerClient** | Simple prototyping, testing | Read events manually |
-| **EventProcessorClient** | Production applications | Scalable, fault-tolerant processing |
-| **Azure Stream Analytics** | Real-time analytics | SQL-like queries on streams |
-| **Azure Functions** | Serverless event processing | Triggered by new events |
-| **Apache Spark** | Big data processing | Large-scale batch processing |
+| **EventHubConsumerClient** | Прототипирование, тестирование | Ручное чтение событий |
+| **EventProcessorClient** | Production-приложения | Масштабируемая и отказоустойчивая обработка |
+| **Azure Stream Analytics** | Поточная аналитика | SQL-подобные запросы к потокам |
+| **Azure Functions** | Serverless-обработка | Автоматический trigger при новых событиях |
+| **Apache Spark** | Big Data обработка | Масштабная batch-обработка |
+
+---
+
+## Разница между ConsumerClient и EventProcessorClient
+
+### EventHubConsumerClient
+- Простой API
+- Не управляет распределением partitions
+- Подходит для тестирования
+
+### EventProcessorClient
+- Автоматически распределяет partitions
+- Управляет checkpointing
+- Обеспечивает масштабирование
+- Используется в production
+
+---
+
+## Архитектурный акцент
+
+- Consumers читают данные независимо
+- Каждая consumer group имеет собственные offsets
+- Один partition обрабатывается одним consumer в рамках группы
+- Scaling достигается увеличением числа consumer-инстансов
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- EventProcessorClient — production-паттерн
+- Stream Analytics — SQL-подобная потоковая аналитика
+- Functions — serverless-обработка
+- Spark — big data processing
+- Consumers работают через consumer groups
+- Offsets управляют позицией чтения
+
+Если в вопросе требуется масштабируемая и отказоустойчивая обработка — правильный выбор обычно EventProcessorClient.
 
 **Consumer Pattern - EventHubConsumerClient:**
 ```csharp
@@ -371,26 +617,94 @@ Partition 0: [E0] [E1] [E2] [E3] [E4] [E5] [E6] [E7]
               (Consumer has processed up to E3)
 ```
 
-**Why Checkpointing?**
-- **Fault Tolerance**: Resume from last checkpoint after failure
-- **Exactly-Once**: Avoid reprocessing events
-- **Progress Tracking**: Monitor consumer lag
+# Checkpointing в Event Hubs
 
-**Checkpointing Storage:**
-- **Azure Blob Storage**: Most common (EventProcessorClient)
-- **Other Storage**: Custom implementation possible
+Checkpointing — это механизм сохранения позиции чтения (offset) consumer’а.
+
+Он позволяет возобновить обработку с последнего сохранённого места.
 
 ---
 
-## Throughput Units (TUs) and Processing Units (PUs)
+## Зачем нужен Checkpointing?
 
-### Throughput Units (Standard Tier)
+- **Fault Tolerance**  
+  После сбоя consumer продолжит чтение с последнего checkpoint.
 
-**Throughput Unit** = capacity unit for Event Hubs Standard tier
+- **Практическая идемпотентность**  
+  Позволяет минимизировать повторную обработку.
 
-**Per TU Capacity:**
-- **Ingress**: Up to 1 MB/s or 1,000 events/second
-- **Egress**: Up to 2 MB/s or 4,096 events/second
+- **Отслеживание прогресса**  
+  Позволяет мониторить lag (отставание от текущей позиции).
+
+---
+
+## Где хранится Checkpoint?
+
+- **Azure Blob Storage**  
+  Наиболее распространённый вариант (используется EventProcessorClient)
+
+- **Другие хранилища**  
+  Возможна кастомная реализация
+
+---
+
+## Архитектурный акцент
+
+- Checkpoint сохраняется на уровне consumer group
+- Каждый partition имеет собственный offset
+- Без checkpointing при перезапуске произойдёт повторное чтение
+
+---
+
+# Throughput Units (TUs) и Processing Units (PUs)
+
+## Throughput Units (Standard Tier)
+
+**Throughput Unit (TU)** — единица пропускной способности в Standard tier.
+
+Она определяет лимиты на входящий и исходящий трафик.
+
+---
+
+## Пропускная способность 1 TU
+
+- **Ingress (входящий поток)**  
+  До 1 MB/s или 1 000 событий/сек
+
+- **Egress (исходящий поток)**  
+  До 2 MB/s или 4 096 событий/сек
+
+---
+
+## Что важно понимать
+
+- Превышение лимита приводит к throttling
+- Можно увеличить количество TU
+- Доступна функция auto-inflate (автоматическое масштабирование)
+
+---
+
+## Архитектурный смысл
+
+TUs определяют:
+
+- Максимальную скорость записи
+- Максимальную скорость чтения
+- Стоимость использования
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- 1 TU = 1 MB/s ingress
+- 1 TU = 2 MB/s egress
+- Throttling при превышении лимита
+- Checkpointing обеспечивает устойчивость
+- EventProcessorClient использует Blob Storage для checkpoint
+
+Если в вопросе говорится о high-throughput ingestion — нужно рассчитать количество TUs.
 
 **Example Calculations:**
 
@@ -418,27 +732,79 @@ az eventhubs namespace update \
   --maximum-throughput-units 20
 ```
 
-### Processing Units (Premium/Dedicated Tiers)
+# Processing Units (Premium / Dedicated)
 
-**Processing Unit (PU)** = capacity for Premium tier
+**Processing Unit (PU)** — единица мощности в Premium tier.
 
-**Per PU:**
-- More powerful than TUs
-- Dedicated CPU and memory
-- Better isolation and performance
+В отличие от Throughput Units (Standard), PU предоставляет выделенные ресурсы.
 
 ---
 
-## Event Retention
+## Особенности PU
 
-**Retention Period**: How long events are stored in Event Hubs
+- Более высокая производительность по сравнению с TU
+- Выделенные CPU и память
+- Изоляция от других клиентов (no noisy neighbors)
+- Предсказуемая производительность
+- Подходит для mission-critical workloads
 
-| Tier | Min Retention | Max Retention | Default |
-|------|--------------|---------------|---------|
-| **Basic** | 1 day | 1 day | 1 day |
-| **Standard** | 1 day | 7 days | 1 day |
-| **Premium** | 1 day | 90 days | 1 day |
-| **Dedicated** | 1 day | 90 days | 1 day |
+---
+
+## Когда использовать Premium / Dedicated
+
+- Высокая нагрузка
+- Требуется стабильная производительность
+- Повышенные требования к изоляции
+- Увеличенный срок хранения данных
+- Enterprise и compliance-сценарии
+
+---
+
+# Retention (Период хранения событий)
+
+**Retention Period** — это время, в течение которого события сохраняются в Event Hubs независимо от того, были ли они прочитаны.
+
+---
+
+## Периоды хранения по tier
+
+| Tier | Минимум | Максимум | По умолчанию |
+|------|----------|-----------|--------------|
+| **Basic** | 1 день | 1 день | 1 день |
+| **Standard** | 1 день | 7 дней | 1 день |
+| **Premium** | 1 день | 90 дней | 1 день |
+| **Dedicated** | 1 день | 90 дней | 1 день |
+
+---
+
+## Важные моменты
+
+- Retention основан на времени, а не на факте чтения
+- После истечения срока события удаляются автоматически
+- Увеличение retention увеличивает стоимость
+- Premium и Dedicated поддерживают до 90 дней
+
+---
+
+## Архитектурный акцент
+
+- Event Hubs — это временное хранилище потоков
+- Не предназначен для долговременного архива
+- Для долгосрочного хранения используется Capture (в Blob или Data Lake)
+
+---
+
+## Важно для AZ-204
+
+Нужно помнить:
+
+- Basic — всегда 1 день
+- Standard — до 7 дней
+- Premium / Dedicated — до 90 дней
+- Retention не зависит от чтения consumer’ом
+- PU используется в Premium tier
+
+Если в вопросе требуется хранение событий более 7 дней — Standard не подходит.
 
 **Configure Retention:**
 ```bash
@@ -489,64 +855,117 @@ ProducerRecord<String, String> record = new ProducerRecord<>("myeventhub", "key"
 producer.send(record);
 ```
 
-**Kafka to Event Hubs Mapping:**
+*# Соответствие Kafka и Event Hubs
 
-| Kafka Concept | Event Hubs Equivalent |
-|--------------|----------------------|
+## Kafka → Event Hubs Mapping
+
+| Концепция Kafka | Эквивалент в Event Hubs |
+|------------------|-------------------------|
 | Kafka Cluster | Event Hubs Namespace |
 | Kafka Topic | Event Hub |
 | Partition | Partition |
 | Consumer Group | Consumer Group |
 | Offset | Offset |
-| Broker | Not applicable (managed service) |
+| Broker | Не применяется (управляемый сервис) |
 
 ---
 
-## Schema Registry
+## Что это означает
 
-**Azure Schema Registry** provides centralized schema management for event streaming applications.
+- Namespace ≈ Kafka cluster
+- Event Hub ≈ Kafka topic
+- Partitions и offsets работают аналогично
+- Нет необходимости управлять брокерами
 
-**Features:**
-- Store and version schemas
-- Avro, JSON Schema support
-- Integration with Kafka and Event Hubs SDKs
-- Schema evolution and compatibility
-
-**Benefits:**
-- **Type Safety**: Ensure data contracts
-- **Compatibility**: Manage schema evolution
-- **Efficiency**: Reduce payload size with schema references
-- **Governance**: Centralized schema management
+Event Hubs скрывает инфраструктурную сложность Kafka.
 
 ---
 
-## Event Hubs vs. Other Azure Services
+# Azure Schema Registry
 
-| Feature | **Event Hubs** | **Event Grid** | **Service Bus** |
-|---------|---------------|---------------|----------------|
-| **Pattern** | Big data streaming | Event distribution | Message queue |
-| **Throughput** | Millions/sec | Millions/sec | Thousands/sec |
-| **Latency** | Sub-second | Sub-second | Low |
-| **Retention** | 1-90 days | None (immediate) | Up to 14 days |
-| **Ordering** | Per partition | No guarantee | FIFO (sessions) |
-| **Message Size** | 1 MB | 1 MB | 256 KB (1 MB Premium) |
-| **Protocols** | AMQP, Kafka, HTTPS | HTTP/HTTPS | AMQP, HTTP |
-| **Use Case** | Telemetry ingestion | Reactive events | Transactional messages |
-| **Pull/Push** | Pull | Push (+ Pull) | Pull |
+**Azure Schema Registry** — централизованное хранилище схем для потоковых приложений.
 
-**When to Use Event Hubs:**
-- ✅ High-volume telemetry ingestion (IoT, logs, metrics)
-- ✅ Real-time analytics and dashboards
-- ✅ Event replay and reprocessing
-- ✅ Kafka workload migration
-- ✅ Big data pipelines
+---
 
-**When NOT to Use Event Hubs:**
-- ❌ Need complex message workflows (use Service Bus)
-- ❌ Need push-based event distribution (use Event Grid)
-- ❌ Low-volume transactional messages (use Service Bus)
-- ❌ Need guaranteed message ordering across all events (use Service Bus sessions)
+## Возможности
 
+- Хранение и версионирование схем
+- Поддержка Avro и JSON Schema
+- Интеграция с Kafka и Event Hubs SDK
+- Управление эволюцией схем
+
+---
+
+## Преимущества
+
+- **Type Safety**  
+  Гарантия соответствия контракту данных
+
+- **Совместимость**  
+  Контроль изменений схемы
+
+- **Эффективность**  
+  Передача ссылок на схему вместо полного описания
+
+- **Governance**  
+  Централизованное управление контрактами
+
+---
+
+# Event Hubs vs другие сервисы Azure
+
+| Характеристика | **Event Hubs** | **Event Grid** | **Service Bus** |
+|----------------|---------------|---------------|----------------|
+| **Паттерн** | Потоковая обработка | Распределение событий | Очереди сообщений |
+| **Throughput** | Миллионы/сек | Миллионы/сек | Тысячи/сек |
+| **Задержка** | Sub-second | Sub-second | Низкая |
+| **Retention** | 1–90 дней | Нет хранения | До 14 дней |
+| **Ordering** | Внутри partition | Не гарантируется | FIFO (sessions) |
+| **Размер сообщения** | 1 MB | 1 MB | 256 KB (1 MB Premium) |
+| **Протоколы** | AMQP, Kafka, HTTPS | HTTP/HTTPS | AMQP, HTTP |
+| **Use Case** | Телеметрия | Reactive events | Транзакционные сообщения |
+| **Push / Pull** | Pull | Push (+ Pull) | Pull |
+
+---
+
+# Когда использовать Event Hubs
+
+- ✅ High-volume ingestion (IoT, логи, метрики)
+- ✅ Real-time analytics
+- ✅ Replay и reprocessing
+- ✅ Миграция Kafka
+- ✅ Big data pipeline
+
+---
+
+# Когда НЕ использовать Event Hubs
+
+- ❌ Сложные message workflows → Service Bus
+- ❌ Push-based event routing → Event Grid
+- ❌ Низкообъёмные транзакционные сообщения → Service Bus
+- ❌ Гарантированный глобальный порядок сообщений → Service Bus (sessions)
+
+---
+
+## Архитектурный акцент
+
+- Event Hubs = ingestion + streaming
+- Event Grid = reactive event routing
+- Service Bus = transactional messaging
+
+---
+
+## Важно для AZ-204
+
+Нужно чётко различать:
+
+- Streaming → Event Hubs
+- Pub/Sub событий → Event Grid
+- Очереди и бизнес-процессы → Service Bus
+- Ordering только внутри partition
+- Retention временной
+
+Если в вопросе фигурируют миллионы событий или потоковая аналитика — это Event Hubs.
 ---
 
 ## Quick Start Example
@@ -631,99 +1050,152 @@ await foreach (PartitionEvent partitionEvent in consumer.ReadEventsAsync())
 
 ---
 
-## Best Practices
+# Best Practices для Azure Event Hubs
 
-### Design Patterns
+## Design Patterns
 
-1. **Partition Key Strategy**
-   - Use partition keys to group related events
-   - Balance partition distribution
-   - Example: User ID, Device ID, Session ID
+### 1️⃣ Стратегия Partition Key
 
-2. **Batch Events**
-   - Send events in batches for better throughput
-   - Reduce network overhead
-   - Use `CreateBatchAsync()` method
+- Используйте partition key для группировки связанных событий
+- Обеспечьте равномерное распределение нагрузки
+- Примеры: User ID, Device ID, Session ID
 
-3. **Consumer Groups**
-   - Create separate consumer groups for each application
-   - Don't share consumer groups between apps
-   - Name groups descriptively
-
-4. **Error Handling**
-   - Implement retry logic with exponential backoff
-   - Handle transient failures gracefully
-   - Monitor and alert on persistent errors
-
-5. **Checkpointing**
-   - Checkpoint frequently (but not after every event)
-   - Balance between fault tolerance and performance
-   - Checkpoint after processing batches
-
-### Performance Optimization
-
-- **Compression**: Compress event data before sending
-- **Batching**: Group multiple events in single send operation
-- **Partition Strategy**: Distribute load evenly across partitions
-- **Connection Pooling**: Reuse producer/consumer clients
-- **Async Operations**: Use async/await patterns
-
-### Security Best Practices
-
-- ✅ Use managed identities instead of connection strings
-- ✅ Enable VNet integration and private endpoints
-- ✅ Configure IP firewall rules
-- ✅ Use Azure RBAC for fine-grained access control
-- ✅ Rotate access keys regularly
-- ✅ Enable diagnostic logging
-- ✅ Use TLS 1.2 or higher
+Правильный partition key:
+- сохраняет порядок внутри partition
+- предотвращает hot partition
 
 ---
 
-## Exam Tips for AZ-204
+### 2️⃣ Отправка батчами (Batching)
 
-### Key Concepts to Remember
+- Отправляйте события пакетами
+- Уменьшайте сетевые накладные расходы
+- Используйте `CreateBatchAsync()`
 
-1. **Event Hubs** = big data streaming platform (millions events/second)
-2. **Partitions** = ordered sequences, scale unit (cannot change after creation)
-3. **Consumer Groups** = independent views of Event Hub
-4. **Throughput Units** = capacity units (1 TU = 1 MB/s ingress, 2 MB/s egress)
-5. **Checkpointing** = tracking processing progress (requires blob storage)
-6. **Kafka Compatible** = no code changes for Kafka applications
-7. **Retention** = 1-90 days (tier-dependent)
+Batching увеличивает throughput и снижает стоимость.
 
-### Common Exam Scenarios
+---
 
-**Scenario 1**: Ingest IoT telemetry at scale
-- ✅ Use Event Hubs (designed for high-volume ingestion)
-- ❌ Don't use Event Grid (not for streaming)
+### 3️⃣ Consumer Groups
 
-**Scenario 2**: Multiple applications processing same events
-- ✅ Create separate consumer groups for each application
-- ❌ Don't share consumer group (causes conflicts)
+- Создавайте отдельную consumer group для каждого приложения
+- Не используйте одну группу для нескольких сервисов
+- Используйте понятные имена
 
-**Scenario 3**: Need event ordering
-- ✅ Use partition key (ordering within partition)
-- ❌ Don't expect ordering across partitions
+---
 
-**Scenario 4**: Migrate Kafka workloads to Azure
-- ✅ Use Event Hubs Kafka endpoint
-- ✅ No code changes required
+### 4️⃣ Обработка ошибок
 
-**Scenario 5**: Scale consumer processing
-- ✅ Use EventProcessorClient with multiple instances
-- ✅ Automatic load balancing across partitions
+- Реализуйте retry с exponential backoff
+- Обрабатывайте transient ошибки
+- Настройте мониторинг persistent ошибок
 
-### Remember for Exam
+---
 
-- **Cannot change partition count** after Event Hub creation
-- **1 MB maximum event size**
-- **Throughput Unit**: 1 MB/s ingress, 2 MB/s egress
-- **Consumer groups**: Up to 20 per Event Hub (Standard)
-- **Partition key**: Determines partition assignment
-- **EventProcessorClient**: Recommended for production (auto load balancing)
-- **Checkpointing**: Requires Azure Blob Storage
-- **Kafka port**: 9093 (SASL_SSL)
+### 5️⃣ Checkpointing
+
+- Делайте checkpoint регулярно (но не после каждого события)
+- Балансируйте отказоустойчивость и производительность
+- Лучше делать checkpoint после обработки batch
+
+---
+
+# Оптимизация производительности
+
+- **Compression** — уменьшение размера payload
+- **Batching** — группировка отправки
+- **Равномерное распределение по partitions**
+- **Переиспользование клиентов** (connection pooling)
+- **Асинхронные операции (async/await)**
+
+---
+
+# Security Best Practices
+
+- ✅ Использовать Managed Identity вместо connection string
+- ✅ Настроить VNet integration и Private Endpoints
+- ✅ Конфигурировать IP firewall
+- ✅ Использовать Azure RBAC
+- ✅ Регулярно ротировать ключи
+- ✅ Включить diagnostic logging
+- ✅ Использовать TLS 1.2+
+
+---
+
+# Советы к экзамену AZ-204
+
+## Ключевые моменты
+
+1️⃣ Event Hubs = платформа для big data streaming  
+2️⃣ Partitions — единица масштабирования (нельзя изменить после создания)  
+3️⃣ Consumer Groups — независимые представления потока  
+4️⃣ 1 TU = 1 MB/s ingress, 2 MB/s egress  
+5️⃣ Checkpointing требует Blob Storage  
+6️⃣ Поддержка Kafka без изменения кода  
+7️⃣ Retention зависит от tier (1–90 дней)
+
+---
+
+# Частые экзаменационные сценарии
+
+### Сценарий 1
+IoT-телеметрия большого объёма
+- ✅ Event Hubs
+- ❌ Не Event Grid
+
+---
+
+### Сценарий 2
+Несколько приложений читают один поток
+- ✅ Отдельные consumer groups
+- ❌ Не использовать одну группу
+
+---
+
+### Сценарий 3
+Требуется порядок событий
+- ✅ Использовать partition key
+- ❌ Не ожидать глобального порядка
+
+---
+
+### Сценарий 4
+Миграция Kafka
+- ✅ Kafka endpoint Event Hubs
+- ✅ Без изменений кода
+
+---
+
+### Сценарий 5
+Масштабирование обработки
+- ✅ EventProcessorClient
+- ✅ Несколько экземпляров → авто-балансировка
+
+---
+
+# Что обязательно помнить
+
+- Partition count нельзя изменить
+- Максимальный размер события — 1 MB
+- До 20 consumer groups (Standard)
+- Partition key определяет распределение
+- EventProcessorClient — production-паттерн
+- Checkpointing требует Blob Storage
+- Kafka порт: 9093 (SASL_SSL)
+
+---
+
+## Архитектурный вывод
+
+Event Hubs используется, когда нужны:
+
+- Высокий throughput
+- Потоковая аналитика
+- Replay и reprocessing
+- Kafka-совместимость
+- Масштабируемая обработка
+
+Если в вопросе фигурируют миллионы событий в секунду — это почти всегда Event Hubs.
 
 ### Quick Command Reference
 
@@ -743,29 +1215,61 @@ az eventhubs namespace authorization-rule keys list --name RootManageSharedAcces
 
 ---
 
-## Summary
+# Итоги по Azure Event Hubs
 
-**Azure Event Hubs** is a fully managed, real-time data streaming platform for big data scenarios.
+**Azure Event Hubs** — это полностью управляемая платформа потоковой передачи данных в реальном времени, предназначенная для сценариев Big Data и high-throughput ingestion.
 
-**Core Components:**
-- **Namespace**: Management container
-- **Event Hub**: Append-only distributed log
-- **Partitions**: Ordered sequences (scale unit)
-- **Consumer Groups**: Independent views
-- **Producers**: Send events
-- **Consumers**: Process events
+---
 
-**Key Features:**
-- Millions of events per second
-- 1-90 days retention
-- Apache Kafka compatible
+# Основные компоненты
+
+- **Namespace**  
+  Контейнер управления ресурсами Event Hubs
+
+- **Event Hub**  
+  Append-only распределённый лог событий
+
+- **Partitions**  
+  Упорядоченные последовательности событий (единица масштабирования)
+
+- **Consumer Groups**  
+  Независимые представления потока
+
+- **Producers**  
+  Отправляют события в Event Hub
+
+- **Consumers**  
+  Читают и обрабатывают события
+
+---
+
+# Ключевые возможности
+
+- Обработка миллионов событий в секунду
+- Retention от 1 до 90 дней (зависит от tier)
+- Совместимость с Apache Kafka
 - Partitioned consumer model
-- Auto-scaling with throughput units
+- Масштабирование через Throughput Units / Processing Units
 
-**Use Event Hubs for:**
-- IoT telemetry ingestion
-- Application logging and metrics
-- Clickstream analytics
-- Real-time dashboards
-- Big data pipelines
-- Kafka workload migration
+---
+
+# Когда использовать Event Hubs
+
+- Приём IoT-телеметрии
+- Централизованный сбор логов и метрик
+- Clickstream-аналитика
+- Реалтайм-дашборды
+- Big data pipeline
+- Миграция Kafka-нагрузки в Azure
+
+---
+
+## Архитектурный вывод
+
+Event Hubs — это:
+
+- Ingestion layer для потоковых данных
+- Буфер между producers и аналитикой
+- Основа для real-time и batch processing
+
+Если задача связана с high-volume streaming — правильный выбор обычно Event Hubs.

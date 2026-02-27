@@ -1,8 +1,71 @@
-# Explore Azure Queue Storage
+# Изучение Azure Queue Storage
 
-## What is Azure Queue Storage?
+## Что такое Azure Queue Storage?
 
-**Azure Queue Storage** is a service for storing large numbers of messages that can be accessed from anywhere via authenticated HTTP or HTTPS calls. It provides a simple, cost-effective solution for asynchronous message queuing.
+**Azure Queue Storage** — это сервис для хранения большого количества сообщений, к которым можно получить доступ из любой точки через аутентифицированные HTTP или HTTPS-запросы.
+
+Он предоставляет простое и экономичное решение для реализации асинхронного обмена сообщениями между компонентами системы.
+
+---
+
+## Основные характеристики
+
+- Хранение миллионов сообщений
+- Доступ через REST API
+- Поддержка SDK для различных языков
+- Интеграция с Azure Storage Account
+- Поддержка масштабируемых облачных приложений
+
+---
+
+## Для чего используется
+
+Azure Queue Storage подходит для:
+
+- Разделения компонентов системы (decoupling)
+- Асинхронной обработки задач
+- Фоновых заданий
+- Очередей обработки заказов
+- Балансировки нагрузки
+
+---
+
+## Как это работает
+
+1. Producer отправляет сообщение в очередь
+2. Сообщение сохраняется в Storage Account
+3. Consumer считывает сообщение
+4. После успешной обработки сообщение удаляется
+
+---
+
+## Важные особенности
+
+- Сообщения хранятся в текстовом формате (до 64 КБ)
+- Поддерживается visibility timeout
+- Поддерживается TTL (время жизни сообщения)
+- Обеспечивается как минимум однократная доставка (at-least-once delivery)
+
+---
+
+## Что важно для AZ-204
+
+- Azure Queue Storage — часть Azure Storage
+- Используется для простых сценариев очередей
+- Не поддерживает сложную маршрутизацию (в отличие от Service Bus)
+- Хороший выбор для дешёвых и масштабируемых фоновых задач
+
+---
+
+## Ключевая идея
+
+Azure Queue Storage — это простой механизм очередей для:
+
+- асинхронной обработки
+- масштабирования
+- снижения связности между сервисами
+
+Для более сложных сценариев (транзакции, ordering, topics, dead-letter queues) чаще используется Azure Service Bus.
 
 ### Key Characteristics
 
@@ -33,17 +96,69 @@ Example:
 https://mystorageaccount.queue.core.windows.net/orders
 ```
 
-### Core Capabilities
+## Основные возможности (Core Capabilities)
 
-| Capability | Description |
-|------------|-------------|
-| **Simple Queue Model** | Basic FIFO queue (no strict ordering guarantee) |
-| **HTTP/HTTPS Access** | REST API accessible from anywhere |
-| **Massive Storage** | Store millions of messages (up to 500 TB per account) |
-| **Message Size** | Up to 64 KB per message |
-| **Cost-Effective** | Low cost for high-volume scenarios |
-| **Visibility Timeout** | Hide messages temporarily during processing |
-| **Peek Without Lock** | View messages without dequeuing |
+| Возможность | Описание |
+|-------------|----------|
+| **Простая модель очереди** | Базовая FIFO-очередь (строгий порядок не гарантируется) |
+| **Доступ по HTTP/HTTPS** | REST API доступен из любой точки |
+| **Масштабируемое хранилище** | Хранение миллионов сообщений (до 500 ТБ на аккаунт) |
+| **Размер сообщения** | До 64 КБ на одно сообщение |
+| **Экономичность** | Низкая стоимость при больших объёмах |
+| **Visibility Timeout** | Временное скрытие сообщения во время обработки |
+| **Peek без блокировки** | Просмотр сообщений без извлечения |
+
+---
+
+## Пояснения к возможностям
+
+### 🔹 Простая модель очереди
+- Сообщения обрабатываются приблизительно в порядке FIFO
+- Однако строгая гарантия порядка отсутствует
+- Подходит для сценариев, где порядок не критичен
+
+---
+
+### 🔹 Visibility Timeout
+Когда consumer получает сообщение:
+
+- Оно становится невидимым для других consumers
+- Если обработка успешна — сообщение удаляется
+- Если не удалено до истечения timeout — снова становится доступным
+
+📌 Это обеспечивает модель доставки **at-least-once**.
+
+---
+
+### 🔹 Peek без извлечения
+Позволяет:
+
+- Просматривать сообщения
+- Не менять их статус
+- Использовать для мониторинга или диагностики
+
+---
+
+## Что важно для AZ-204
+
+- Максимальный размер сообщения — 64 КБ
+- Нет строгой гарантии порядка
+- Поддерживается visibility timeout
+- Используется модель at-least-once delivery
+- Экономичное решение для простых очередей
+
+---
+
+## Ключевая идея
+
+Azure Queue Storage — это:
+
+- простая
+- дешёвая
+- масштабируемая
+
+очередь для фоновых задач и асинхронной обработки,  
+без сложной логики маршрутизации и транзакционных гарантий.
 
 ---
 
@@ -146,45 +261,72 @@ If consumer crashes before step 4:
 
 ## Queue Storage vs Service Bus
 
-### Quick Comparison
+### Быстрое сравнение
 
-| Feature | Queue Storage | Service Bus Queue |
-|---------|---------------|-------------------|
-| **Max Message Size** | 64 KB | 256 KB (Standard)<br>100 MB (Premium) |
-| **Max Queue Size** | 500 TB | Unlimited |
-| **Ordering Guarantee** | ❌ No (best-effort) | ✅ Yes (with sessions) |
-| **Delivery Guarantee** | At-least-once | At-least-once or at-most-once |
-| **Protocol** | HTTP/HTTPS | AMQP, HTTP, SBMP |
-| **Transactions** | ❌ No | ✅ Yes |
-| **Duplicate Detection** | ❌ No | ✅ Yes |
-| **Dead-Letter Queue** | ❌ No (manual) | ✅ Yes (automatic) |
-| **Publish-Subscribe** | ❌ No | ✅ Yes (topics) |
-| **Message Sessions** | ❌ No | ✅ Yes |
-| **TTL** | 7 days (default), unlimited | Unlimited |
-| **Pricing** | ~$0.05 per GB/month | Pay per operation or fixed (Premium) |
-| **Best For** | Simple queues, cost-effective | Enterprise messaging, advanced features |
-
-### Decision Matrix
-
-| Requirement | Choose Queue Storage | Choose Service Bus |
-|-------------|---------------------|-------------------|
-| **Simple queue needed** | ✅ Yes | Overkill |
-| **Cost-effective** | ✅ Yes | More expensive |
-| **> 80 GB storage** | ✅ Yes | Expensive at scale |
-| **FIFO ordering** | ❌ No | ✅ Yes (sessions) |
-| **Pub/sub pattern** | ❌ No | ✅ Yes (topics) |
-| **Transactions** | ❌ No | ✅ Yes |
-| **Message > 64 KB** | ❌ No | ✅ Yes |
-| **Duplicate detection** | ❌ No | ✅ Yes |
+| Возможность | Queue Storage | Service Bus Queue |
+|--------------|---------------|-------------------|
+| **Макс. размер сообщения** | 64 КБ | 256 КБ (Standard)<br>100 МБ (Premium) |
+| **Макс. размер очереди** | 500 ТБ | Практически неограничен |
+| **Гарантия порядка** | ❌ Нет (best-effort) | ✅ Да (при использовании sessions) |
+| **Гарантия доставки** | At-least-once | At-least-once или at-most-once |
+| **Протокол** | HTTP/HTTPS | AMQP, HTTP, SBMP |
+| **Транзакции** | ❌ Нет | ✅ Да |
+| **Обнаружение дубликатов** | ❌ Нет | ✅ Да |
+| **Dead-Letter Queue** | ❌ Нет (вручную) | ✅ Да (автоматически) |
+| **Publish-Subscribe** | ❌ Нет | ✅ Да (topics) |
+| **Message Sessions** | ❌ Нет | ✅ Да |
+| **TTL** | 7 дней (по умолчанию), можно без ограничения | Без ограничения |
+| **Стоимость** | Низкая (~$0.05 за ГБ/мес.) | Оплата за операции или фиксированная (Premium) |
+| **Лучше подходит для** | Простые и дешёвые очереди | Enterprise-месседжинг |
 
 ---
 
-## Queue Storage Features
+## Матрица выбора
 
-### 1. Message TTL (Time-To-Live)
+| Требование | Queue Storage | Service Bus |
+|--------------|----------------|--------------|
+| Нужна простая очередь | ✅ Да | Избыточно |
+| Важна минимальная стоимость | ✅ Да | Дороже |
+| Нужно хранить > 80 ГБ | ✅ Да | Дорого при большом объёме |
+| Требуется строгий FIFO | ❌ Нет | ✅ Да (sessions) |
+| Нужен pub/sub | ❌ Нет | ✅ Да (topics) |
+| Нужны транзакции | ❌ Нет | ✅ Да |
+| Сообщения > 64 КБ | ❌ Нет | ✅ Да |
+| Нужна дедупликация | ❌ Нет | ✅ Да |
 
-**Default:** 7 days
-**Configurable:** 1 second to 7 days (old API), unlimited (new API)
+---
+
+# Возможности Queue Storage
+
+## 1. Message TTL (Time-To-Live)
+
+- **По умолчанию:** 7 дней
+- **Настраивается:**
+    - От 1 секунды до 7 дней (старый API)
+    - Без ограничения (новый API)
+
+Если сообщение не обработано до истечения TTL — оно автоматически удаляется.
+
+---
+
+## Что важно для AZ-204
+
+- Queue Storage дешевле и проще
+- Service Bus предоставляет расширенные возможности
+- FIFO в Queue Storage не гарантируется
+- Dead-letter и дедупликация есть только в Service Bus
+- Если в вопросе фигурируют транзакции, sessions или topics — почти всегда правильный ответ Service Bus
+
+---
+
+## Ключевая идея
+
+Выбор зависит от требований:
+
+- Простая, дешёвая, масштабируемая очередь → Queue Storage
+- Сложная корпоративная интеграция → Service Bus
+
+Понимание различий между этими сервисами — одна из самых частых тем на AZ-204.
 
 ```csharp
 // Send message with custom TTL
@@ -514,50 +656,73 @@ if (count > 10000)
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204 (Azure Queue Storage)
 
-### Key Concepts
+## Ключевые концепции
 
-1. **Queue Storage** = Simple, cost-effective queue
-2. **Message size** = 64 KB max
-3. **Queue size** = 500 TB per storage account
-4. **Visibility timeout** = 30 seconds default
-5. **TTL** = 7 days default, unlimited possible
-6. **No FIFO guarantee** = Best-effort ordering
-
-### Remember
-
-| Feature | Queue Storage |
-|---------|---------------|
-| **Max message size** | 64 KB |
-| **Max queue size** | 500 TB per account |
-| **Ordering** | No guarantee (best-effort) |
-| **Delivery** | At-least-once |
-| **TTL** | 7 days (default), unlimited |
-| **Visibility timeout** | 30 seconds (default) |
-| **Protocol** | HTTP/HTTPS |
-| **Best for** | Simple queues, high volume |
-
-### Common Scenarios
-
-- **Cost-effective queue** → Queue Storage
-- **> 80 GB messages** → Queue Storage
-- **Simple producer-consumer** → Queue Storage
-- **Track retries** → DequeueCount
-- **Prevent double processing** → Visibility timeout
-- **Handle failures** → Poison message queue
+1. **Queue Storage** — простая и экономичная очередь
+2. **Максимальный размер сообщения** — 64 КБ
+3. **Максимальный размер очереди** — до 500 ТБ на storage account
+4. **Visibility timeout** — по умолчанию 30 секунд
+5. **TTL** — 7 дней по умолчанию, возможно без ограничения
+6. **FIFO не гарантируется** — порядок best-effort
 
 ---
 
-## Summary
+## Что обязательно помнить
 
-**Azure Queue Storage provides:**
-- ✅ Simple HTTP/HTTPS message queue
-- ✅ Massive storage capacity (500 TB)
-- ✅ Cost-effective solution
-- ✅ Messages up to 64 KB
-- ✅ Visibility timeout for safe processing
-- ✅ Peek without dequeuing
-- ✅ Three authentication methods (key, SAS, Azure AD)
+| Характеристика | Queue Storage |
+|----------------|---------------|
+| **Макс. размер сообщения** | 64 КБ |
+| **Макс. размер очереди** | 500 ТБ на аккаунт |
+| **Гарантия порядка** | Нет (best-effort) |
+| **Гарантия доставки** | At-least-once |
+| **TTL** | 7 дней (по умолчанию), возможно без ограничения |
+| **Visibility timeout** | 30 секунд (по умолчанию) |
+| **Протокол** | HTTP/HTTPS |
+| **Лучше подходит для** | Простых и высоконагруженных очередей |
 
-**Use Queue Storage for simple, cost-effective queuing scenarios. Use Service Bus for advanced features like FIFO, pub/sub, and transactions!
+---
+
+## Типовые сценарии
+
+- Нужна дешёвая очередь → **Queue Storage**
+- Нужен большой объём хранения → **Queue Storage**
+- Простой producer-consumer → **Queue Storage**
+- Нужно отслеживать количество повторных попыток → `DequeueCount`
+- Нужно предотвратить двойную обработку → Visibility timeout
+- Обработка ошибок → Poison message queue
+
+---
+
+# Итог
+
+**Azure Queue Storage предоставляет:**
+
+- ✅ Простую HTTP/HTTPS очередь
+- ✅ Огромный объём хранения (до 500 ТБ)
+- ✅ Экономичное решение
+- ✅ Сообщения до 64 КБ
+- ✅ Visibility timeout для безопасной обработки
+- ✅ Возможность просмотра сообщений (peek) без удаления
+- ✅ Несколько методов аутентификации (ключ, SAS, Azure AD)
+
+---
+
+## Главное для AZ-204
+
+Используйте **Queue Storage**, если требуется:
+
+- простая
+- дешёвая
+- масштабируемая очередь
+
+Используйте **Service Bus**, если нужны:
+
+- строгий FIFO
+- pub/sub
+- транзакции
+- дедупликация
+- автоматический dead-letter
+
+Понимание различий между этими сервисами — частая тема экзамена AZ-204.

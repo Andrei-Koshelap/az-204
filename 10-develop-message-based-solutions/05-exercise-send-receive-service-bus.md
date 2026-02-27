@@ -1,27 +1,98 @@
-# Exercise: Send and Receive Messages from Service Bus Queue
+# Практическое задание: Отправка и получение сообщений из Service Bus Queue
 
-## Overview
+## Обзор
 
-In this exercise, you'll create a Service Bus namespace, send messages to a queue, and receive messages using the Azure SDK for .NET. You'll also explore advanced features like message sessions and dead-letter queues.
+В этом упражнении вы:
 
-**What you'll learn:**
-- Create Service Bus namespace and queue
-- Send messages to a queue
-- Receive messages using Peek Lock mode
-- Use message sessions for FIFO ordering
-- Handle dead-letter queue
-- Monitor queue metrics
+- Создадите Service Bus namespace и очередь
+- Отправите сообщения в очередь
+- Получите сообщения в режиме Peek Lock
+- Используете message sessions для FIFO
+- Разберётесь с dead-letter queue (DLQ)
+- Посмотрите метрики очереди
 
-**Estimated time:** 30-40 minutes
+**Оценочное время:** 30–40 минут
 
 ---
 
-## Prerequisites
+## Предварительные требования
 
-- Azure subscription
-- Azure CLI installed
-- .NET 6.0 or later installed
-- Code editor (VS Code, Visual Studio, or similar)
+- Подписка Azure
+- Установленный Azure CLI
+- .NET 6.0 или новее
+- Редактор кода (VS Code, Visual Studio или аналог)
+
+---
+
+## Что важно (экзаменационный фокус)
+
+- Peek Lock — рекомендуемый режим для надёжной обработки
+- Sessions — механизм FIFO (порядок внутри сессии)
+- DLQ — место для "ядовитых" сообщений после превышения числа попыток или при ошибках
+- Мониторинг — через Azure Monitor / Metrics / Diagnostics
+
+---
+
+## План упражнения (без кода)
+
+### Шаг 1: Создать Service Bus namespace
+- Создайте namespace в выбранном регионе (лучше ближе к вашему приложению)
+- Выберите tier (для Topics, Sessions, Transactions нужен минимум Standard)
+
+### Шаг 2: Создать очередь
+- Создайте queue в namespace
+- Проверьте ключевые параметры:
+   - TTL (DefaultMessageTimeToLive)
+   - MaxDeliveryCount (когда попадёт в DLQ)
+   - RequiresSession (если хотите FIFO через sessions)
+   - Duplicate detection (если требуется)
+
+### Шаг 3: Настроить доступ
+- Выберите способ доступа:
+   - Connection string (проще для учебного упражнения)
+   - Managed Identity / RBAC (предпочтительно для production)
+- Сохраните данные доступа в переменные окружения или конфигурацию приложения
+
+### Шаг 4: Отправить сообщения
+- Отправьте несколько сообщений в очередь
+- Для сценария с FIFO:
+   - назначьте одинаковый SessionId связанным сообщениям
+- Для проверки дедупликации:
+   - попробуйте отправить сообщения с одинаковым MessageId (при включённой duplicate detection)
+
+### Шаг 5: Получить сообщения (Peek Lock)
+- Получите сообщение и обработайте его
+- После успешной обработки подтвердите завершение (Complete)
+- Для проверки поведения при ошибках:
+   - не подтверждайте сообщение (или "отпустите" его), чтобы оно вернулось в очередь
+- Проверьте рост DeliveryCount при повторных попытках
+
+### Шаг 6: Проверить Dead-Letter Queue (DLQ)
+- Создайте условия, чтобы сообщение попало в DLQ:
+   - превысить MaxDeliveryCount
+   - либо явно отправить сообщение в DLQ при обработке
+- Получите сообщение из DLQ и проанализируйте причину (Reason / ErrorDescription)
+
+### Шаг 7: Мониторинг и метрики
+В Azure Portal посмотрите:
+- Active messages
+- Dead-lettered messages
+- Incoming / Outgoing requests
+- Throttling (если есть)
+- Server errors
+
+---
+
+## Итог
+
+После выполнения упражнения вы будете понимать:
+
+- как работает надежная обработка сообщений через Peek Lock
+- как sessions обеспечивают FIFO
+- как и почему сообщения попадают в DLQ
+- как мониторить очередь и её состояние
+
+Если хочешь, следующим шагом могу перевести “Exercise Steps” (начиная с создания namespace/queue) в таком же стиле, но тоже без кода.
 
 ---
 
@@ -663,20 +734,56 @@ class DLQProcessor
 
 ---
 
-## Part 6: Monitor Queue Metrics
+## Часть 6: Мониторинг метрик очереди
 
-### View Queue Metrics in Portal
+### Просмотр метрик в Azure Portal
 
-1. Navigate to Azure Portal
-2. Go to your Service Bus namespace
-3. Select "Queues" → Select your queue
-4. View "Overview" tab for metrics:
-   - Active message count
-   - Dead-letter message count
-   - Size (MB)
-   - Incoming/outgoing messages
+1. Откройте Azure Portal
+2. Перейдите в ваш **Service Bus namespace**
+3. Выберите раздел **Queues** → выберите нужную очередь
+4. На вкладке **Overview** проверьте основные показатели:
 
-### Query Queue Metrics with Azure CLI
+- **Active message count** — количество активных сообщений
+- **Dead-letter message count** — количество сообщений в DLQ
+- **Size (MB)** — текущий размер очереди
+- **Incoming / Outgoing messages** — входящий и исходящий поток
+
+---
+
+### Что анализировать
+
+- Рост **Active messages** → consumers не успевают обрабатывать
+- Рост **Dead-letter messages** → проблемы обработки
+- Резкие пики **Incoming messages** → всплеск нагрузки
+- Низкий Outgoing при высоком Incoming → узкое место
+
+---
+
+### Запрос метрик через Azure CLI
+
+Через CLI можно:
+
+- Получить общее состояние очереди
+- Проверить количество сообщений
+- Автоматизировать мониторинг
+- Интегрировать проверку в CI/CD или скрипты
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Важно понимать:
+
+- Active messages → backlog
+- Dead-letter count → ошибки обработки
+- DeliveryCount → повторные попытки
+- Метрики доступны через Azure Monitor
+
+Если в вопросе говорится о мониторинге очереди или проблемах обработки — нужно анализировать метрики namespace и конкретной очереди.
+
+Главная идея:
+
+Мониторинг = контроль нагрузки + контроль ошибок + предотвращение инцидентов.
 
 ```bash
 # Get active message count
@@ -784,45 +891,56 @@ az servicebus queue update \
 ```
 
 ---
+## Основные выводы
 
-## Key Takeaways
+✅ **Создали Service Bus namespace и очередь**
+- Развернули ресурсы через Azure CLI
+- Настроили параметры очереди (LockDuration, TTL, MaxDeliveryCount)
 
-✅ **Created Service Bus namespace and queue**
-- Used Azure CLI to provision resources
-- Configured queue properties (lock duration, TTL, max delivery count)
+✅ **Отправили сообщения в очередь**
+- Одиночные сообщения
+- Пакетная отправка (batch)
+- Сообщения с пользовательскими свойствами
 
-✅ **Sent messages to queue**
-- Single messages
-- Batch messages
-- Messages with custom properties
+✅ **Получили сообщения в режиме Peek Lock**
+- Завершали (Complete) после успешной обработки
+- Освобождали (Abandon) для повторной попытки
+- Перемещали в DLQ после превышения числа попыток
 
-✅ **Received messages with Peek Lock**
-- Complete messages after successful processing
-- Abandon messages for retry
-- Dead-letter messages after max retries
+✅ **Использовали sessions для FIFO**
+- Группировали сообщения по SessionId
+- Обрабатывали разные сессии параллельно
 
-✅ **Used message sessions for FIFO ordering**
-- Grouped related messages by SessionId
-- Processed sessions in parallel
+✅ **Работали с Dead-Letter Queue**
+- Перемещали проблемные сообщения в DLQ
+- Анализировали и повторно обрабатывали их
 
-✅ **Handled dead-letter queue**
-- Moved failed messages to DLQ
-- Processed and inspected DLQ messages
-
-✅ **Monitored queue metrics**
-- Viewed metrics in Azure Portal
-- Queried metrics with Azure CLI
+✅ **Мониторили метрики очереди**
+- Просматривали показатели в Azure Portal
+- Запрашивали метрики через Azure CLI
 
 ---
 
-## Exam Tips
+## Советы для экзамена AZ-204
 
-1. **Peek Lock is default and recommended** for reliable processing
-2. **Sessions enable FIFO** ordering within session
-3. **Dead-letter queue** holds undeliverable messages
-4. **Max delivery count** determines when to dead-letter
-5. **Lock duration** should match processing time
-6. **Use MessageId** for duplicate detection and idempotency
-7. **Batch sending** improves performance
+1. **Peek Lock — режим по умолчанию и рекомендованный** для надёжной обработки
+2. **Sessions обеспечивают FIFO** (в пределах сессии)
+3. **Dead-Letter Queue** хранит недоставленные сообщения
+4. **MaxDeliveryCount** определяет, когда сообщение попадёт в DLQ
+5. **LockDuration** должен соответствовать времени обработки
+6. **MessageId** используется для duplicate detection и идемпотентности
+7. **Batch-отправка** повышает производительность
 
-**Remember:** Always complete, abandon, or dead-letter messages in Peek Lock mode to prevent lock timeouts!
+---
+
+## Главное правило
+
+В режиме Peek Lock сообщение обязательно нужно:
+
+- Завершить (Complete),
+- Освободить (Abandon),
+- Или отправить в DLQ.
+
+Иначе произойдёт истечение блокировки и повторная доставка.
+
+Контроль обработки = надёжность системы.

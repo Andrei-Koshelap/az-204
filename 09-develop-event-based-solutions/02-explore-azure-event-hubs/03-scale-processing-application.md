@@ -1,23 +1,72 @@
-# Scale Event Processing Application
+# Масштабирование приложения обработки событий
 
-## Scaling Challenges with Event Streams
+## Проблемы масштабирования при работе с потоками событий
 
-### The Problem
+### Проблема
 
-Consider a scenario with **100,000 homes** sending sensor data to Event Hubs:
+Представим сценарий: **100 000 домов** отправляют данные с датчиков в Event Hubs.
 
-**Requirements:**
-- ✅ **Scale**: Handle varying numbers of consumers dynamically
-- ✅ **Load Balance**: Distribute partitions among consumers evenly
-- ✅ **Fault Tolerance**: Resume processing after consumer failures
-- ✅ **Efficiency**: Process events without duplication or data loss
-- ✅ **Checkpointing**: Track processing progress per partition
+### Требования:
 
-**Challenge:**
-How do you coordinate multiple consumer instances to efficiently process events from multiple partitions without conflicts?
+- ✅ **Масштабируемость (Scale)** — динамическое добавление или удаление обработчиков
+- ✅ **Балансировка нагрузки (Load Balance)** — равномерное распределение партиций между consumer-инстансами
+- ✅ **Отказоустойчивость (Fault Tolerance)** — продолжение обработки после сбоя consumer
+- ✅ **Эффективность** — отсутствие дублирования и потери данных
+- ✅ **Checkpointing** — отслеживание прогресса обработки по каждой партиции
 
-**Solution:**
-Use **EventProcessorClient** (or **EventHubConsumerClient** with manual coordination)
+---
+
+## В чём сложность?
+
+Event Hub делит поток событий на **партиции**.
+
+Каждая партиция:
+
+- сохраняет порядок событий
+- может обрабатываться только одним consumer в рамках одной consumer group
+
+Если запустить несколько инстансов без координации:
+
+- возможны конфликты при чтении
+- дублирование обработки
+- потеря прогресса
+- неравномерная нагрузка
+
+---
+
+## Решение
+
+Использовать:
+
+- **EventProcessorClient** — рекомендуемый способ  
+  или
+- **EventHubConsumerClient** с ручной координацией (более сложный вариант)
+
+---
+
+## Почему EventProcessorClient — лучший выбор?
+
+EventProcessorClient автоматически обеспечивает:
+
+### 1. Балансировку партиций
+- Распределяет партиции между активными инстансами
+- Перераспределяет их при добавлении или удалении consumer
+
+### 2. Отказоустойчивость
+- При падении одного инстанса его партиции перераспределяются
+- Обработка продолжается другими инстансами
+
+### 3. Checkpointing
+- Сохраняет позицию чтения в Azure Blob Storage
+- Позволяет продолжить обработку с последней зафиксированной позиции
+
+### 4. Отсутствие конфликтов
+- Использует механизм lease для координации
+- Только один consumer обрабатывает конкретную партицию
+
+---
+
+
 
 ---
 
@@ -117,34 +166,98 @@ Benefit: Parallel processing, high scalability
               └────────────────┴────────────────┘
 ```
 
-### How EventProcessorClient Works
+### Как работает EventProcessorClient
 
-**1. Partition Ownership Claim:**
-- Each EventProcessorClient instance claims ownership of partitions
-- Ownership tracked via **blob leases** in Azure Blob Storage
-- Lease duration: 15-60 seconds (configurable)
-- Lease renewal: Every few seconds to maintain ownership
+EventProcessorClient — это высокоуровневый механизм координации обработки событий из Event Hubs с автоматической балансировкой и отказоустойчивостью.
 
-**2. Load Balancing:**
-- Continuously monitors partition distribution
-- Rebalances when:
-  - New consumer instance starts
-  - Existing consumer instance stops
-  - Lease renewal fails (instance crashed)
+---
 
-**3. Checkpointing:**
-- Consumer periodically saves processing progress
-- Checkpoint includes:
-  - Partition ID
-  - Offset (position in partition)
-  - Sequence number
-- Stored in checkpoint store (Blob Storage)
+## 1. Захват владения партицией (Partition Ownership Claim)
 
-**4. Failure Recovery:**
-- When consumer crashes, lease expires
-- Another consumer claims ownership
-- Resumes from last checkpoint
-- Prevents duplicate processing (if checkpointed correctly)
+- Каждый экземпляр EventProcessorClient пытается «захватить» одну или несколько партиций
+- Владение отслеживается через **blob leases** в Azure Blob Storage
+- Длительность lease: обычно 15–60 секунд (настраивается)
+- Lease регулярно продлевается (каждые несколько секунд), чтобы сохранить владение
+
+Если lease не продлён — считается, что инстанс недоступен.
+
+📌 Blob Storage здесь используется как координационный механизм (distributed lock).
+
+---
+
+## 2. Балансировка нагрузки (Load Balancing)
+
+EventProcessorClient постоянно отслеживает распределение партиций.
+
+Перераспределение происходит, когда:
+
+- Запускается новый consumer-инстанс
+- Останавливается существующий инстанс
+- Не удаётся продлить lease (например, из-за сбоя)
+
+Цель — обеспечить максимально равномерное распределение партиций между активными инстансами.
+
+Важно:
+
+- Одна партиция обрабатывается только одним consumer в рамках consumer group
+- При увеличении числа инстансов нагрузка автоматически распределяется
+
+---
+
+## 3. Checkpointing (Сохранение прогресса)
+
+Consumer периодически сохраняет состояние обработки.
+
+Checkpoint включает:
+
+- ID партиции
+- Offset (позиция в партиции)
+- Sequence number
+
+Checkpoint хранится в **checkpoint store** (обычно Azure Blob Storage).
+
+📌 Рекомендуется сохранять checkpoint после успешной обработки события или батча событий.
+
+Если checkpoint не выполняется корректно — возможна повторная обработка при перезапуске.
+
+---
+
+## 4. Восстановление после сбоя (Failure Recovery)
+
+Когда consumer падает:
+
+1. Lease истекает
+2. Другой инстанс захватывает партицию
+3. Обработка продолжается с последнего checkpoint
+
+Это обеспечивает:
+
+- отказоустойчивость
+- отсутствие потери данных
+- минимизацию дублирования (при корректном checkpointing)
+
+---
+
+## Что важно помнить для AZ-204
+
+- EventProcessorClient автоматически управляет lease и балансировкой
+- Координация выполняется через Blob Storage
+- Checkpointing критичен для корректного восстановления
+- При сбое обработка продолжается другим инстансом
+- Без checkpoint возможна повторная обработка
+
+---
+
+## Ключевая идея
+
+EventProcessorClient решает сразу несколько задач распределённой системы:
+
+- распределение нагрузки
+- синхронизация
+- обработка отказов
+- отслеживание прогресса
+
+Это стандартный способ построения масштабируемого и устойчивого consumer-приложения для Event Hubs.
 
 ---
 
@@ -539,36 +652,85 @@ Time T3: 1 Consumer Instance (scale in - Instance 2, 3, 4 stopped)
          └─── Takes over all partitions
 ```
 
-**Load Balancing Algorithm:**
+## Алгоритм балансировки нагрузки (Load Balancing Algorithm)
 
-1. **Ownership Claim Cycle** (every 10-30 seconds):
-   - Count total partitions
-   - Count active consumers
-   - Calculate fair share: `partitions / consumers`
-   
-2. **Partition Distribution:**
-   - If consumer owns < fair share: claim more partitions
-   - If consumer owns > fair share: release partitions
-   - Balance achieved over multiple cycles
+EventProcessorClient выполняет балансировку циклически.
 
-3. **Lease Management:**
-   - Lease duration: 15-60 seconds
-   - Renewal interval: Every few seconds
-   - Expired lease: Partition available for claiming
+### 1. Цикл захвата владения (Ownership Claim Cycle)
+(обычно каждые 10–30 секунд)
+
+- Подсчитывается общее количество партиций
+- Подсчитывается количество активных consumer-инстансов
+- Вычисляется «справедливая доля»:
+
+  `количество партиций / количество consumers`
+
+Это число определяет, сколько партиций должен обрабатывать каждый инстанс.
 
 ---
 
-## Checkpointing Strategies
+### 2. Распределение партиций
 
-### When to Checkpoint?
+- Если consumer владеет **меньше**, чем справедливая доля → он пытается захватить дополнительные партиции
+- Если consumer владеет **больше**, чем справедливая доля → он освобождает лишние партиции
+- Баланс достигается постепенно, за несколько циклов
 
-| Strategy | Frequency | Pros | Cons | Use Case |
-|----------|-----------|------|------|----------|
-| **Every Event** | After each event | Maximum fault tolerance | High overhead, slow | Critical financial transactions |
-| **Every Batch** | After processing batch | Good balance | Some reprocessing risk | Standard applications |
-| **Time-Based** | Every N seconds | Predictable | Potential data loss | High-throughput scenarios |
-| **Count-Based** | Every N events | Consistent | Variable time | Moderate throughput |
-| **Hybrid** | Batch + time | Best balance | More complex | Production recommended |
+📌 Балансировка не мгновенная — она сходится итеративно.
+
+---
+
+### 3. Управление lease
+
+- Длительность lease: 15–60 секунд
+- Продление lease: каждые несколько секунд
+- Если lease истёк → партиция становится доступной для захвата
+
+Если consumer падает, его lease не продлевается — другие инстансы автоматически забирают партиции.
+
+---
+
+# Стратегии Checkpointing
+
+Checkpoint определяет, с какой позиции продолжится обработка после сбоя.
+
+## Когда выполнять checkpoint?
+
+| Стратегия | Частота | Плюсы | Минусы | Подходит для |
+|------------|----------|--------|--------|--------------|
+| **Каждое событие** | После каждого события | Максимальная отказоустойчивость | Высокая нагрузка, снижение производительности | Критичные финансовые операции |
+| **Каждый батч** | После обработки батча | Хороший баланс | Возможна повторная обработка части данных | Стандартные приложения |
+| **По времени** | Каждые N секунд | Предсказуемость | Возможна потеря части прогресса | Высоконагруженные системы |
+| **По количеству** | Каждые N событий | Контролируемый объём | Время между checkpoint может варьироваться | Средняя нагрузка |
+| **Гибридная** | Батч + таймер | Оптимальный баланс | Более сложная реализация | Рекомендуется для production |
+
+---
+
+## Практические рекомендации
+
+- Не выполняйте checkpoint слишком часто — это увеличивает нагрузку на Blob Storage
+- Не выполняйте checkpoint слишком редко — возрастает риск повторной обработки
+- В production чаще всего используется гибридный подход
+- Всегда выполняйте checkpoint **после успешной обработки**, а не до неё
+
+---
+
+## Что важно для AZ-204
+
+- Балансировка выполняется циклически
+- Используются blob leases
+- Checkpoint хранится в Blob Storage
+- При сбое обработка продолжается с последнего checkpoint
+- Без checkpoint возможна повторная обработка
+
+---
+
+## Ключевая идея
+
+Балансировка + lease + checkpoint =
+
+масштабируемая, отказоустойчивая и согласованная обработка событий в распределённой системе.
+
+Понимание этих механизмов — основа для правильного ответа на вопросы по масштабированию Event Hubs в AZ-204.
 
 ### Checkpointing Examples
 
@@ -770,116 +932,163 @@ processor.ProcessEventAsync += async (ProcessEventArgs args) =>
 
 ---
 
-## Best Practices
-
-### Performance Optimization
-
-1. **Batch Checkpointing**
-   - Checkpoint every 50-100 events or 30 seconds
-   - Reduces storage operations
-   - Balance fault tolerance vs performance
-
-2. **Async Processing**
-   - Use async/await throughout
-   - Don't block threads
-   - Leverage I/O concurrency
-
-3. **Resource Management**
-   - Reuse connections and clients
-   - Dispose resources properly
-   - Use connection pooling
-
-4. **Partition Count**
-   - More partitions = more parallelism
-   - Match partition count to expected consumer instances
-   - Plan for future scale
-
-### Fault Tolerance
-
-1. **Error Handling**
-   - Catch exceptions in event handler
-   - Don't checkpoint on error (allows retry)
-   - Log errors for debugging
-   - Implement dead-letter queue for poison messages
-
-2. **Graceful Shutdown**
-   ```csharp
-   // Graceful shutdown
-   await processor.StopProcessingAsync();
-   ```
-
-3. **Idempotency**
-   - Design processing to be idempotent
-   - Handle duplicate events gracefully
-   - Use unique identifiers to detect duplicates
-
-4. **Monitoring**
-   - Track checkpoint lag
-   - Monitor partition distribution
-   - Alert on processing errors
-
-### Scalability
-
-1. **Horizontal Scaling**
-   - Add more consumer instances
-   - Automatic load balancing
-   - Maximum instances = number of partitions
-
-2. **Vertical Scaling**
-   - Increase CPU/memory per instance
-   - Optimize processing logic
-   - Use faster storage for checkpoints
-
-3. **Autoscaling**
-   - Scale based on consumer lag
-   - Use Azure Container Instances or AKS
-   - KEDA for event-driven autoscaling
+## Лучшие практики
 
 ---
 
-## Exam Tips for AZ-204
+# Оптимизация производительности
 
-### Key Concepts to Remember
+### 1. Batch Checkpointing
+- Выполнять checkpoint каждые 50–100 событий или каждые ~30 секунд
+- Снижает количество операций записи в Blob Storage
+- Баланс между отказоустойчивостью и производительностью
 
-1. **EventProcessorClient** = production-recommended client (automatic load balancing)
-2. **Checkpoint Store** = Azure Blob Storage (tracks progress and ownership)
-3. **Partition Ownership** = One partition owned by one consumer at a time
-4. **Load Balancing** = Automatic distribution of partitions among consumers
-5. **Checkpointing** = Marking processing progress (offset + sequence number)
-6. **Fault Tolerance** = Resume from checkpoint after failure
-7. **Thread Safety** = Sequential per partition, concurrent across partitions
+---
 
-### Common Exam Scenarios
+### 2. Асинхронная обработка
+- Использовать async/await на всех уровнях
+- Не блокировать потоки
+- Эффективно использовать I/O-конкурентность
 
-**Scenario 1**: Scale event processing dynamically
-- ✅ Use EventProcessorClient
-- ✅ Deploy multiple instances
-- ✅ Automatic load balancing
+---
 
-**Scenario 2**: Track processing progress
-- ✅ Use checkpointing (UpdateCheckpointAsync)
-- ✅ Requires Blob Storage
-- ✅ Resume from checkpoint on failure
+### 3. Управление ресурсами
+- Переиспользовать клиентов и соединения
+- Корректно освобождать ресурсы
+- Использовать connection pooling
 
-**Scenario 3**: Maximize parallelism
-- ✅ Match consumer instances to partition count
-- ✅ Example: 16 partitions = up to 16 consumers
+---
 
-**Scenario 4**: Ensure event ordering
-- ✅ Use partition key (events in same partition maintain order)
-- ❌ No ordering guarantee across partitions
+### 4. Количество партиций
+- Больше партиций → больше параллелизма
+- Количество партиций должно соответствовать ожидаемому числу consumer-инстансов
+- Планировать масштабирование заранее
 
-### Remember for Exam
+---
 
-- **EventProcessorClient**: Recommended for production
-- **EventHubConsumerClient**: For prototyping only (no automatic load balancing)
-- **Checkpoint store**: Requires Azure Blob Storage
-- **Checkpointing**: Call UpdateCheckpointAsync() periodically
-- **Partition ownership**: Tracked via blob leases (15-60 second duration)
-- **Load balancing**: Automatic, rebalances every 10-30 seconds
-- **Maximum consumers**: Limited by partition count
-- **Thread safety**: Sequential per partition, parallel across partitions
+# Отказоустойчивость
 
+### 1. Обработка ошибок
+- Перехватывать исключения в обработчике событий
+- Не выполнять checkpoint при ошибке (чтобы событие могло быть обработано повторно)
+- Логировать ошибки
+- Реализовать dead-letter очередь для «ядовитых» сообщений
+
+---
+
+### 2. Корректное завершение работы (Graceful Shutdown)
+
+- Перед остановкой приложения корректно завершать обработку
+- Освобождать партиции
+- Гарантировать сохранение последнего checkpoint
+
+---
+
+### 3. Идемпотентность
+- Проектировать обработку как идемпотентную
+- Корректно обрабатывать дубликаты
+- Использовать уникальные идентификаторы событий
+
+---
+
+### 4. Мониторинг
+- Отслеживать lag (задержку обработки)
+- Контролировать распределение партиций
+- Настраивать алерты на ошибки обработки
+
+---
+
+# Масштабируемость
+
+### 1. Горизонтальное масштабирование
+- Добавлять новые consumer-инстансы
+- Автоматическая балансировка нагрузки
+- Максимальное количество инстансов = количество партиций
+
+---
+
+### 2. Вертикальное масштабирование
+- Увеличивать CPU / память
+- Оптимизировать логику обработки
+- Использовать быстрое хранилище для checkpoint
+
+---
+
+### 3. Автомасштабирование
+- Масштабировать на основе consumer lag
+- Использовать Azure Container Instances или AKS
+- Применять KEDA для event-driven autoscaling
+
+---
+
+# Советы к экзамену AZ-204
+
+## Ключевые концепции
+
+1. **EventProcessorClient** — рекомендуемый production-клиент (автоматическая балансировка)
+2. **Checkpoint Store** — Azure Blob Storage (хранит прогресс и владение партициями)
+3. **Partition Ownership** — одна партиция принадлежит одному consumer одновременно
+4. **Load Balancing** — автоматическое распределение партиций
+5. **Checkpointing** — фиксация позиции обработки (offset + sequence number)
+6. **Fault Tolerance** — восстановление с последнего checkpoint
+7. **Thread Safety** — последовательная обработка внутри партиции, параллельная между партициями
+
+---
+
+## Типовые экзаменационные сценарии
+
+### Сценарий 1: Динамическое масштабирование обработки
+
+✔ Использовать EventProcessorClient  
+✔ Развернуть несколько инстансов  
+✔ Автоматическая балансировка
+
+---
+
+### Сценарий 2: Отслеживание прогресса обработки
+
+✔ Использовать checkpointing  
+✔ Требуется Blob Storage  
+✔ При сбое обработка продолжается с последнего checkpoint
+
+---
+
+### Сценарий 3: Максимальный параллелизм
+
+✔ Количество consumer-инстансов ≤ количество партиций  
+✔ Пример: 16 партиций → максимум 16 consumer
+
+---
+
+### Сценарий 4: Гарантия порядка событий
+
+✔ Использовать partition key  
+✔ Внутри одной партиции порядок сохраняется  
+✘ Между партициями порядок не гарантируется
+
+---
+
+## Что обязательно помнить
+
+- **EventProcessorClient** — рекомендован для production
+- **EventHubConsumerClient** — больше подходит для прототипирования
+- Checkpoint store требует Azure Blob Storage
+- Владение партициями отслеживается через blob leases (15–60 секунд)
+- Балансировка выполняется автоматически каждые 10–30 секунд
+- Максимальное количество consumer ограничено числом партиций
+- Обработка последовательная внутри партиции и параллельная между партициями
+
+---
+
+## Ключевая идея
+
+Масштабирование обработки в Event Hubs строится вокруг трёх механизмов:
+
+- Партиционирование
+- Lease-механизм
+- Checkpointing
+
+Именно их понимание позволяет правильно отвечать на вопросы по масштабированию и отказоустойчивости в AZ-204.
 ### Quick Reference
 
 ```csharp
@@ -906,24 +1115,63 @@ await processor.StopProcessingAsync();
 
 ---
 
-## Summary
+## Итог
 
-**Scaling event processing** requires coordination among multiple consumer instances to efficiently process events from multiple partitions.
+**Масштабирование обработки событий** требует координации между несколькими consumer-инстансами, чтобы эффективно обрабатывать события из нескольких партиций без конфликтов и потери данных.
 
-**Key Components:**
-- **EventProcessorClient**: Automatic load balancing and fault tolerance
-- **Checkpoint Store**: Azure Blob Storage for progress tracking
-- **Partition Ownership**: One partition per consumer (dynamic distribution)
-- **Checkpointing**: Track processing progress (offset + sequence)
+---
 
-**Benefits:**
-- Horizontal scalability (add/remove consumers dynamically)
-- Fault tolerance (resume from checkpoint)
-- Load balancing (automatic partition distribution)
-- Concurrency (parallel processing across partitions)
+## Ключевые компоненты
 
-**Best Practices:**
-- Checkpoint periodically (not every event)
-- Handle errors gracefully (don't checkpoint on error)
-- Design for idempotency (handle duplicates)
-- Monitor partition distribution and lag
+- **EventProcessorClient**  
+  Обеспечивает автоматическую балансировку нагрузки и отказоустойчивость
+
+- **Checkpoint Store**  
+  Azure Blob Storage для хранения прогресса обработки и информации о владении партициями
+
+- **Partition Ownership**  
+  Одна партиция принадлежит одному consumer в рамках consumer group  
+  (динамическое распределение)
+
+- **Checkpointing**  
+  Отслеживание прогресса обработки (offset + sequence number)
+
+---
+
+## Преимущества
+
+- Горизонтальная масштабируемость  
+  (динамическое добавление и удаление consumer-инстансов)
+
+- Отказоустойчивость  
+  (восстановление обработки с последнего checkpoint)
+
+- Автоматическая балансировка нагрузки  
+  (равномерное распределение партиций)
+
+- Конкурентность  
+  (параллельная обработка между партициями)
+
+---
+
+## Лучшие практики
+
+- Выполнять checkpoint периодически, а не после каждого события
+- Не выполнять checkpoint при ошибке обработки
+- Проектировать систему с учётом идемпотентности
+- Мониторить распределение партиций и lag обработки
+
+---
+
+## Главное для AZ-204
+
+Если в вопросе говорится о:
+
+- масштабировании consumer-приложения
+- автоматической балансировке
+- восстановлении после сбоя
+- отслеживании прогресса обработки
+
+— правильный ответ почти всегда связан с использованием **EventProcessorClient + Azure Blob Storage checkpoint store**.
+
+Понимание этих механизмов — ключ к правильным ответам в теме масштабирования Event Hubs.

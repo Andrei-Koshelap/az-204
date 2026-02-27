@@ -1,18 +1,138 @@
-# Exercise: Send and Receive Events with Event Hubs
+# Практическое задание: Отправка и получение событий в Event Hubs
 
-## Exercise Overview
+## Обзор упражнения
 
-In this hands-on exercise, you'll create an Event Hubs namespace and event hub, then build producer and consumer applications to send and receive events.
+В этом практическом задании вы:
 
-**Estimated Time:** 30-40 minutes
+- создадите Event Hubs namespace и Event Hub
+- реализуете producer-приложение
+- реализуете consumer-приложение
+- протестируете масштабируемую обработку
+- отследите поток событий через Azure Portal
 
-**What You'll Learn:**
-- Create Event Hubs namespace and event hub
-- Send events with EventHubProducerClient
-- Receive events with EventHubConsumerClient
-- Process events with EventProcessorClient
-- Monitor event flow with Azure Portal
+**Оценочное время:** 30–40 минут
 
+---
+
+## Чему вы научитесь
+
+- Создавать Event Hubs namespace и Event Hub
+- Отправлять события с помощью EventHubProducerClient
+- Читать события через EventHubConsumerClient
+- Обрабатывать события через EventProcessorClient
+- Мониторить метрики и поток событий
+
+---
+
+# Шаг 1. Создание инфраструктуры
+
+### 1️⃣ Создать Event Hubs Namespace
+
+В Azure Portal:
+
+- Создать ресурс **Event Hubs**
+- Выбрать tier (Standard рекомендуется для практики)
+- Настроить регион и resource group
+
+---
+
+### 2️⃣ Создать Event Hub
+
+Внутри namespace:
+
+- Создать новый Event Hub
+- Указать количество партиций (например, 4)
+- Настроить retention (например, 1 день)
+
+📌 Количество партиций влияет на масштабируемость.
+
+---
+
+# Шаг 2. Создание Producer-приложения
+
+Задача:
+
+- Подключиться к Event Hub
+- Отправить события
+- Использовать batching
+
+Что проверить:
+
+- Используется ли batch-отправка
+- Указан ли partition key (при необходимости)
+- Нет ли ошибок отправки
+
+После запуска:
+
+- Проверить метрику **Incoming Messages** в Azure Portal
+
+---
+
+# Шаг 3. Создание Consumer-приложения (простой сценарий)
+
+Использовать EventHubConsumerClient:
+
+- Подключиться к конкретной consumer group
+- Начать чтение с `EventPosition.Earliest`
+- Вывести события в консоль
+
+📌 Подходит для прототипирования, но не для production.
+
+---
+
+# Шаг 4. Production-обработка через EventProcessorClient
+
+Задача:
+
+- Настроить Azure Blob Storage для checkpoint
+- Использовать EventProcessorClient
+- Реализовать обработчик событий
+- Периодически выполнять checkpoint
+
+Что проверить:
+
+- Автоматическая балансировка
+- Корректная запись checkpoint
+- Поведение при перезапуске приложения
+
+---
+
+# Шаг 5. Мониторинг через Azure Portal
+
+Проверить:
+
+- Incoming Messages
+- Outgoing Messages
+- Throttled Requests
+- Consumer Lag
+
+📌 Метрики помогают понять производительность и узкие места.
+
+---
+
+# Что закрепляет это упражнение
+
+- Разницу между Producer и Consumer
+- Использование batching
+- Понимание partition key
+- Работу checkpointing
+- Балансировку нагрузки
+
+---
+
+# Связь с AZ-204
+
+Это упражнение покрывает:
+
+- Отправку и получение событий
+- Масштабируемую обработку
+- Checkpointing
+- Балансировку партиций
+- Мониторинг Event Hubs
+
+Если вы понимаете каждый этап этого задания — тема клиентской библиотеки Event Hubs для AZ-204 у вас хорошо проработана.
+
+---
 ### Architecture
 
 ```
@@ -767,43 +887,96 @@ dotnet run
 
 ---
 
-## Part 5: Monitor with Azure Portal
+## Часть 5: Мониторинг через Azure Portal
 
-### Step 1: View Metrics
+Мониторинг позволяет понять:
 
-1. Navigate to [Azure Portal](https://portal.azure.com)
-2. Go to your Event Hubs namespace
-3. Select **Metrics** under Monitoring
-4. Add metrics:
-   - **Incoming Messages**: Events sent
-   - **Outgoing Messages**: Events read
-   - **Throttled Requests**: Throttling events
-   - **User Errors**: Client errors
+- поступают ли события
+- читаются ли они consumer-приложениями
+- есть ли throttling
+- равномерно ли распределена нагрузка
 
-### Step 2: View Event Hub Details
+---
 
-1. Select your Event Hub (`telemetry`)
-2. Select **Overview**
-3. View:
-   - **Message Count**: Total messages
-   - **Throughput Units**: Current utilization
-   - **Partitions**: Distribution
+## Шаг 1. Просмотр метрик
 
-### Step 3: View Partition Information
+1. Перейдите в Azure Portal
+2. Откройте ваш **Event Hubs namespace**
+3. В разделе **Monitoring** выберите **Metrics**
+4. Добавьте следующие метрики:
 
-1. Select **Partitions** under Entities
-2. View per-partition metrics:
+   - **Incoming Messages** — количество отправленных событий
+   - **Outgoing Messages** — количество прочитанных событий
+   - **Throttled Requests** — случаи ограничения (throttling)
+   - **User Errors** — ошибки клиента
+
+📌 Если Incoming растёт, а Outgoing — нет, значит consumer не читает события.
+
+---
+
+## Шаг 2. Просмотр информации об Event Hub
+
+1. Выберите ваш Event Hub (например, `telemetry`)
+2. Откройте вкладку **Overview**
+3. Проверьте:
+
+   - **Message Count** — общее количество сообщений
+   - **Throughput Units** — текущая загрузка
+   - **Partitions** — распределение партиций
+
+📌 Если наблюдается throttling — возможно, нужно увеличить Throughput Units.
+
+---
+
+## Шаг 3. Просмотр информации по партициям
+
+1. В разделе **Entities** выберите **Partitions**
+2. Просмотрите метрики по каждой партиции:
+
    - Incoming messages
    - Outgoing messages
    - Active connections
 
-### Step 4: View Consumer Groups
+📌 Неравномерная нагрузка может указывать на отсутствие partition key или на «горячую» партицию.
 
-1. Select **Consumer groups** under Entities
-2. View consumer groups:
-   - `$Default`: Default group
-   - `processor`: Custom group
+---
 
+## Шаг 4. Просмотр Consumer Groups
+
+1. В разделе **Entities** выберите **Consumer groups**
+2. Проверьте доступные группы:
+
+   - `$Default` — стандартная consumer group
+   - `processor` — пользовательская группа
+
+📌 Каждая consumer group получает собственный поток чтения.  
+Это позволяет нескольким приложениям независимо обрабатывать одни и те же события.
+
+---
+
+## Что важно для AZ-204
+
+- Incoming vs Outgoing помогает диагностировать проблемы
+- Throttled Requests указывает на нехватку Throughput Units
+- Партиции влияют на масштабируемость
+- Consumer groups позволяют независимое чтение
+
+---
+
+## Ключевая идея
+
+Мониторинг Event Hubs — важная часть production-систем:
+
+- помогает выявлять узкие места
+- позволяет корректно масштабировать систему
+- даёт понимание распределения нагрузки
+
+На экзамене часто проверяется понимание различий между:
+
+- Namespace-level метриками
+- Event Hub-level метриками
+- Partition-level метриками
+- Consumer group поведением
 ---
 
 ## Part 6: Test Scenarios
@@ -899,53 +1072,87 @@ az group delete \
 echo "Resource group deletion initiated"
 ```
 
-**⚠️ Warning**: This deletes ALL resources in the resource group, including:
+## ⚠️ Внимание
+
+Удаление resource group приведёт к удалению **ВСЕХ** ресурсов внутри неё, включая:
+
 - Event Hubs namespace
 - Event Hub
 - Storage account
-- All data
+- Все данные
+
+Перед удалением убедитесь, что данные больше не нужны.
 
 ---
 
-## Key Takeaways
+# Ключевые выводы
 
-### Concepts Learned
+## Изученные концепции
 
-1. **Event Hubs Architecture**
-   - Namespace → Event Hub → Partitions
-   - Consumer groups for independent consumption
-   - Partition-based parallelism
+### 1. Архитектура Event Hubs
+- Namespace → Event Hub → Partitions
+- Consumer groups обеспечивают независимое чтение
+- Параллелизм достигается за счёт партиций
 
-2. **EventHubProducerClient**
-   - Batching for performance
-   - Partition key for related events
-   - Application properties for metadata
+---
 
-3. **EventHubConsumerClient**
-   - Read events from all partitions
-   - Iterator pattern for consumption
-   - Good for prototyping
+### 2. EventHubProducerClient
+- Использование batching для повышения производительности
+- Partition key для группировки связанных событий
+- Application properties для передачи метаданных
 
-4. **EventProcessorClient**
-   - Automatic load balancing
-   - Checkpoint-based fault tolerance
-   - Production-ready scalability
+---
 
-5. **Checkpointing**
-   - Tracks processing progress
-   - Enables failure recovery
-   - Requires Azure Blob Storage
+### 3. EventHubConsumerClient
+- Чтение событий из всех партиций
+- Использование итеративного подхода (iterator pattern)
+- Подходит для прототипирования
 
-### Best Practices Applied
+---
 
-✅ **Batching**: Used `CreateBatchAsync()` for efficient sending
-✅ **Partition Key**: Grouped related events (same device)
-✅ **Checkpointing**: Balanced frequency (every 10 events)
-✅ **Error Handling**: Try-catch with no checkpoint on error
-✅ **Resource Management**: Used `await using` for disposal
-✅ **Load Balancing**: Multiple processor instances automatically balanced
-✅ **Monitoring**: Used Azure Portal metrics for observability
+### 4. EventProcessorClient
+- Автоматическая балансировка нагрузки
+- Отказоустойчивость на основе checkpoint
+- Production-ready масштабируемость
 
+---
+
+### 5. Checkpointing
+- Отслеживает прогресс обработки
+- Позволяет восстановиться после сбоя
+- Требует Azure Blob Storage
+
+---
+
+# Применённые лучшие практики
+
+✅ **Batching** — использование `CreateBatchAsync()` для эффективной отправки
+
+✅ **Partition Key** — группировка связанных событий (например, по устройству)
+
+✅ **Checkpointing** — разумная частота (например, каждые 10 событий)
+
+✅ **Обработка ошибок** — try-catch без выполнения checkpoint при ошибке
+
+✅ **Управление ресурсами** — корректное освобождение ресурсов
+
+✅ **Балансировка нагрузки** — несколько инстансов автоматически распределяют партиции
+
+✅ **Мониторинг** — использование метрик Azure Portal для наблюдаемости
+
+---
+
+## Главное для AZ-204
+
+После выполнения этого упражнения вы понимаете:
+
+- разницу между producer и consumer
+- зачем нужен partition key
+- как работает балансировка
+- почему важен checkpoint
+- как масштабируется обработка
+
+Если вы уверенно объясняете каждый из этих пунктов — тема Event Hubs для AZ-204 у вас закрыта на хорошем уровне.
 ---
 
 ## Troubleshooting Guide
@@ -1033,81 +1240,119 @@ az eventhubs eventhub show \
 
 ---
 
-## Exam Tips for AZ-204
+# Советы к экзамену AZ-204
 
-### Key Concepts from Exercise
+## Ключевые концепции из упражнения
 
-1. **Event Hubs Setup**
-   - Create namespace (Standard SKU for consumer groups)
-   - Create event hub with partitions
-   - Get connection string
-
-2. **Producer Pattern**
-   - Use `EventHubProducerClient`
-   - Always use batching (`CreateBatchAsync()`)
-   - Set partition key for related events
-
-3. **Consumer Pattern**
-   - `EventHubConsumerClient`: Prototyping only
-   - `EventProcessorClient`: Production (requires Blob Storage)
-
-4. **Checkpointing**
-   - Call `UpdateCheckpointAsync()` periodically
-   - Don't checkpoint on error
-   - Balance frequency (fault tolerance vs performance)
-
-5. **Load Balancing**
-   - Multiple EventProcessorClient instances
-   - Automatic partition distribution
-   - Scales horizontally
-
-### Remember for Exam
-
-- **Namespace**: Container for Event Hubs (like SQL Server)
-- **Event Hub**: Append-only log (like SQL table)
-- **Partitions**: Ordered sequences (cannot change after creation)
-- **Consumer Group**: Independent view of Event Hub
-- **Checkpoint Store**: Azure Blob Storage (required for EventProcessorClient)
-- **Batching**: `CreateBatchAsync()` → `TryAdd()` → `SendAsync()`
-- **Partition Key**: Hash-based distribution (maintains order)
-- **EventProcessorClient**: Production choice (automatic load balancing)
-
-### Common Exam Scenarios
-
-**Scenario 1**: Build telemetry ingestion system
-- ✅ Use Event Hubs (designed for high-volume ingestion)
-- ✅ EventHubProducerClient with batching
-- ✅ Partition key for device grouping
-
-**Scenario 2**: Scale event processing
-- ✅ Use EventProcessorClient
-- ✅ Multiple instances for horizontal scaling
-- ✅ Checkpoint store for fault tolerance
-
-**Scenario 3**: Track processing progress
-- ✅ Use checkpointing (`UpdateCheckpointAsync`)
-- ✅ Azure Blob Storage as checkpoint store
-- ✅ Resume from checkpoint after failure
+### 1. Настройка Event Hubs
+- Создать **Namespace** (Standard SKU — поддержка consumer groups)
+- Создать **Event Hub** с нужным количеством партиций
+- Получить connection string или настроить Azure AD
 
 ---
 
-## Summary
+### 2. Producer-паттерн
+- Использовать `EventHubProducerClient`
+- Всегда применять batching (`CreateBatchAsync()`)
+- Указывать partition key для связанных событий
 
-In this exercise, you:
+---
 
-✅ Created Event Hubs namespace and event hub
-✅ Built producer application with batching
-✅ Built consumer application with iterator pattern
-✅ Built event processor with load balancing and checkpointing
-✅ Tested fault tolerance and scaling
-✅ Monitored metrics in Azure Portal
+### 3. Consumer-паттерн
+- `EventHubConsumerClient` — только для прототипирования
+- `EventProcessorClient` — production (требует Blob Storage)
 
-**Production Checklist:**
-- ✅ Use EventProcessorClient (not EventHubConsumerClient)
-- ✅ Configure checkpoint store (Azure Blob Storage)
-- ✅ Implement proper error handling
-- ✅ Use batching for sending events
-- ✅ Set appropriate checkpoint frequency
-- ✅ Monitor metrics (consumer lag, throughput)
-- ✅ Use managed identity (not connection strings)
-- ✅ Configure auto-scaling for consumer apps
+---
+
+### 4. Checkpointing
+- Вызывать `UpdateCheckpointAsync()` периодически
+- Не выполнять checkpoint при ошибке
+- Балансировать частоту (отказоустойчивость vs производительность)
+
+---
+
+### 5. Балансировка нагрузки
+- Несколько экземпляров EventProcessorClient
+- Автоматическое распределение партиций
+- Горизонтальное масштабирование
+
+---
+
+# Что обязательно помнить
+
+- **Namespace** — контейнер для Event Hubs (аналог SQL Server)
+- **Event Hub** — append-only лог (аналог таблицы)
+- **Partitions** — упорядоченные последовательности (нельзя изменить после создания)
+- **Consumer Group** — независимое представление Event Hub
+- **Checkpoint Store** — Azure Blob Storage (обязателен для EventProcessorClient)
+- **Batching**: `CreateBatchAsync()` → `TryAdd()` → `SendAsync()`
+- **Partition Key** — хеш-распределение с сохранением порядка
+- **EventProcessorClient** — production-решение
+
+---
+
+# Типовые экзаменационные сценарии
+
+### Сценарий 1: Система приёма телеметрии
+
+✔ Использовать Event Hubs  
+✔ Producer с batching  
+✔ Partition key для группировки по устройствам
+
+---
+
+### Сценарий 2: Масштабирование обработки
+
+✔ Использовать EventProcessorClient  
+✔ Развернуть несколько инстансов  
+✔ Настроить checkpoint store
+
+---
+
+### Сценарий 3: Отслеживание прогресса
+
+✔ Использовать checkpointing  
+✔ Blob Storage как checkpoint store  
+✔ Восстановление после сбоя
+
+---
+
+# Итог упражнения
+
+В ходе задания вы:
+
+✅ Создали Event Hubs namespace и Event Hub  
+✅ Реализовали producer с batching  
+✅ Реализовали consumer с iterator-подходом  
+✅ Настроили EventProcessorClient с балансировкой  
+✅ Протестировали отказоустойчивость  
+✅ Проанализировали метрики в Azure Portal
+
+---
+
+# Production Checklist
+
+- ✅ Использовать EventProcessorClient (не EventHubConsumerClient)
+- ✅ Настроить checkpoint store (Azure Blob Storage)
+- ✅ Реализовать корректную обработку ошибок
+- ✅ Использовать batching
+- ✅ Настроить разумную частоту checkpoint
+- ✅ Мониторить lag и throughput
+- ✅ Использовать Managed Identity вместо connection string
+- ✅ Настроить auto-scaling для consumer-приложений
+
+---
+
+## Финальная мысль для AZ-204
+
+Если в вопросе фигурируют:
+
+- масштабирование
+- отказоустойчивость
+- checkpoint
+- балансировка
+- production-нагрузка
+
+— правильный ответ почти всегда связан с **EventProcessorClient + Azure Blob Storage + batching + partition key**.
+
+Понимание этих механизмов — ключ к успешной сдаче темы Event Hubs на AZ-204.

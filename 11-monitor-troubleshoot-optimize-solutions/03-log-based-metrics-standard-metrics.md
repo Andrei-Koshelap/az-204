@@ -1,16 +1,44 @@
-# Discover Log-Based Metrics and Standard Metrics
+# Log-Based Metrics и Standard Metrics
 
-## Overview
+## Обзор
 
-Application Insights provides two types of metrics that serve different purposes: **log-based metrics** and **standard metrics** (preaggregated). Understanding the differences, advantages, and use cases for each is critical for effective monitoring and cost optimization.
+Application Insights предоставляет два типа метрик, которые решают разные задачи:  
+**log-based metrics** и **standard metrics (предагрегированные)**.
 
-In this unit, you'll learn:
-- The difference between log-based and standard metrics
-- How preaggregation works and why it matters
-- Performance implications and cost considerations
-- When to use each metric type
-- Sampling and filtering techniques
+Понимание различий, преимуществ и сценариев использования каждого типа критически важно для:
 
+- эффективного мониторинга
+- высокой производительности запросов
+- оптимизации стоимости хранения и обработки данных
+
+---
+
+## В этом разделе вы изучите:
+
+- В чём разница между log-based и standard metrics
+- Как работает предагрегация (preaggregation) и почему она важна
+- Влияние каждого типа на производительность
+- Как выбор типа метрик влияет на стоимость
+- Когда использовать каждый вариант
+- Стратегии sampling и filtering
+
+---
+
+## Почему это важно для AZ-204
+
+В экзаменационных вопросах часто проверяется:
+
+- Как уменьшить объём ingestion?
+- Как повысить скорость обработки метрик?
+- Какой тип метрик выбрать при высокой нагрузке?
+- Как правильно реализовать кастомные метрики?
+
+Ключевая идея, которую нужно помнить:
+
+- **Log-based metrics** — гибкость и мощная аналитика через KQL
+- **Standard metrics** — высокая производительность и низкая стоимость благодаря предагрегации
+
+Далее разберём детали работы каждого типа.
 ## Metric Types Comparison
 
 ```
@@ -46,21 +74,40 @@ In this unit, you'll learn:
 │  • Query costs              │                             │
 └────────────────────────────────────────────────────────────┘
 ```
+### Таблица сравнения возможностей
 
-### Feature Comparison Table
+| Характеристика | Log-Based Metrics | Standard Metrics (Preaggregated) |
+|---------------|-------------------|----------------------------------|
+| **Хранение** | Отдельные события в логах | Предагрегированные временные ряды |
+| **Производительность запросов** | Ниже (агрегация выполняется во время запроса) | Очень высокая (данные уже агрегированы) |
+| **Зависимость от Sampling** | ✅ Да (может снижать точность) | ❌ Нет (рассчитываются до sampling) |
+| **Измерения (Dimensions)** | Практически не ограничены (все свойства события) | Ограничены (заранее определённые измерения) |
+| **Retention** | 30–730 дней (настраивается) | 93 дня (фиксировано) |
+| **Лучше всего подходит для** | Ad-hoc анализа, отладки, расследований | Дашбордов, near real-time алёртов |
+| **Стоимость** | Выше (хранятся все события) | Ниже (хранятся агрегаты) |
+| **Язык запросов** | KQL (Kusto Query Language) | Metrics API / Azure CLI |
+| **Real-time алёрты** | Ограничены (задержка выполнения запроса) | Отлично подходят (менее минуты) |
+| **Примеры** | `requests \| summarize avg(duration)` | Встроенные: Request rate, Response time |
 
-| Feature | Log-Based Metrics | Standard Metrics (Preaggregated) |
-|---------|-------------------|----------------------------------|
-| **Storage** | Individual events in logs | Preaggregated time series |
-| **Query Performance** | Slower (aggregates at query time) | Very fast (already aggregated) |
-| **Affected by Sampling** | ✅ Yes (can reduce accuracy) | ❌ No (calculated before sampling) |
-| **Dimensions** | Unlimited (all event properties) | Limited (predefined dimensions) |
-| **Retention** | 30-730 days (configurable) | 93 days (fixed) |
-| **Best for** | Ad-hoc analysis, debugging | Dashboards, real-time alerts |
-| **Cost** | Higher (stores all events) | Lower (stores aggregates) |
-| **Query Language** | KQL (Kusto) | Metrics API / Azure CLI |
-| **Real-time Alerting** | Limited (query lag) | Excellent (sub-minute) |
-| **Examples** | `requests \| summarize avg(duration)` | Built-in: Request rate, Response time |
+---
+
+## Ключевое различие
+
+- **Log-based metrics** → гибкость и аналитика, но выше нагрузка и стоимость.
+- **Standard metrics** → скорость, эффективность и низкая задержка для алёртов.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+
+- требуется высокая точность при sampling → выбираем Standard metrics
+- нужен сложный аналитический запрос → Log-based metrics
+- важно быстрое срабатывание алёрта → Standard metrics
+- требуется анализ по множеству кастомных измерений → Log-based metrics
+
+Главное — понимать компромисс между гибкостью и производительностью.
 
 ## Log-Based Metrics
 
@@ -193,10 +240,46 @@ Actual: 2.1% errors      Calculated: ~2.1% errors (estimated)
                          ⚠️ May vary: 1.8% - 2.4%
 ```
 
-**Sampling Types:**
-- **Ingestion Sampling**: Applied at the Application Insights ingestion endpoint
-- **Adaptive Sampling**: Automatically adjusts rate based on telemetry volume
-- **Fixed-Rate Sampling**: Set a specific percentage (e.g., 50%)
+### Типы Sampling
+
+Sampling используется для снижения объёма отправляемой телеметрии и, как следствие, уменьшения стоимости ingestion и нагрузки на систему.
+
+---
+
+**Типы Sampling:**
+
+- **Ingestion Sampling**  
+  Применяется на стороне Application Insights (на ingestion endpoint).  
+  Телеметрия отправляется полностью, но часть данных отбрасывается уже в облаке.
+
+- **Adaptive Sampling**  
+  Автоматически регулирует процент выборки в зависимости от объёма телеметрии.  
+  При высокой нагрузке процент снижается, при низкой — увеличивается.
+
+- **Fixed-Rate Sampling**  
+  Устанавливается фиксированный процент (например, 50%).  
+  Ровно указанная доля телеметрии отправляется в Application Insights.
+
+---
+
+## Важные нюансы
+
+- Sampling применяется к **Requests, Dependencies, Traces, Exceptions**, но:
+    - **Standard metrics не зависят от sampling**, так как рассчитываются до него.
+    - Log-based metrics могут терять точность при sampling.
+
+- Adaptive sampling особенно полезен для продакшена с непредсказуемой нагрузкой.
+
+- Sampling сохраняет корреляцию: если request попал в выборку, связанные dependency и exception тоже сохраняются.
+
+---
+
+## Для AZ-204 важно помнить
+
+- Sampling — ключевой инструмент оптимизации затрат.
+- Adaptive sampling обычно включён по умолчанию в SDK.
+- Если требуется 100% точность аналитики — sampling нужно отключить.
+- Standard metrics остаются точными даже при sampling.
 
 ```csharp
 // Configure adaptive sampling in ASP.NET Core
@@ -334,33 +417,76 @@ Standard Metrics Storage:
 Savings: ~$220/month
 ```
 
-### Disadvantages
+### Недостатки Standard Metrics (Preaggregated)
 
-#### 1. **Limited Dimensions**
-Only predefined dimensions are available (can't query arbitrary properties).
+Несмотря на высокую производительность и низкую задержку, предагрегированные метрики имеют ограничения.
 
-**Available Dimensions (Examples):**
-- cloud_RoleName (service name)
-- cloud_RoleInstance (instance ID)
-- request/name (operation name)
-- request/resultCode (HTTP status code)
-- request/success (true/false)
+---
 
-**Not Available:**
+#### 1. **Ограниченные измерения (Limited Dimensions)**
+
+Доступны только заранее определённые измерения.  
+Нельзя выполнять запросы по произвольным свойствам события.
+
+**Примеры доступных измерений:**
+- `cloud_RoleName` (имя сервиса)
+- `cloud_RoleInstance` (ID инстанса)
+- `request/name` (имя операции)
+- `request/resultCode` (HTTP-код ответа)
+- `request/success` (true/false)
+
+**Недоступно:**
 - Custom dimensions
-- User IDs
-- Arbitrary request properties
+- User ID
+- Произвольные свойства запроса
+- Любые поля, добавленные вручную в TrackEvent / TrackTrace
 
-#### 2. **Fixed Aggregations**
-Can't change how metrics are calculated after collection.
+📌 Если нужно фильтровать по кастомному полю — придётся использовать log-based metrics.
 
-**Standard Aggregations:**
+---
+
+#### 2. **Фиксированные агрегации (Fixed Aggregations)**
+
+Нельзя изменить способ расчёта метрики после её сбора.
+
+**Стандартные агрегации:**
 - Count
 - Sum
 - Min
 - Max
 - Average
 - Percentiles (P50, P90, P95, P99)
+
+⚠️ Нельзя:
+- Добавить собственную формулу
+- Пересчитать метрику иначе задним числом
+- Выполнить сложные join’ы или вычисления
+
+---
+
+## Практическое понимание
+
+Standard metrics:
+- Быстро работают
+- Отлично подходят для алёртов
+- Дешевле
+
+Но:
+- Меньше гибкости
+- Нет сложной аналитики
+- Нет произвольных измерений
+
+---
+
+## Для AZ-204 важно помнить
+
+Если требуется:
+- Анализ по UserId → log-based metrics
+- Кастомные измерения → log-based metrics
+- Высокая скорость алёртов → standard metrics
+- Percentiles (P95 latency) → standard metrics
+
+Выбор зависит от баланса между гибкостью и производительностью.
 
 **What You Can't Do:**
 ```
@@ -468,15 +594,71 @@ requests
 | order by p95Duration desc
 ```
 
-**Why:** Need flexible grouping by client_City, not available in standard metrics.
+**Почему:** требуется гибкая группировка по `client_City`, которая недоступна в standard metrics.
 
-## SDK and Metric Preaggregation
+---
 
-### How SDKs Preaggregate
+## SDK и предагрегация метрик
 
-Modern Application Insights SDKs (v2.7+) automatically preaggregate metrics.
+### Как SDK выполняет предагрегацию
 
-**SDK Processing:**
+Современные SDK Application Insights (v2.7+) автоматически выполняют предагрегацию метрик до отправки данных в облако.
+
+Это означает, что:
+
+- Вместо отправки каждого отдельного значения
+- SDK агрегирует данные локально (в памяти)
+- И отправляет уже сводные показатели за интервал времени
+
+---
+
+### Что происходит внутри SDK
+
+1. Приложение вызывает `GetMetric().TrackValue()`
+2. SDK:
+    - группирует значения по имени метрики и измерениям
+    - накапливает статистику (count, sum, min, max)
+3. Через заданный интервал (обычно 1 минута)
+4. Отправляется агрегированная запись вместо множества отдельных событий
+
+---
+
+### Почему это важно
+
+- Снижает объём ingestion
+- Уменьшает стоимость
+- Повышает производительность
+- Не зависит от sampling
+- Позволяет получать точные percentiles
+
+---
+
+### Отличие от TrackMetric()
+
+`TrackMetric()`:
+- Отправляет каждое значение как отдельное событие
+- Попадает в Logs
+- Увеличивает ingestion
+- Может быть искажён sampling
+
+`GetMetric()`:
+- Предагрегируется в SDK
+- Работает как standard metric
+- Эффективнее и дешевле
+
+---
+
+## Для AZ-204 важно помнить
+
+Если требуется:
+- Высокая нагрузка + кастомные метрики → использовать `GetMetric()`
+- Минимизация стоимости → preaggregation обязателен
+- Гибкая аналитика через KQL → использовать log-based метрики
+
+Главное различие:  
+`TrackMetric()` = лог-событие  
+`GetMetric()` = предагрегированная метрика
+
 ```
 ┌─────────── Application ────────────┐
 │                                     │
@@ -525,30 +707,60 @@ for (int i = 0; i < 1000; i++)
 // Result: 1 aggregated metric sent (efficient)
 ```
 
-**Benefits of GetMetric():**
-- Lower data ingestion costs (up to 100x reduction)
-- Not affected by sampling
-- Better performance (less network overhead)
-- Accurate aggregations
+### Преимущества `GetMetric()`
 
-### Standard Metrics (Automatic)
+- Более низкая стоимость ingestion (снижение объёма данных до 100 раз)
+- Не зависит от sampling
+- Лучшая производительность (меньше сетевых запросов)
+- Точные агрегации (count, sum, min, max и percentiles)
 
-These metrics are always preaggregated, regardless of SDK version:
+📌 В высоконагруженных системах использование `GetMetric()` вместо `TrackMetric()` — практически обязательная практика.
 
-| Metric Namespace | Metrics | Description |
-|------------------|---------|-------------|
-| **requests/** | count, duration, failed | Incoming HTTP requests |
-| **dependencies/** | count, duration, failed | Outgoing calls (SQL, HTTP, etc.) |
-| **exceptions/** | count | Caught and uncaught exceptions |
-| **availabilityResults/** | availabilityPercentage, duration | Availability test results |
-| **performanceCounters/** | processCpuPercentage, processPrivateBytes | Server performance |
+---
 
-## Sampling Strategies
+## Standard Metrics (Автоматические)
 
-### Sampling Types
+Эти метрики всегда предагрегируются, независимо от версии SDK:
 
-#### 1. **Adaptive Sampling** (Recommended)
-SDK automatically adjusts sampling rate based on telemetry volume.
+| Пространство метрик | Метрики | Описание |
+|---------------------|----------|------------|
+| **requests/** | count, duration, failed | Входящие HTTP-запросы |
+| **dependencies/** | count, duration, failed | Исходящие вызовы (SQL, HTTP и т.д.) |
+| **exceptions/** | count | Перехваченные и неперехваченные исключения |
+| **availabilityResults/** | availabilityPercentage, duration | Результаты Availability-тестов |
+| **performanceCounters/** | processCpuPercentage, processPrivateBytes | Показатели производительности сервера |
+
+---
+
+## Стратегии Sampling
+
+Sampling снижает объём телеметрии и помогает контролировать стоимость.
+
+---
+
+### Типы Sampling
+
+#### 1. **Adaptive Sampling** (Рекомендуется)
+
+SDK автоматически регулирует процент выборки в зависимости от объёма телеметрии.
+
+**Как работает:**
+- При высокой нагрузке процент снижается
+- При низкой нагрузке увеличивается
+- Поддерживает целевое количество событий в секунду
+
+**Преимущества:**
+- Не требует ручной настройки
+- Хорошо подходит для production
+- Сохраняет корреляцию между request, dependency и exception
+
+---
+
+📌 Важно:  
+Standard metrics остаются точными даже при включённом sampling, потому что рассчитываются до него.
+
+Для AZ-204:
+Если нужно снизить стоимость и сохранить стабильность — Adaptive Sampling обычно лучший выбор.
 
 **Configuration (.NET Core):**
 ```csharp
@@ -643,46 +855,71 @@ Aggregation: Defined in query
 Split by: Any dimension available in logs
 ```
 
-## Key Takeaways
+## Основные выводы
 
-✅ **Two metric types**: Log-based (flexible, slow) vs Standard (fast, limited)
+✅ **Два типа метрик**:
+- Log-based (гибкие, но медленнее)
+- Standard (быстрые, но с ограничениями)
 
-✅ **Standard metrics** are preaggregated before storage, offering fast queries and real-time alerting
+✅ **Standard metrics** предагрегируются до сохранения, обеспечивая быстрые запросы и near real-time алёрты
 
-✅ **Log-based metrics** provide full event details and flexible analysis but are slower and affected by sampling
+✅ **Log-based metrics** содержат полные данные событий и позволяют выполнять гибкий анализ, но работают медленнее и зависят от sampling
 
-✅ **Use standard metrics** for dashboards, alerts, and high-level monitoring
+✅ **Standard metrics** подходят для дашбордов, алёртов и общего мониторинга
 
-✅ **Use log-based metrics** for debugging, root cause analysis, and ad-hoc investigation
+✅ **Log-based metrics** лучше использовать для отладки, root cause analysis и ad-hoc анализа
 
-✅ **GetMetric()** creates preaggregated custom metrics (preferred over TrackMetric)
+✅ **GetMetric()** создаёт предагрегированные кастомные метрики (предпочтительнее, чем TrackMetric)
 
-✅ **Sampling** reduces costs but only affects log-based metrics (standard metrics are calculated before sampling)
+✅ **Sampling** снижает стоимость, но влияет только на log-based метрики (standard metrics рассчитываются до sampling)
 
-✅ **Modern SDKs** (v2.7+) automatically preaggregate standard metrics
+✅ **Современные SDK (v2.7+)** автоматически выполняют предагрегацию стандартных метрик
 
-## AZ-204 Exam Tips
+---
 
-💡 **Portal Namespace**: Know how to switch between standard and log-based metrics in the Azure Portal
+## Советы для экзамена AZ-204
 
-💡 **Sampling Impact**: Standard metrics are NOT affected by sampling (key exam point)
+💡 **Namespace в Portal**  
+Нужно уметь переключаться между standard и log-based метриками в Azure Portal.
 
-💡 **GetMetric()**: Use for custom business metrics (cost-effective, accurate)
+💡 **Влияние Sampling**  
+Standard metrics НЕ зависят от sampling — это частый экзаменационный вопрос.
 
-💡 **Alert Response Time**: Standard metrics enable sub-minute alerting (log-based: 5-10 min lag)
+💡 **GetMetric()**  
+Используйте для кастомных бизнес-метрик (дешевле и точнее).
 
-💡 **Cost Optimization**: Standard metrics dramatically reduce ingestion costs
+💡 **Время реакции алёртов**
+- Standard metrics → менее минуты
+- Log-based → задержка 5–10 минут
 
-💡 **SDK Version**: v2.7+ required for automatic preaggregation
+💡 **Оптимизация стоимости**  
+Standard metrics существенно уменьшают объём ingestion.
 
-## Next Steps
+💡 **Версия SDK**  
+Для автоматической предагрегации требуется SDK версии 2.7+.
 
-In the next unit, you'll learn how to:
-- Instrument applications for monitoring
-- Choose between autoinstrumentation and manual SDK
-- Configure OpenTelemetry integration
-- Customize telemetry collection
+---
 
+## Что дальше
+
+В следующем разделе вы узнаете, как:
+
+- Инструментировать приложения для мониторинга
+- Выбирать между autoinstrumentation и ручным SDK
+- Настраивать интеграцию OpenTelemetry
+- Кастомизировать сбор телеметрии
+
+---
+
+### Экзаменационный акцент
+
+Если в вопросе требуется:
+- быстрый алёрт → standard metrics
+- глубокий анализ → log-based metrics
+- снизить стоимость → sampling + standard metrics + GetMetric()
+- гибкость по измерениям → log-based
+
+Главное — понимать компромисс между гибкостью, производительностью и стоимостью.
 ---
 
 **📚 Further Reading:**

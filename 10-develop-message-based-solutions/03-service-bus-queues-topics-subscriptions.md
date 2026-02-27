@@ -2,9 +2,50 @@
 
 ## Service Bus Queues
 
-**Queues** provide **point-to-point** message delivery using a **competing consumers** pattern. Messages are stored in the queue until a receiver retrieves and processes them.
+**Queues** обеспечивают модель доставки сообщений **point-to-point** с использованием паттерна **competing consumers**.  
+Сообщения сохраняются в очереди до тех пор, пока получатель не извлечёт и не обработает их.
 
-### Queue Architecture
+---
+
+## Архитектура очереди
+
+Типичный поток работы:
+
+1. **Producer** отправляет сообщение в очередь
+2. Сообщение сохраняется в Service Bus
+3. Один из **Consumers** получает сообщение
+4. После успешной обработки сообщение удаляется
+
+---
+
+### Ключевые свойства архитектуры
+
+- Одно сообщение обрабатывается только одним consumer’ом
+- Несколько consumers могут работать параллельно (масштабирование)
+- Очередь выступает буфером при скачках нагрузки
+- Поддерживается надёжная доставка (at-least-once)
+
+---
+
+## Когда использовать очереди
+
+- Асинхронная обработка задач
+- Разгрузка веб-приложений
+- Микросервисное взаимодействие (1:1)
+- Фоновые worker-процессы
+- Batch-обработка
+
+---
+
+## Важно для AZ-204
+
+- Queue = 1:1 взаимодействие
+- FIFO гарантируется только при использовании Sessions
+- Подходит для decoupling и load leveling
+- Для 1:N используйте Topics
+
+Главная идея:  
+Queue — это базовый строительный блок надёжной асинхронной архитектуры.
 
 ```
 Senders (Multiple)              Queue                Receivers (Multiple)
@@ -25,16 +66,39 @@ Key Characteristics:
 • Messages persist until successfully processed
 ```
 
-### Key Features
+### Основные возможности
 
-| Feature | Description |
-|---------|-------------|
-| **FIFO Ordering** | Guaranteed when sessions are enabled (per session) |
-| **Competing Consumers** | Multiple receivers process messages in parallel |
-| **Load Balancing** | Distribute work evenly across receivers |
-| **Load Leveling** | Smooth out traffic bursts |
-| **Temporal Decoupling** | Senders and receivers don't need to be online simultaneously |
-| **Message Persistence** | Messages stored durably until processed |
+| Возможность | Описание |
+|-------------|----------|
+| **FIFO Ordering** | Гарантируется при включённых sessions (внутри одной сессии) |
+| **Competing Consumers** | Несколько получателей могут параллельно обрабатывать сообщения |
+| **Load Balancing** | Равномерное распределение нагрузки между получателями |
+| **Load Leveling** | Сглаживание резких пиков нагрузки |
+| **Temporal Decoupling** | Отправитель и получатель могут работать независимо по времени |
+| **Message Persistence** | Сообщения надёжно сохраняются до обработки |
+
+---
+
+## Пояснения
+
+- **FIFO** работает только при использовании Sessions (через SessionId).
+- **Competing Consumers** позволяют масштабировать обработку горизонтально.
+- **Load Leveling** делает очередь буфером при всплесках трафика.
+- **Temporal Decoupling** снижает связанность между сервисами.
+- **Message Persistence** защищает от потери данных при сбоях.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+- требуется надёжность доставки
+- нужно масштабирование через несколько consumers
+- важна асинхронность
+
+→ Service Bus Queue подходит идеально.
+
+Если требуется 1:N или фильтрация → используйте Topics.
 
 ### Creating a Queue
 
@@ -52,42 +116,86 @@ az servicebus queue create \
   --duplicate-detection-history-time-window PT10M
 ```
 
-### Queue Properties
+### Свойства очереди (Queue Properties)
 
-| Property | Description | Default | Range |
-|----------|-------------|---------|-------|
-| **MaxSizeInMegabytes** | Maximum queue size | 1024 MB | 1024-5120 MB (Standard)<br>1024-81920 MB (Premium) |
-| **DefaultMessageTimeToLive** | Message TTL | 14 days | 1 sec to unlimited |
-| **LockDuration** | Lock timeout for Peek Lock | 30 sec | 5 sec to 5 min |
-| **MaxDeliveryCount** | Max delivery attempts before dead-lettering | 10 | 1 to 2000 |
-| **RequiresDuplicateDetection** | Enable duplicate detection | false | true/false |
-| **DuplicateDetectionHistoryTimeWindow** | Deduplication window | N/A | 20 sec to 7 days |
-| **EnableBatchedOperations** | Enable server-side batching | true | true/false |
-| **RequiresSession** | Enable sessions for FIFO | false | true/false |
-| **DeadLetteringOnMessageExpiration** | Dead-letter expired messages | false | true/false |
+| Свойство | Описание | По умолчанию | Диапазон |
+|-----------|----------|--------------|-----------|
+| **MaxSizeInMegabytes** | Максимальный размер очереди | 1024 MB | 1024–5120 MB (Standard)<br>1024–81920 MB (Premium) |
+| **DefaultMessageTimeToLive** | Время жизни сообщения (TTL) | 14 дней | От 1 секунды до неограниченного |
+| **LockDuration** | Время блокировки в режиме Peek Lock | 30 сек | 5 сек – 5 мин |
+| **MaxDeliveryCount** | Количество попыток доставки до DLQ | 10 | 1–2000 |
+| **RequiresDuplicateDetection** | Включить дедупликацию | false | true/false |
+| **DuplicateDetectionHistoryTimeWindow** | Окно дедупликации | — | 20 сек – 7 дней |
+| **EnableBatchedOperations** | Серверный batching | true | true/false |
+| **RequiresSession** | Включить Sessions (FIFO) | false | true/false |
+| **DeadLetteringOnMessageExpiration** | Перемещать просроченные сообщения в DLQ | false | true/false |
 
 ---
 
-## Receive Modes
+## Режимы получения сообщений (Receive Modes)
 
-Service Bus offers two modes for receiving messages, each with different trade-offs between simplicity and reliability.
+Service Bus поддерживает два режима получения сообщений с разным балансом между простотой и надёжностью.
 
-### Comparison Table
+---
 
-| Feature | Receive and Delete | Peek Lock |
-|---------|-------------------|-----------|
-| **Delivery Guarantee** | At-most-once | At-least-once |
-| **Processing Steps** | 1 step | 2 steps |
-| **Simplicity** | ✅ Simple | More complex |
-| **Fault Tolerance** | ❌ Not fault-tolerant | ✅ Fault-tolerant |
-| **Message Lost on Crash?** | ✅ Yes | ❌ No (auto-redelivery) |
-| **Lock/Timeout** | No lock | ✅ Lock with timeout |
-| **Best For** | Non-critical data, logging | Critical data, transactions |
-| **Performance** | Slightly faster | Slightly slower |
+### Сравнение режимов
 
-### 1. Receive and Delete Mode
+| Характеристика | Receive and Delete | Peek Lock |
+|----------------|-------------------|------------|
+| **Гарантия доставки** | At-most-once | At-least-once |
+| **Шаги обработки** | 1 шаг | 2 шага |
+| **Простота** | ✅ Очень просто | Более сложный |
+| **Отказоустойчивость** | ❌ Нет | ✅ Да |
+| **Потеря сообщения при сбое?** | ✅ Да | ❌ Нет (авто-повтор) |
+| **Lock / Timeout** | Нет | ✅ Есть блокировка |
+| **Лучше всего подходит для** | Логирование, некритичные данные | Критичные данные |
+| **Производительность** | Чуть быстрее | Чуть медленнее |
 
-**Simplest model**: Service Bus marks message as consumed when it sends to receiver.
+---
+
+## 1️⃣ Receive and Delete
+
+**Самая простая модель:**  
+Сообщение помечается как обработанное сразу после отправки получателю.
+
+### Особенности:
+
+- Нет механизма подтверждения обработки
+- Если consumer упал — сообщение теряется
+- Подходит для некритичных сценариев
+- Более высокая производительность
+
+📌 Используется, когда потеря сообщения допустима (например, telemetry, логирование).
+
+---
+
+## 2️⃣ Peek Lock
+
+**Надёжная модель:**  
+Сообщение сначала блокируется, затем после успешной обработки подтверждается.
+
+### Особенности:
+
+- Сообщение блокируется на время LockDuration
+- Если обработка завершена успешно → сообщение удаляется
+- Если произошёл сбой → сообщение станет доступным повторно
+- При превышении MaxDeliveryCount → сообщение перемещается в DLQ
+
+📌 Это рекомендуемый режим для production и критичных операций.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Нужна надёжность → Peek Lock
+- Допустима потеря сообщений → Receive and Delete
+- Сценарии с транзакциями → Peek Lock
+- DLQ работает только с Peek Lock
+
+Главная идея:
+
+Receive and Delete → просто  
+Peek Lock → надёжно
 
 ```
 Client              Service Bus              Outcome
@@ -161,26 +269,58 @@ Client              Service Bus                   Outcome
 └──────┘            └──────────┘            
 ```
 
-**Workflow:**
+## Workflow (Peek Lock Mode)
 
-1. **Receive**: Message locked (invisible to other receivers) for `LockDuration` (default 30 seconds)
-2. **Process**: Application processes the message
-3. **Complete**: Explicitly delete message from queue
-   - OR **Abandon**: Release lock (message becomes visible again)
-   - OR **Dead-letter**: Move to dead-letter queue
-   - OR **Defer**: Defer processing to later time
+### Последовательность обработки:
 
-**Lock timeout:**
-- Default: 30 seconds
-- Configurable: 5 seconds to 5 minutes
-- If timeout expires before Complete/Abandon, message automatically unlocked and redelivered
-- Lock can be renewed during processing
+1️⃣ **Receive**  
+Сообщение блокируется (становится невидимым для других получателей) на время `LockDuration`  
+(по умолчанию — 30 секунд).
 
-**Use when:**
-- ✅ Critical data (no loss acceptable)
-- ✅ Long processing time
-- ✅ Transaction support needed
-- ✅ Error handling required
+2️⃣ **Process**  
+Приложение обрабатывает сообщение.
+
+3️⃣ **Завершение обработки:**
+- **Complete** — сообщение явно удаляется из очереди
+- **Abandon** — блокировка снимается, сообщение снова становится доступным
+- **Dead-letter** — сообщение перемещается в DLQ
+- **Defer** — обработка откладывается на более позднее время
+
+---
+
+## Тайм-аут блокировки (Lock Timeout)
+
+- По умолчанию: **30 секунд**
+- Настраивается: **от 5 секунд до 5 минут**
+- Если время истекло до вызова Complete или Abandon:
+   - Блокировка снимается автоматически
+   - Сообщение снова становится доступным
+- Блокировку можно продлить во время обработки (Lock Renewal)
+
+---
+
+## Когда использовать Peek Lock
+
+- ✅ Критичные данные (потеря недопустима)
+- ✅ Длительная обработка сообщений
+- ✅ Необходима поддержка транзакций
+- ✅ Требуется обработка ошибок (DLQ, повторные попытки)
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+
+- важна надёжность доставки
+- требуется повторная попытка при сбое
+- используется DLQ
+- обрабатываются финансовые или бизнес-критичные данные
+
+→ Правильный выбор: **Peek Lock Mode**.
+
+Главная идея:  
+Peek Lock = контроль + надёжность + повторная доставка при сбое.
 
 **Code example:**
 ```csharp
@@ -331,15 +471,46 @@ Key Characteristics:
 • Multiple receivers per subscription (competing consumers)
 ```
 
-### Key Differences: Queue vs Topic
+### Ключевые различия: Queue vs Topic
 
-| Aspect | Queue | Topic |
-|--------|-------|-------|
-| **Pattern** | Point-to-point | Publish-subscribe |
-| **Message Delivery** | One consumer | Multiple consumers (one per subscription) |
-| **Use Case** | Task distribution | Event broadcasting |
-| **Message Copy** | Single copy | Copy per subscription |
-| **Filtering** | Not supported | Supported (per subscription) |
+| Аспект | Queue | Topic |
+|--------|--------|--------|
+| **Паттерн** | Point-to-point | Publish-subscribe |
+| **Доставка сообщения** | Один получатель | Несколько получателей (по одному на subscription) |
+| **Типичный сценарий** | Распределение задач | Рассылка событий |
+| **Копирование сообщения** | Одна копия | Копия для каждой subscription |
+| **Фильтрация** | Не поддерживается | Поддерживается (на уровне подписки) |
+
+---
+
+## Пояснение
+
+### Queue
+- Используется для распределения задач между worker’ами
+- Каждое сообщение обрабатывается только одним consumer’ом
+- Подходит для 1:1 взаимодействия
+
+---
+
+### Topic
+- Используется для событийной архитектуры
+- Каждая subscription получает свою копию сообщения
+- Поддерживает фильтрацию по свойствам
+- Подходит для 1:N взаимодействия
+
+---
+
+## Экзаменационный ориентир (AZ-204)
+
+- 1:1 → Queue
+- 1:N → Topic
+- Нужна фильтрация → Topic
+- Нужно распределение задач → Queue
+
+Главная разница:
+
+Queue = задача  
+Topic = событие
 
 ### Creating Topics and Subscriptions
 
@@ -399,17 +570,68 @@ await foreach (var message in receiver.ReceiveMessagesAsync())
 
 ---
 
-## Message Filtering
+## Фильтрация сообщений (Message Filtering)
 
-Subscriptions can **filter messages** using SQL-like filter expressions. Only messages matching the filter are delivered to that subscription.
+Подписки (Subscriptions) могут **фильтровать сообщения** с помощью SQL-подобных выражений.  
+Только сообщения, соответствующие условию фильтра, будут доставлены в конкретную подписку.
 
-### Filter Types
+Это позволяет реализовать интеллектуальную маршрутизацию внутри одного Topic.
 
-| Filter Type | Description | Example |
-|------------|-------------|---------|
-| **SQL Filter** | SQL-92 expression on message properties | `Priority = 'High' AND Region = 'US'` |
-| **Correlation Filter** | Match specific property values (optimized) | `CorrelationId = '123'` |
-| **Boolean Filter** | True filter (all messages) or False filter (no messages) | `TrueFilter`, `FalseFilter` |
+---
+
+## Типы фильтров
+
+| Тип фильтра | Описание | Пример |
+|-------------|----------|---------|
+| **SQL Filter** | SQL-92 выражение по свойствам сообщения | `Priority = 'High' AND Region = 'US'` |
+| **Correlation Filter** | Сравнение конкретных свойств (оптимизированный вариант) | `CorrelationId = '123'` |
+| **Boolean Filter** | Логический фильтр (все или ни одного сообщения) | `TrueFilter`, `FalseFilter` |
+
+---
+
+## Пояснение
+
+### SQL Filter
+- Самый гибкий вариант
+- Позволяет использовать условия AND, OR, сравнения
+- Подходит для сложной маршрутизации
+
+---
+
+### Correlation Filter
+- Быстрее SQL-фильтра
+- Оптимизирован для точного совпадения свойств
+- Часто используется для correlationId, label и других конкретных значений
+
+---
+
+### Boolean Filter
+- `TrueFilter` — принимает все сообщения
+- `FalseFilter` — не принимает ни одного
+- Используется для управления логикой подписок
+
+---
+
+## Когда применять фильтрацию
+
+- Multi-tenant приложения
+- Разделение сообщений по регионам
+- Разделение по типу события
+- Разная бизнес-логика обработки
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+Если в вопросе:
+
+- требуется маршрутизация по свойствам
+- нужно отправлять сообщения разным сервисам по условиям
+- используется publish-subscribe
+
+→ правильный выбор — **Service Bus Topics + Subscription Filters**.
+
+Queue Storage не поддерживает фильтрацию сообщений.
 
 ### SQL Filter Examples
 
@@ -627,19 +849,45 @@ await foreach (var message in sessionReceiver.ReceiveMessagesAsync())
 
 ---
 
-## Best Practices
+## Лучшие практики
 
-### 1. Choose Right Entity
+### 1️⃣ Выбор правильной сущности
 
-✅ **Use Queue when:**
-- Point-to-point communication
-- Task distribution (competing consumers)
-- Load balancing
+---
 
-✅ **Use Topic when:**
-- Broadcast to multiple subscribers
-- Event notification
-- Independent processing by multiple systems
+### ✅ Используйте **Queue**, если:
+
+- Нужна модель point-to-point (1:1)
+- Требуется распределение задач между worker’ами (competing consumers)
+- Необходима балансировка нагрузки
+- Каждое сообщение должно быть обработано только одним получателем
+- Нет необходимости в рассылке нескольким системам
+
+📌 Queue подходит для фоновых задач и асинхронной обработки.
+
+---
+
+### ✅ Используйте **Topic**, если:
+
+- Требуется рассылка сообщений нескольким подписчикам (1:N)
+- Реализуется event-driven архитектура
+- Несколько систем должны независимо обрабатывать одно и то же событие
+- Нужна фильтрация сообщений по свойствам
+
+📌 Topic идеален для событий и микросервисной архитектуры.
+
+---
+
+## Экзаменационный ориентир (AZ-204)
+
+- 1:1 → Queue
+- 1:N → Topic
+- Task distribution → Queue
+- Event broadcasting → Topic
+
+Главное правило:  
+Queue = задачи  
+Topic = события
 
 ### 2. Implement Idempotency
 
@@ -725,64 +973,87 @@ var filter = new SqlRuleFilter(
 ```
 
 ---
+## Советы для экзамена AZ-204
 
-## Exam Tips for AZ-204
+### Ключевые концепции
 
-### Key Concepts
+1. **Queue** = Point-to-point  
+   Одно сообщение → один получатель.
 
-1. **Queue** = Point-to-point (one consumer per message)
-2. **Topic** = Publish-subscribe (multiple consumers)
-3. **Peek Lock** = Fault-tolerant (two-stage receive)
-4. **Receive and Delete** = Simple but lossy
-5. **Sessions** = FIFO guarantee (within session)
-6. **Filters** = Route messages to subscriptions
+2. **Topic** = Publish-subscribe  
+   Одно сообщение → несколько получателей.
 
-### Remember
+3. **Peek Lock** = Отказоустойчивый режим  
+   Двухэтапное получение с подтверждением.
 
-| Scenario | Solution |
-|----------|----------|
-| **Ordered processing** | Queue with sessions |
-| **Broadcast events** | Topic with subscriptions |
-| **Fault-tolerant processing** | Peek Lock mode |
-| **Performance critical, data loss OK** | Receive and Delete mode |
-| **Route by properties** | Topic with SQL filters |
-| **Distribute tasks** | Queue with competing consumers |
+4. **Receive and Delete** = Простой, но с риском потери  
+   Сообщение удаляется сразу при получении.
 
-### Common Exam Questions
+5. **Sessions** = Гарантия FIFO  
+   Порядок гарантируется внутри одной сессии.
 
-**Q: How to guarantee FIFO ordering?**
-✅ Enable sessions on queue/topic and use SessionId
-
-**Q: How to send events to multiple systems?**
-✅ Use topics with multiple subscriptions
-
-**Q: How to prevent message loss on crash?**
-✅ Use Peek Lock mode with explicit Complete
-
-**Q: How to route messages based on properties?**
-✅ Use topic subscriptions with SQL filters
-
-**Q: How to handle poison messages?**
-✅ Check DeliveryCount and dead-letter after max retries
+6. **Filters** = Маршрутизация сообщений  
+   Используются в подписках Topic.
 
 ---
 
-## Summary
+## Что нужно помнить
 
-**Service Bus Queues:**
-- ✅ Point-to-point messaging
-- ✅ Competing consumers pattern
-- ✅ One message to one receiver
-- ✅ FIFO with sessions
+| Сценарий | Решение |
+|-----------|----------|
+| **Обработка строго по порядку** | Queue с включёнными sessions |
+| **Рассылка событий** | Topic с несколькими subscriptions |
+| **Отказоустойчивая обработка** | Peek Lock |
+| **Высокая производительность, допустима потеря** | Receive and Delete |
+| **Маршрутизация по свойствам** | Topic + SQL filters |
+| **Распределение задач** | Queue + competing consumers |
 
-**Service Bus Topics:**
-- ✅ Publish-subscribe pattern
-- ✅ One message to multiple subscribers
-- ✅ Message filtering per subscription
-- ✅ Independent processing
+---
 
-**Receive Modes:**
-- **Peek Lock**: Two-stage, fault-tolerant (recommended)
-- **Receive and Delete**: One-stage, simple, lossy
+## Типовые вопросы на экзамене
 
-**Use sessions for FIFO ordering, filters for routing, and Peek Lock for reliability!
+**Как гарантировать FIFO?**  
+→ Включить sessions и использовать SessionId.
+
+**Как отправить события нескольким системам?**  
+→ Использовать Topic с несколькими subscriptions.
+
+**Как предотвратить потерю сообщения при сбое?**  
+→ Использовать Peek Lock и явный Complete.
+
+**Как маршрутизировать сообщения по свойствам?**  
+→ Topic + фильтры подписок.
+
+**Как обработать "ядовитые" сообщения?**  
+→ Проверять DeliveryCount и перемещать в DLQ после превышения лимита.
+
+---
+
+## Итог
+
+### Service Bus Queues
+- ✅ Point-to-point модель
+- ✅ Competing consumers
+- ✅ Одно сообщение — один получатель
+- ✅ FIFO через sessions
+
+### Service Bus Topics
+- ✅ Publish-subscribe модель
+- ✅ Одно сообщение — несколько подписчиков
+- ✅ Фильтрация на уровне подписки
+- ✅ Независимая обработка
+
+### Режимы получения
+
+- **Peek Lock** — надёжный, двухэтапный (рекомендуется)
+- **Receive and Delete** — простой, но возможна потеря
+
+---
+
+### Главное правило
+
+- Sessions → порядок
+- Filters → маршрутизация
+- Peek Lock → надёжность
+
+Понимание этих трёх механизмов покрывает большинство вопросов по Service Bus на AZ-204.

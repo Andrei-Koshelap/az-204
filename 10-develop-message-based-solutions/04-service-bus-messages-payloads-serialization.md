@@ -1,11 +1,74 @@
 # Service Bus Messages, Payloads, and Serialization
 
-## Message Structure
+## Структура сообщения
 
-A Service Bus message consists of a **binary payload** (data section) and **metadata** (properties).
+Сообщение в Service Bus состоит из:
 
-### Message Anatomy
+- **Binary payload** (тело сообщения) — данные
+- **Metadata** (свойства) — служебная информация
 
+---
+
+## Анатомия сообщения
+
+### 1️⃣ Body (Payload)
+
+- Основная часть сообщения
+- Представляет собой бинарные данные
+- Может содержать:
+    - JSON
+    - XML
+    - Protobuf
+    - Текст
+    - Бинарные данные (файл, документ и т.д.)
+
+📌 Service Bus не интерпретирует payload — это ответственность приложения.
+
+---
+
+### 2️⃣ System Properties (Системные свойства)
+
+Устанавливаются Service Bus автоматически или при отправке:
+
+- `MessageId` — уникальный идентификатор
+- `CorrelationId` — связывает связанные сообщения
+- `SessionId` — используется для FIFO
+- `ReplyTo` — очередь/топик для ответа
+- `TimeToLive` — срок жизни сообщения
+- `DeliveryCount` — количество попыток доставки
+
+---
+
+### 3️⃣ Application Properties (User Properties)
+
+- Кастомные свойства
+- Используются для фильтрации и маршрутизации
+- Доступны в SQL-фильтрах подписок
+
+Примеры использования:
+- Тип события
+- Регион
+- Приоритет
+- Tenant ID
+
+---
+
+## Важно для AZ-204
+
+- Payload — бинарный, формат выбирает приложение
+- Фильтрация работает по **Application Properties**
+- FIFO требует `SessionId`
+- Duplicate detection использует `MessageId`
+- CorrelationId применяется в request-reply сценариях
+
+---
+
+## Ключевая идея
+
+Body = данные  
+Properties = управление доставкой и маршрутизацией
+
+Правильное использование свойств делает архитектуру гибкой и масштабируемой.
 ```
 Service Bus Message
 ══════════════════════════════════════════════════════════════
@@ -45,39 +108,67 @@ Service Bus Message
 └──────────────────────────────────────────────────────────┘
 ```
 
-### Key Characteristics
+### Основные характеристики
 
-| Component | Description | Visibility |
-|-----------|-------------|------------|
-| **Binary Payload** | Message data (any format) | Opaque to Service Bus |
-| **Broker Properties** | System-defined metadata | Used for routing and processing |
-| **User Properties** | Application-defined key-value pairs | Used for filtering and routing |
+| Компонент | Описание | Видимость |
+|------------|-----------|------------|
+| **Binary Payload** | Данные сообщения (любой формат) | Непрозрачен для Service Bus |
+| **Broker Properties** | Системные метаданные | Используются для маршрутизации и обработки |
+| **User Properties** | Пользовательские пары ключ-значение | Используются для фильтрации и маршрутизации |
 
 ---
 
-## Broker Properties (System-Defined)
+## Broker Properties (Системные свойства)
 
-Broker properties are **system-defined** fields that control message behavior and routing.
+Broker properties — это **системные поля**, которые управляют поведением сообщения и его доставкой.
 
-### Essential Broker Properties
+---
 
-| Property | Type | Description | Use Case |
-|----------|------|-------------|----------|
-| **MessageId** | string | Unique message identifier | Duplicate detection, idempotency |
-| **CorrelationId** | string | Links related messages | Request-reply pattern |
-| **SessionId** | string | Groups related messages | FIFO ordering |
-| **ContentType** | string | MIME type of payload | Serialization hint |
-| **Subject** (Label) | string | Application-specific label | Message classification |
-| **To** | string | Destination address | Routing |
-| **ReplyTo** | string | Reply queue/topic address | Request-reply pattern |
-| **ReplyToSessionId** | string | Reply session identifier | Session-based request-reply |
-| **TimeToLive** | TimeSpan | Message expiration | Auto-cleanup |
-| **ScheduledEnqueueTimeUtc** | DateTime | Delayed delivery time | Scheduled messages |
-| **PartitionKey** | string | Partitioning key | Message grouping |
+### Основные Broker Properties
 
-### MessageId
+| Свойство | Тип | Описание | Типичный сценарий |
+|------------|------|------------|-------------------|
+| **MessageId** | string | Уникальный идентификатор сообщения | Duplicate detection, идемпотентность |
+| **CorrelationId** | string | Связывает связанные сообщения | Request-reply |
+| **SessionId** | string | Группировка связанных сообщений | FIFO порядок |
+| **ContentType** | string | MIME-тип payload | Подсказка для сериализации |
+| **Subject (Label)** | string | Метка сообщения | Классификация |
+| **To** | string | Адрес назначения | Маршрутизация |
+| **ReplyTo** | string | Адрес для ответа | Request-reply |
+| **ReplyToSessionId** | string | Session для ответа | Session-based reply |
+| **TimeToLive** | TimeSpan | Срок жизни сообщения | Авто-удаление |
+| **ScheduledEnqueueTimeUtc** | DateTime | Время отложенной доставки | Scheduled messages |
+| **PartitionKey** | string | Ключ партиционирования | Группировка сообщений |
 
-**Unique identifier** for the message, used for duplicate detection and idempotency.
+---
+
+## MessageId
+
+**Уникальный идентификатор сообщения.**
+
+### Используется для:
+
+- Обнаружения дубликатов (Duplicate Detection)
+- Обеспечения идемпотентности
+- Предотвращения повторной обработки
+- Контроля уникальности бизнес-операций
+
+📌 Если включена duplicate detection, Service Bus проверяет `MessageId` в пределах заданного временного окна.
+
+---
+
+## Экзаменационный акцент (AZ-204)
+
+- Duplicate detection → MessageId
+- FIFO → SessionId
+- Request-reply → CorrelationId + ReplyTo
+- Отложенная доставка → ScheduledEnqueueTimeUtc
+- TTL → TimeToLive
+
+Главная идея:
+
+Broker Properties управляют поведением сообщения,  
+а не содержимым.
 
 ```csharp
 var message = new ServiceBusMessage("Order data");
@@ -89,10 +180,17 @@ await sender.SendMessageAsync(message);
 // If sent twice, second message is discarded (if duplicate detection enabled)
 ```
 
-**Best practices:**
-- ✅ Use business identifiers (order ID, transaction ID)
-- ✅ Enable duplicate detection on queue/topic
-- ✅ Use for idempotent processing
+### Лучшие практики использования MessageId
+
+- ✅ Используйте **бизнес-идентификаторы**  
+  Например: OrderId, TransactionId, PaymentId.  
+  Это помогает избежать повторной обработки одной и той же бизнес-операции.
+
+- ✅ Включайте **Duplicate Detection** на уровне очереди или топика  
+  Service Bus будет автоматически отклонять сообщения с одинаковым `MessageId` в пределах заданного временного окна.
+
+- ✅ Применяйте для **идемпотентной обработки**  
+  Даже если сообщение будет доставлено повторно, система не выполнит операцию дважды.
 
 ```csharp
 // Idempotent processing using MessageId
@@ -701,52 +799,88 @@ var filter = new SqlRuleFilter("Priority = 'High' AND Region = 'US-West'");
 
 ---
 
-## Exam Tips for AZ-204
+## Советы для экзамена AZ-204
 
-### Key Concepts
+### Ключевые концепции
 
-1. **MessageId** = Unique identifier, duplicate detection, idempotency
-2. **CorrelationId** = Link related messages, request-reply
-3. **SessionId** = FIFO ordering, message grouping
-4. **ContentType** = Serialization format
-5. **User Properties** = Custom metadata, filtering
-6. **ReplyTo** = Reply queue address
+1. **MessageId**  
+   Уникальный идентификатор, используется для duplicate detection и идемпотентности.
 
-### Remember
+2. **CorrelationId**  
+   Связывает связанные сообщения (request-reply, цепочки операций).
 
-| Property | Used For |
-|----------|----------|
-| **MessageId** | Duplicate detection, idempotency |
-| **CorrelationId** | Request-reply linking |
-| **SessionId** | FIFO ordering |
-| **ContentType** | Serialization format |
-| **ApplicationProperties** | Filtering, routing |
-| **ReplyTo** | Reply address |
-| **TimeToLive** | Message expiration |
+3. **SessionId**  
+   Гарантирует FIFO и группирует связанные сообщения.
 
-### Common Scenarios
+4. **ContentType**  
+   Указывает формат сериализации (например, JSON).
 
-- **Prevent duplicates** → MessageId + duplicate detection
-- **Request-reply** → CorrelationId + ReplyTo
-- **Ordered processing** → SessionId
-- **Route by properties** → ApplicationProperties + SQL filter
-- **Schedule delivery** → ScheduledEnqueueTimeUtc
+5. **User Properties (ApplicationProperties)**  
+   Кастомные свойства для фильтрации и маршрутизации.
+
+6. **ReplyTo**  
+   Адрес очереди или топика для ответа.
 
 ---
 
-## Summary
+## Что нужно помнить
 
-**Service Bus messages consist of:**
-- ✅ Binary payload (any format)
-- ✅ Broker properties (system-defined)
-- ✅ User properties (application-defined)
+| Свойство | Используется для |
+|-----------|------------------|
+| **MessageId** | Duplicate detection, идемпотентность |
+| **CorrelationId** | Связь request-reply |
+| **SessionId** | FIFO порядок |
+| **ContentType** | Формат сериализации |
+| **ApplicationProperties** | Фильтрация и маршрутизация |
+| **ReplyTo** | Адрес ответа |
+| **TimeToLive** | Истечение срока сообщения |
 
-**Key broker properties:**
-- **MessageId**: Unique identifier
-- **CorrelationId**: Link related messages
-- **SessionId**: FIFO grouping
-- **ContentType**: Serialization format
-- **ReplyTo**: Reply address
+---
+
+## Типовые сценарии
+
+- **Предотвратить дубликаты**  
+  → MessageId + включённая duplicate detection
+
+- **Request-reply паттерн**  
+  → CorrelationId + ReplyTo
+
+- **Обработка строго по порядку**  
+  → SessionId
+
+- **Маршрутизация по свойствам**  
+  → ApplicationProperties + SQL-фильтр
+
+- **Отложенная доставка**  
+  → ScheduledEnqueueTimeUtc
+
+---
+
+## Итог
+
+Сообщение Service Bus состоит из:
+
+- ✅ **Binary payload** (любого формата)
+- ✅ **Broker properties** (системные свойства)
+- ✅ **User properties** (пользовательские метаданные)
+
+### Ключевые broker properties:
+
+- **MessageId** — уникальный идентификатор
+- **CorrelationId** — связь между сообщениями
+- **SessionId** — группировка для FIFO
+- **ContentType** — формат сериализации
+- **ReplyTo** — адрес для ответа
+
+---
+
+Главная идея:
+
+Payload = данные  
+Broker Properties = управление доставкой  
+User Properties = фильтрация и маршрутизация
+
+Понимание этих ролей покрывает большинство вопросов по сообщениям Service Bus на AZ-204.
 
 Dead-letter queue
 Используется для:
